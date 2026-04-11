@@ -1,0 +1,209 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,text/html,text/plain
+
+spring:
+  application:
+    name: house-rental-platform
+
+  profiles:
+    active: dev
+
+  # 数据源配置
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${DB_URL:jdbc:mysql://localhost:3306/house_rental?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true}
+    username: ${DB_USER:root}
+    password: ${DB_PASSWORD:root}
+    druid:
+      initial-size: 5
+      min-idle: 5
+      max-active: 20
+      max-wait: 60000
+      time-between-eviction-runs-millis: 60000
+      min-evictable-idle-time-millis: 300000
+      validation-query: SELECT 1 FROM DUAL
+      test-while-idle: true
+      test-on-borrow: false
+      test-on-return: false
+      pool-prepared-statements: true
+      max-pool-prepared-statement-per-connection-size: 20
+      filters: stat,wall,slf4j
+      connection-properties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=5000
+      web-stat-filter:
+        enabled: true
+        url-pattern: /*
+        exclusions: "*.js,*.gif,*.jpg,*.bmp,*.png,*.css,*.ico,/druid/*"
+      stat-view-servlet:
+        enabled: true
+        url-pattern: /druid/*
+        reset-enable: false
+        login-username: admin
+        login-password: admin
+
+  # MyBatis Plus配置
+  mybatis-plus:
+    mapper-locations: classpath*:mapper/**/*.xml
+    type-aliases-package: com.houserental.entity
+    configuration:
+      log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+      map-underscore-to-camel-case: true
+
+  # Redis配置
+  redis:
+    host: localhost
+    port: 6379
+    password:
+    database: 0
+    timeout: 6000ms
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
+        max-wait: -1ms
+
+  # RabbitMQ配置
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    virtual-host: /
+    connection-timeout: 60000
+    requested-heartbeat: 30
+    template:
+      retry:
+        enabled: true
+        initial-interval: 1000ms
+        max-interval: 10000ms
+        multiplier: 2.0
+        max-attempts: 3
+    listener:
+      simple:
+        acknowledge-mode: auto
+        concurrency: 5
+        max-concurrency: 10
+        retry:
+          enabled: true
+          initial-interval: 1000ms
+          max-interval: 10000ms
+          multiplier: 2.0
+          max-attempts: 3
+
+  # 邮件发送配置
+  mail:
+    host: smtp.qq.com
+    port: 587
+    username: your-email@qq.com
+    password: your-email-password
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+
+  # 文件上传配置
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 100MB
+
+  # Jackson配置
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+    serialization:
+      write-dates-as-timestamps: false
+
+# 日志配置
+logging:
+  level:
+    root: INFO
+    com.houserental: INFO
+    org.springframework.security: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: log/house-rental.log
+    max-size: 10MB
+    max-history: 30
+
+# 阿里云SMS配置
+ali yun:
+  sms:
+    accessKeyId: ${ALIYUN_SMS_ACCESS_KEY_ID:your-access-key-id}
+    accessKeySecret: ${ALIYUN_SMS_ACCESS_KEY_SECRET:your-access-key-secret}
+    signName: ${ALIYUN_SMS_SIGN_NAME:房屋租赁平台}
+
+# 自定义配置
+app:
+  # JWT配置
+  jwt:
+    secret: house-rental-platform-secret-key-2024-secure-jwt-token
+    expiration: 86400000
+    refresh-expiration: 604800000
+    header: Authorization
+    prefix: Bearer
+
+  # 文件存储配置
+  file:
+    upload-path: ./uploads
+    allowed-types: jpg,jpeg,png,gif,pdf,doc,docx
+    max-size: 10485760
+
+  # MinIO配置
+  minio:
+    url: http://localhost:9000
+    access-key: minioadmin
+    secret-key: minioadmin
+    bucket-name: house-rental
+    secure: false
+
+  # Elasticsearch配置
+  elasticsearch:
+    enabled: false
+    uris: http://localhost:9200
+    username: elastic
+    password: changeme
+    socket-timeout: 30s
+    connection-timeout: 10s
+
+  # 短信配置
+  sms:
+    enabled: false
+    provider: aliyun
+    access-key: your-access-key
+    secret-key: your-secret-key
+    sign-name: 房屋租赁平台
+    template-code: your-template-code
+
+
+
+# Knife4j配置
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn
+    swagger-model-name: 实体类列表
+    enableSwaggerModels: true
+    enableDocumentManage: true
+  documents:
+    - group: 默认分组
+      name: 房屋租赁平台API文档
+      locations: classpath:markdown/*
+
+# Springfox配置
+springfox:
+  documentation:
+    enabled: false

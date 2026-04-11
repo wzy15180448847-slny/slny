@@ -1,0 +1,161 @@
+.container {
+  max-width: $container-width;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.flex {
+  display: flex;
+}
+
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.text-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.text-ellipsis-2 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mb-10 {
+  margin-bottom: 10px;
+}
+
+.mb-20 {
+  margin-bottom: 20px;
+}
+
+.mb-30 {
+  margin-bottom: 30px;
+}
+
+.mt-10 {
+  margin-top: 10px;
+}
+
+.mt-20 {
+  margin-top: 20px;
+}
+
+.mt-30 {
+  margin-top: 30px;
+}
+
+.page-container {
+  min-height: calc(100vh - #{$navbar-height} - #{$footer-height});
+  padding: 30px 0;
+}
+
+.card {
+  background: $bg-white;
+  border-radius: $radius-base;
+  box-shadow: $shadow-light;
+  padding: 20px;
+  transition: $transition-base;
+  
+  &:hover {
+    box-shadow: $shadow-base;
+  }
+}
+
+.btn-gradient {
+  background: linear-gradient(135deg, $primary-color 0%, #764ba2 100%);
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  padding: 10px 30px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: $transition-base;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.gradient-bg {
+  background: linear-gradient(135deg, $primary-color 0%, #764ba2 100%);
+}
+
+.tag {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  background: $bg-color;
+  color: $text-secondary;
+  
+  &.tag-primary {
+    background: $primary-light;
+    color: $primary-color;
+  }
+  
+  &.tag-success {
+    background: rgba($success-color, 0.1);
+    color: $success-color;
+  }
+  
+  &.tag-warning {
+    background: rgba($warning-color, 0.1);
+    color: $warning-color;
+  }
+  
+  &.tag-danger {
+    background: rgba($danger-color, 0.1);
+    color: $danger-color;
+  }
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.slide-fade-enter-active {
+  transition: all 0.3s ease-out;
+}
+
+.slide-fade-leave-active {
+  transition: all 0.2s cubic-bezier(1, 0.5, 0.8, 1);
+}
+
+.slide-fade-enter-from,
+.slide-fade-leave-to {
+  transform: translateY(-10px);
+  opacity: 0;
+}

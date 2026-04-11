@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.houserental.mapper.HouseMapper">
+
+    <!-- 根据房源编号查询 -->
+    <select id="selectByHouseNo" resultType="com.houserental.entity.House">
+        SELECT * FROM biz_house WHERE house_no = #{houseNo} AND deleted = 0
+    </select>
+
+    <!-- 根据房东ID查询房源列表 -->
+    <select id="selectByLandlordId" resultType="com.houserental.entity.House">
+        SELECT * FROM biz_house WHERE landlord_id = #{landlordId} AND deleted = 0
+    </select>
+
+    <!-- 根据房东ID和状态查询房源列表 -->
+    <select id="selectByLandlordIdAndStatus" resultType="com.houserental.entity.House">
+        SELECT * FROM biz_house WHERE landlord_id = #{landlordId} AND status = #{status} AND deleted = 0
+    </select>
+
+    <!-- 根据城市查询房源列表 -->
+    <select id="selectByCityAndStatus" resultType="com.houserental.entity.House">
+        SELECT * FROM biz_house WHERE city = #{city} AND status = #{status} AND deleted = 0
+    </select>
+
+    <!-- 根据城市和区域查询房源列表 -->
+    <select id="selectByCityAndDistrictAndStatus" resultType="com.houserental.entity.House">
+        SELECT * FROM biz_house WHERE city = #{city} AND district = #{district} AND status = #{status} AND deleted = 0
+    </select>
+
+    <!-- 多条件查询房源 -->
+    <select id="searchHouses" resultType="com.houserental.entity.House">
+        SELECT * FROM biz_house 
+        WHERE deleted = 0 AND status = #{status}
+        <if test="city != null and city != ''">
+            AND city = #{city}
+        </if>
+        <if test="district != null and district != ''">
+            AND district = #{district}
+        </if>
+        <if test="houseType != null and houseType != ''">
+            AND house_type LIKE CONCAT('%', #{houseType}, '%')
+        </if>
+        <if test="minPrice != null">
+            AND rent_price >= #{minPrice}
+        </if>
+        <if test="maxPrice != null">
+            AND rent_price &lt;= #{maxPrice}
+        </if>
+        <if test="minArea != null">
+            AND area >= #{minArea}
+        </if>
+        <if test="maxArea != null">
+            AND area &lt;= #{maxArea}
+        </if>
+        <if test="rentWay != null">
+            AND rent_way = #{rentWay}
+        </if>
+    </select>
+
+    <!-- 查询推荐房源（按浏览量排序） -->
+    <select id="selectRecommendHouses" resultType="com.houserental.entity.House">
+        SELECT * FROM biz_house WHERE deleted = 0 AND status = 2 ORDER BY view_count DESC LIMIT #{limit}
+    </select>
+
+    <!-- 查询最新房源 -->
+    <select id="selectLatestHouses" resultType="com.houserental.entity.House">
+        SELECT * FROM biz_house WHERE deleted = 0 AND status = 2 ORDER BY create_time DESC LIMIT #{limit}
+    </select>
+
+    <!-- 增加浏览次数 -->
+    <update id="incrementViewCount">
+        UPDATE biz_house SET view_count = view_count + 1 WHERE id = #{id}
+    </update>
+
+    <!-- 增加收藏次数 -->
+    <update id="incrementFavoriteCount">
+        UPDATE biz_house SET favorite_count = favorite_count + 1 WHERE id = #{id}
+    </update>
+
+    <!-- 减少收藏次数 -->
+    <update id="decrementFavoriteCount">
+        UPDATE biz_house SET favorite_count = favorite_count - 1 WHERE id = #{id} AND favorite_count > 0
+    </update>
+
+    <!-- 统计房东的房源数量 -->
+    <select id="countByLandlordIdAndDeleted" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM biz_house WHERE landlord_id = #{landlordId} AND deleted = #{deleted}
+    </select>
+
+    <!-- 统计各状态的房源数量 -->
+    <select id="countByStatusAndDeleted" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM biz_house WHERE status = #{status} AND deleted = #{deleted}
+    </select>
+
+</mapper>

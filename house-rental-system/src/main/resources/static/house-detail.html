@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>房源详情 - 房屋租赁平台</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: #f5f7fa;
+            color: #333;
+        }
+
+        .navbar {
+            background: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 70px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .breadcrumb {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .breadcrumb a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 30px;
+        }
+
+        .left-panel {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+        }
+
+        .house-gallery {
+            margin-bottom: 30px;
+        }
+
+        .main-image {
+            width: 100%;
+            height: 400px;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .main-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .thumbnail-list {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+        }
+
+        .thumbnail {
+            width: 80px;
+            height: 60px;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            border: 2px solid transparent;
+            flex-shrink: 0;
+        }
+
+        .thumbnail.active {
+            border-color: #667eea;
+        }
+
+        .thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .house-header {
+            margin-bottom: 25px;
+        }
+
+        .house-title {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .house-tags {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .tag {
+            padding: 5px 15px;
+            background: #f5f7fa;
+            border-radius: 15px;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .tag.highlight {
+            background: #667eea;
+            color: white;
+        }
+
+        .house-price-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+        }
+
+        .price-main {
+            display: flex;
+            align-items: baseline;
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+
+        .price-main .amount {
+            font-size: 36px;
+            font-weight: bold;
+        }
+
+        .price-main .unit {
+            font-size: 16px;
+        }
+
+        .price-extra {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f5f7fa;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .info-item {
+            text-align: center;
+            padding: 15px;
+            background: #f5f7fa;
+            border-radius: 8px;
+        }
+
+        .info-item .label {
+            font-size: 13px;
+            color: #999;
+            margin-bottom: 5px;
+        }
+
+        .info-item .value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .facilities-list {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .facility-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px;
+            background: #f5f7fa;
+            border-radius: 8px;
+        }
+
+        .facility-item .icon {
+            font-size: 20px;
+        }
+
+        .facility-item .text {
+            font-size: 13px;
+        }
+
+        .description {
+            line-height: 1.8;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .map-section {
+            margin-bottom: 30px;
+        }
+
+        .map-placeholder {
+            width: 100%;
+            height: 300px;
+            background: #e0e0e0;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+        }
+
+        .right-panel {
+            position: sticky;
+            top: 100px;
+            height: fit-content;
+        }
+
+        .contact-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        .agent-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .agent-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #667eea;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .agent-details h4 {
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+
+        .agent-details p {
+            font-size: 13px;
+            color: #999;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s;
+            margin-bottom: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-outline {
+            background: white;
+            border: 1px solid #667eea;
+            color: #667eea;
+        }
+
+        .btn-outline:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .contact-phone {
+            text-align: center;
+            padding: 15px;
+            background: #f5f7fa;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .contact-phone .label {
+            font-size: 13px;
+            color: #999;
+            margin-bottom: 5px;
+        }
+
+        .contact-phone .phone {
+            font-size: 20px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .similar-houses {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+        }
+
+        .similar-house-item {
+            display: flex;
+            gap: 15px;
+            padding: 15px 0;
+            border-bottom: 1px solid #f5f7fa;
+            cursor: pointer;
+        }
+
+        .similar-house-item:last-child {
+            border-bottom: none;
+        }
+
+        .similar-house-image {
+            width: 100px;
+            height: 75px;
+            border-radius: 8px;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .similar-house-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .similar-house-info {
+            flex: 1;
+        }
+
+        .similar-house-info h5 {
+            font-size: 14px;
+            margin-bottom: 5px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .similar-house-info p {
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 5px;
+        }
+
+        .similar-house-info .price {
+            color: #ff6b6b;
+            font-weight: bold;
+        }
+
+        /* 预约弹窗 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            width: 500px;
+            max-width: 90%;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h3 {
+            font-size: 20px;
+        }
+
+        .modal-close {
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .form-group textarea {
+            height: 100px;
+            resize: none;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .right-panel {
+                position: static;
+            }
+
+            .info-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .facilities-list {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo">🏠 房屋租赁平台</a>
+            <a href="index.html" class="btn btn-outline">返回首页</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="breadcrumb">
+            <a href="index.html">首页</a> > 
+            <a href="house-list.html">房源列表</a> > 
+            <span id="breadcrumbTitle">房源详情</span>
+        </div>
+
+        <div class="main-content">
+            <div class="left-panel">
+                <!-- 图片画廊 -->
+                <div class="house-gallery">
+                    <div class="main-image">
+                        <img id="mainImage" src="https://via.placeholder.com/800x400?text=House+Image" alt="房源图片">
+                    </div>
+                    <div class="thumbnail-list" id="thumbnailList">
+                        <!-- 缩略图将通过JavaScript动态加载 -->
+                    </div>
+                </div>
+
+                <!-- 房源标题 -->
+                <div class="house-header">
+                    <h1 class="house-title" id="houseTitle">精装修两室一厅 南北通透 拎包入住</h1>
+                    <div class="house-tags">
+                        <span class="tag highlight" id="rentWayTag">整租</span>
+                        <span class="tag" id="houseTypeTag">2室1厅</span>
+                        <span class="tag" id="areaTag">85㎡</span>
+                        <span class="tag" id="orientationTag">朝南</span>
+                        <span class="tag" id="decorationTag">精装修</span>
+                    </div>
+                </div>
+
+                <!-- 价格信息 -->
+                <div class="house-price-section">
+                    <div class="price-main">
+                        <span class="amount" id="priceAmount">5500</span>
+                        <span class="unit">元/月</span>
+                    </div>
+                    <div class="price-extra">
+                        押金：押一付三 | 付款方式：季度付
+                    </div>
+                </div>
+
+                <!-- 基本信息 -->
+                <h3 class="section-title">基本信息</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="label">户型</div>
+                        <div class="value" id="infoHouseType">2室1厅1卫</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="label">面积</div>
+                        <div class="value" id="infoArea">85㎡</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="label">楼层</div>
+                        <div class="value" id="infoFloor">中层/18层</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="label">朝向</div>
+                        <div class="value" id="infoOrientation">南北通透</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="label">装修</div>
+                        <div class="value" id="infoDecoration">精装修</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="label">电梯</div>
+                        <div class="value" id="infoElevator">有</div>
+                    </div>
+                </div>
+
+                <!-- 配套设施 -->
+                <h3 class="section-title">配套设施</h3>
+                <div class="facilities-list" id="facilitiesList">
+                    <div class="facility-item">
+                        <span class="icon">🛏️</span>
+                        <span class="text">床</span>
+                    </div>
+                    <div class="facility-item">
+                        <span class="icon">🛋️</span>
+                        <span class="text">沙发</span>
+                    </div>
+                    <div class="facility-item">
+                        <span class="icon">📺</span>
+                        <span class="text">电视</span>
+                    </div>
+                    <div class="facility-item">
+                        <span class="icon">❄️</span>
+                        <span class="text">空调</span>
+                    </div>
+                    <div class="facility-item">
+                        <span class="icon">🧊</span>
+                        <span class="text">冰箱</span>
+                    </div>
+                    <div class="facility-item">
+                        <span class="icon">🧺</span>
+                        <span class="text">洗衣机</span>
+                    </div>
+                    <div class="facility-item">
+                        <span class="icon">🍳</span>
+                        <span class="text">燃气灶</span>
+                    </div>
+                    <div class="facility-item">
+                        <span class="icon">🚿</span>
+                        <span class="text">热水器</span>
+                    </div>
+                    <div class="facility-item">
+                        <span class="icon">📶</span>
+                        <span class="text">宽带</span>
+                    </div>
+                    <div class="facility-item">
+                        <span class="icon">🔒</span>
+                        <span class="text">智能门锁</span>
+                    </div>
+                </div>
+
+                <!-- 房源描述 -->
+                <h3 class="section-title">房源描述</h3>
+                <div class="description" id="houseDescription">
+                    <p>【房源亮点】</p>
+                    <p>1. 南北通透，采光极佳，全天阳光充足</p>
+                    <p>2. 精装修，家电家具齐全，拎包即住</p>
+                    <p>3. 小区环境优美，绿化率高，物业管理完善</p>
+                    <p>4. 交通便利，地铁步行5分钟，多路公交直达</p>
+                    <p>5. 周边配套齐全，超市、商场、医院、学校一应俱全</p>
+                    <br>
+                    <p>【周边配套】</p>
+                    <p>购物：家乐福超市、万达广场</p>
+                    <p>医疗：市第一人民医院</p>
+                    <p>教育：重点小学、中学</p>
+                    <p>交通：地铁1号线、多路公交</p>
+                </div>
+
+                <!-- 地图位置 -->
+                <h3 class="section-title">位置及周边</h3>
+                <div class="map-section">
+                    <div class="map-placeholder">
+                        📍 地图加载中...
+                    </div>
+                    <p style="margin-top: 15px; color: #666;" id="houseAddress">
+                        地址：北京市朝阳区望京街道阜通东大街
+                    </p>
+                </div>
+            </div>
+
+            <!-- 右侧面板 -->
+            <div class="right-panel">
+                <div class="contact-card">
+                    <div class="agent-info">
+                        <div class="agent-avatar">张</div>
+                        <div class="agent-details">
+                            <h4 id="agentName">张先生</h4>
+                            <p>房东 · 发布于3天前</p>
+                        </div>
+                    </div>
+                    
+                    <button class="btn btn-primary" onclick="showAppointmentModal()">预约看房</button>
+                    <button class="btn btn-outline" onclick="toggleFavorite()">♡ 收藏房源</button>
+                    
+                    <div class="contact-phone">
+                        <div class="label">联系电话</div>
+                        <div class="phone" id="contactPhone">138****8888</div>
+                    </div>
+                </div>
+
+                <div class="similar-houses">
+                    <h3 class="section-title">相似房源</h3>
+                    <div id="similarHouses">
+                        <!-- 相似房源将通过JavaScript动态加载 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 预约看房弹窗 -->
+    <div class="modal" id="appointmentModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>预约看房</h3>
+                <span class="modal-close" onclick="hideAppointmentModal()">×</span>
+            </div>
+            
+            <form id="appointmentForm">
+                <div class="form-group">
+                    <label>预约日期</label>
+                    <input type="date" id="appointmentDate" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>预约时间</label>
+                    <select id="appointmentTime" required>
+                        <option value="">请选择时间段</option>
+                        <option value="09:00-10:00">09:00-10:00</option>
+                        <option value="10:00-11:00">10:00-11:00</option>
+                        <option value="11:00-12:00">11:00-12:00</option>
+                        <option value="14:00-15:00">14:00-15:00</option>
+                        <option value="15:00-16:00">15:00-16:00</option>
+                        <option value="16:00-17:00">16:00-17:00</option>
+                        <option value="17:00-18:00">17:00-18:00</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>联系电话</label>
+                    <input type="tel" id="appointmentPhone" placeholder="请输入联系电话" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>备注信息</label>
+                    <textarea id="appointmentRemark" placeholder="请输入备注信息（选填）"></textarea>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">提交预约</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8080/api';
+        let currentHouseId = null;
+
+        // 获取URL参数
+        function getUrlParam(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+
+        // 加载房源详情
+        async function loadHouseDetail() {
+            currentHouseId = getUrlParam('id') || 1;
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/houses/${currentHouseId}`);
+                const result = await response.json();
+                
+                if (result.code === 200) {
+                    renderHouseDetail(result.data);
+                } else {
+                    renderMockHouseDetail();
+                }
+            } catch (error) {
+                console.error('Load house detail error:', error);
+                renderMockHouseDetail();
+            }
+        }
+
+        // 渲染房源详情
+        function renderHouseDetail(house) {
+            document.getElementById('breadcrumbTitle').textContent = house.title;
+            document.getElementById('houseTitle').textContent = house.title;
+            document.getElementById('rentWayTag').textContent = house.rentWay === 1 ? '整租' : '合租';
+            document.getElementById('houseTypeTag').textContent = house.houseType;
+            document.getElementById('areaTag').textContent = house.area + '㎡';
+            document.getElementById('priceAmount').textContent = house.rentPrice;
+            document.getElementById('infoHouseType').textContent = house.houseType;
+            document.getElementById('infoArea').textContent = house.area + '㎡';
+            document.getElementById('houseAddress').textContent = '地址：' + house.city + house.district + house.address;
+            
+            if (house.coverImage) {
+                document.getElementById('mainImage').src = house.coverImage;
+            }
+        }
+
+        // 渲染模拟数据
+        function renderMockHouseDetail() {
+            const mockHouse = {
+                id: 1,
+                title: '精装修两室一厅 南北通透 拎包入住',
+                houseType: '2室1厅1卫',
+                area: 85,
+                rentPrice: 5500,
+                rentWay: 1,
+                city: '北京',
+                district: '朝阳区',
+                address: '望京街道阜通东大街',
+                floor: 8,
+                totalFloor: 18,
+                orientation: '南北通透',
+                decoration: '精装修',
+                coverImage: 'https://via.placeholder.com/800x400?text=House+Detail'
+            };
+            
+            renderHouseDetail(mockHouse);
+            renderSimilarHouses();
+        }
+
+        // 渲染相似房源
+        function renderSimilarHouses() {
+            const similarHouses = [
+                {
+                    id: 2,
+                    title: '望京精装两居 近地铁 家电齐全',
+                    area: 80,
+                    rentPrice: 5200,
+                    image: 'https://via.placeholder.com/100x75?text=House+2'
+                },
+                {
+                    id: 3,
+                    title: '南北通透三居室 学区房',
+                    area: 110,
+                    rentPrice: 7500,
+                    image: 'https://via.placeholder.com/100x75?text=House+3'
+                },
+                {
+                    id: 4,
+                    title: '精装一居室 适合单身白领',
+                    area: 45,
+                    rentPrice: 3800,
+                    image: 'https://via.placeholder.com/100x75?text=House+4'
+                }
+            ];
+
+            const container = document.getElementById('similarHouses');
+            container.innerHTML = similarHouses.map(house => `
+                <div class="similar-house-item" onclick="viewHouse(${house.id})">
+                    <div class="similar-house-image">
+                        <img src="${house.image}" alt="${house.title}">
+                    </div>
+                    <div class="similar-house-info">
+                        <h5>${house.title}</h5>
+                        <p>${house.area}㎡</p>
+                        <span class="price">¥${house.rentPrice}/月</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 查看房源
+        function viewHouse(houseId) {
+            window.location.href = `house-detail.html?id=${houseId}`;
+        }
+
+        // 显示预约弹窗
+        function showAppointmentModal() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert('请先登录');
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            document.getElementById('appointmentModal').classList.add('active');
+            
+            // 设置最小日期为明天
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            document.getElementById('appointmentDate').min = tomorrow.toISOString().split('T')[0];
+        }
+
+        // 隐藏预约弹窗
+        function hideAppointmentModal() {
+            document.getElementById('appointmentModal').classList.remove('active');
+        }
+
+        // 提交预约
+        document.getElementById('appointmentForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const appointment = {
+                houseId: currentHouseId,
+                appointmentDate: document.getElementById('appointmentDate').value,
+                appointmentTime: document.getElementById('appointmentTime').value,
+                phone: document.getElementById('appointmentPhone').value,
+                remark: document.getElementById('appointmentRemark').value
+            };
+
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`${API_BASE_URL}/appointments`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(appointment)
+                });
+
+                const result = await response.json();
+                
+                if (result.code === 200) {
+                    alert('预约成功！请等待房东确认');
+                    hideAppointmentModal();
+                } else {
+                    alert(result.message || '预约失败');
+                }
+            } catch (error) {
+                console.error('Submit appointment error:', error);
+                alert('网络错误，请稍后重试');
+            }
+        });
+
+        // 收藏房源
+        async function toggleFavorite() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert('请先登录');
+                window.location.href = 'login.html';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/favorites/${currentHouseId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const result = await response.json();
+                if (result.code === 200) {
+                    alert('收藏成功');
+                }
+            } catch (error) {
+                console.error('Toggle favorite error:', error);
+            }
+        }
+
+        // 页面加载时执行
+        window.onload = function() {
+            loadHouseDetail();
+        };
+    </script>
+</body>
+</html>

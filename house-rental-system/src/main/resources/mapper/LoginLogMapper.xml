@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.houserental.mapper.LoginLogMapper">
+
+    <!-- 统计指定用户的登录失败次数（24小时内） -->
+    <select id="countLoginFailuresByUsername" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM biz_login_log 
+        WHERE username = #{username} 
+        AND login_result = 0 
+        AND created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
+    </select>
+
+    <!-- 统计指定IP的登录失败次数（24小时内） -->
+    <select id="countLoginFailuresByIp" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM biz_login_log 
+        WHERE login_ip = #{ip} 
+        AND login_result = 0 
+        AND created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
+    </select>
+
+</mapper>

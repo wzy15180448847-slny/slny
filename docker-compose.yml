@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  # 后端服务
+  backend:
+    build: .
+    ports:
+      - "8081:8081"
+    environment:
+      - DB_URL=jdbc:mysql://mysql:3306/house_rental?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
+      - DB_USER=root
+      - DB_PASSWORD=root
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=guest
+      - RABBITMQ_PASSWORD=guest
+    depends_on:
+      - mysql
+      - redis
+      - rabbitmq
+    networks:
+      - house-rental-network
+
+  # MySQL数据库
+  mysql:
+    image: mysql:8.0
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=house_rental
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - house-rental-network
+
+  # Redis缓存
+  redis:
+    image: redis:6.0
+    ports:
+      - "6379:6379"
+    networks:
+      - house-rental-network
+
+  # RabbitMQ消息队列
+  rabbitmq:
+    image: rabbitmq:3.8-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - house-rental-network
+
+volumes:
+  mysql-data:
+
+networks:
+  house-rental-network:
+    driver: bridge

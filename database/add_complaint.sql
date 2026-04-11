@@ -1,0 +1,25 @@
+-- 用户投诉表
+CREATE TABLE IF NOT EXISTS `biz_complaint` (
+  `id` BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `complainant_id` BIGINT(20) NOT NULL COMMENT '投诉人ID',
+  `respondent_id` BIGINT(20) NOT NULL COMMENT '被投诉人ID',
+  `complaint_type` INT(11) NOT NULL COMMENT '投诉类型（1-房源问题，2-服务问题，3-合同问题，4-其他）',
+  `title` VARCHAR(255) NOT NULL COMMENT '投诉标题',
+  `content` TEXT NOT NULL COMMENT '投诉内容',
+  `evidence` TEXT COMMENT '投诉证据（JSON格式存储，多张图片URL）',
+  `status` INT(11) DEFAULT 0 COMMENT '处理状态（0-待处理，1-处理中，2-已处理，3-已驳回）',
+  `process_result` TEXT COMMENT '处理结果',
+  `processor_id` BIGINT(20) COMMENT '处理人ID',
+  `process_time` DATETIME COMMENT '处理时间',
+  `created_by` BIGINT(20) COMMENT '创建人',
+  `created_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_by` BIGINT(20) COMMENT '更新人',
+  `updated_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted` TINYINT(4) DEFAULT 0 COMMENT '逻辑删除标识',
+  PRIMARY KEY (`id`),
+  KEY `idx_complainant_id` (`complainant_id`),
+  KEY `idx_respondent_id` (`respondent_id`),
+  KEY `idx_status` (`status`),
+  CONSTRAINT `fk_complaint_complainant` FOREIGN KEY (`complainant_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_complaint_respondent` FOREIGN KEY (`respondent_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户投诉表';

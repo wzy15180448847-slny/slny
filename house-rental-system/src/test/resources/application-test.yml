@@ -1,0 +1,67 @@
+server:
+  port: 8081
+  servlet:
+    context-path: /api
+
+spring:
+  application:
+    name: house-rental-platform
+
+  # 数据源配置
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/house_rental?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: root
+    password: root
+
+  # Redis配置
+  redis:
+    host: localhost
+    port: 6379
+    password:
+    database: 0
+
+  # RabbitMQ配置
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    virtual-host: /
+
+  # Elasticsearch配置
+  data:
+    elasticsearch:
+      enabled: false
+
+  # 测试环境禁用Security
+  security:
+    enabled: false
+
+# 自定义配置
+app:
+  # JWT配置
+  jwt:
+    secret: house-rental-platform-secret-key-2024-secure-jwt-token
+    expiration: 86400000
+    refresh-expiration: 604800000
+    header: Authorization
+    prefix: Bearer
+
+  # 短信配置
+  sms:
+    enabled: false
+
+  # Elasticsearch配置
+  elasticsearch:
+    enabled: false
+
+
+
+# 阿里云SMS配置
+aliyun:
+  sms:
+    accessKeyId: test
+    accessKeySecret: test
+    signName: test

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.houserental.mapper.AuditLogMapper">
+
+    <select id="selectByHouseId" resultType="com.houserental.entity.AuditLog">
+        SELECT * FROM sys_audit_log
+        WHERE house_id = #{houseId}
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="selectLatestByHouseId" resultType="com.houserental.entity.AuditLog">
+        SELECT * FROM sys_audit_log
+        WHERE house_id = #{houseId}
+        ORDER BY create_time DESC
+        LIMIT 1
+    </select>
+
+</mapper>
