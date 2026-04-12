@@ -31,3 +31,12 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# 忽略日志文件
+log/
+logs/
+*.log
+*.gz
+
+# 忽略可执行文件
+*.exe
