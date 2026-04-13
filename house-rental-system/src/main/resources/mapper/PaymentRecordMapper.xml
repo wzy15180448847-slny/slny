@@ -2,12 +2,20 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.houserental.mapper.PaymentRecordMapper">
 
+    <!-- 根据用户ID查询支付记录列表 -->
     <select id="selectByUserId" resultType="com.houserental.entity.PaymentRecord">
-        SELECT * FROM payment_record WHERE user_id = #{userId} ORDER BY create_time DESC
+        SELECT * FROM biz_payment_record WHERE tenant_id = #{userId} AND deleted = 0 ORDER BY created_time DESC
     </select>
 
+    <!-- 根据订单号查询支付记录 -->
     <select id="selectByOrderNo" resultType="com.houserental.entity.PaymentRecord">
-        SELECT * FROM payment_record WHERE order_no = #{orderNo}
+        SELECT * FROM biz_payment_record WHERE payment_no = #{orderNo} AND deleted = 0
+    </select>
+
+    <!-- 按月统计支付成功的总金额 -->
+    <select id="sumPaymentByMonth" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(amount), 0) FROM biz_payment_record 
+        WHERE status = 1 AND DATE_FORMAT(payment_time, '%Y-%m') = #{month} AND deleted = 0
     </select>
 
 </mapper>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.houserental.mapper.UserWalletMapper">
+
+    <select id="selectByUserId" parameterType="java.lang.Long" resultType="com.houserental.entity.UserWallet">
+        SELECT id, user_id, balance, freeze_balance, created_time, updated_time, version
+        FROM user_wallet
+        WHERE user_id = #{userId}
+    </select>
+
+    <update id="decreaseBalanceWithOptimisticLock">
+        UPDATE user_wallet
+        SET balance = balance - #{amount}, version = version + 1
+        WHERE user_id = #{userId} AND version = #{version} AND balance >= #{amount}
+    </update>
+
+    <update id="increaseBalance">
+        UPDATE user_wallet
+        SET balance = balance + #{amount}
+        WHERE user_id = #{userId}
+    </update>
+
+    <update id="decreaseBalanceWithCheck">
+        UPDATE user_wallet
+        SET balance = balance - #{amount}
+        WHERE user_id = #{userId} AND balance >= #{amount}
+    </update>
+
+</mapper>

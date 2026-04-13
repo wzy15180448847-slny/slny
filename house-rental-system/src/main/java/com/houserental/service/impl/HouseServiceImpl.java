@@ -6,10 +6,13 @@ import com.houserental.common.result.ResultCode;
 import com.houserental.common.utils.SecurityUtils;
 import com.houserental.dto.HouseQueryRequest;
 import com.houserental.entity.AuditLog;
+import com.houserental.entity.Favorite;
 import com.houserental.entity.House;
 import com.houserental.entity.HouseDocument;
+import com.houserental.mapper.FavoriteMapper;
 import com.houserental.mapper.HouseMapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 
 import com.houserental.service.AuditLogService;
@@ -44,6 +47,7 @@ public class HouseServiceImpl implements HouseService {
 
     private static final Logger log = LoggerFactory.getLogger(HouseServiceImpl.class);
     private final HouseMapper houseMapper;
+    private final FavoriteMapper favoriteMapper;
     private final RedisTemplate<String, Object> redisTemplate;
     private final FileService fileService;
     // private final HouseRepository houseRepository;
@@ -292,6 +296,11 @@ public class HouseServiceImpl implements HouseService {
         redisTemplate.opsForSet().add(key, houseId);
         redisTemplate.expire(key, 30, TimeUnit.DAYS);
         
+        Favorite favorite = new Favorite();
+        favorite.setUserId(userId);
+        favorite.setHouseId(houseId);
+        favoriteMapper.insert(favorite);
+        
         houseMapper.incrementFavoriteCount(houseId);
     }
 
@@ -301,23 +310,48 @@ public class HouseServiceImpl implements HouseService {
         String key = FAVORITE_SET + userId;
         redisTemplate.opsForSet().remove(key, houseId);
         
+        favoriteMapper.deleteByUserIdAndHouseId(userId, houseId);
+        
         houseMapper.decrementFavoriteCount(houseId);
     }
 
     @Override
     public boolean isFavorited(Long userId, Long houseId) {
         String key = FAVORITE_SET + userId;
-        return Boolean.TRUE.equals(redisTemplate.opsForSet().isMember(key, houseId));
+        Boolean isMember = redisTemplate.opsForSet().isMember(key, houseId);
+        
+        if (Boolean.TRUE.equals(isMember)) {
+            return true;
+        }
+        
+        Favorite favorite = favoriteMapper.selectByUserIdAndHouseId(userId, houseId);
+        if (favorite != null) {
+            redisTemplate.opsForSet().add(key, houseId);
+            redisTemplate.expire(key, 30, TimeUnit.DAYS);
+            return true;
+        }
+        
+        return false;
     }
 
     @Override
     public List<Long> getFavorites(Long userId) {
         String key = FAVORITE_SET + userId;
         Set<Object> members = redisTemplate.opsForSet().members(key);
-        if (members == null) {
-            return java.util.Collections.emptyList();
+        
+        if (members != null && !members.isEmpty()) {
+            return members.stream().map(obj -> Long.valueOf(obj.toString())).collect(java.util.stream.Collectors.toList());
         }
-        return members.stream().map(obj -> Long.valueOf(obj.toString())).collect(java.util.stream.Collectors.toList());
+        
+        List<Long> houseIds = favoriteMapper.selectHouseIdsByUserId(userId);
+        if (houseIds != null && !houseIds.isEmpty()) {
+            for (Long houseId : houseIds) {
+                redisTemplate.opsForSet().add(key, houseId);
+            }
+            redisTemplate.expire(key, 30, TimeUnit.DAYS);
+        }
+        
+        return houseIds != null ? houseIds : java.util.Collections.emptyList();
     }
 
     @Override
@@ -330,28 +364,43 @@ public class HouseServiceImpl implements HouseService {
             throw new BusinessException("无权操作此房源");
         }
 
-        // 上传图片到MinIO
         List<String> uploadedFiles = fileService.uploadBatch(files);
+        log.info("图片上传到MinIO成功, houseId={}, uploadedFiles={}", houseId, uploadedFiles);
         
-        // 更新房源图片信息
-        List<String> existingImages = new ArrayList<>();
-        if (house.getImages() != null && !house.getImages().isEmpty()) {
-            JSONArray jsonArray = JSON.parseArray(house.getImages());
-            for (Object item : jsonArray) {
-                existingImages.add(item.toString());
+        try {
+            List<String> existingImages = new ArrayList<>();
+            if (house.getImages() != null && !house.getImages().isEmpty()) {
+                JSONArray jsonArray = JSON.parseArray(house.getImages());
+                for (Object item : jsonArray) {
+                    existingImages.add(item.toString());
+                }
             }
+            
+            existingImages.addAll(uploadedFiles);
+            house.setImages(JSON.toJSONString(existingImages));
+            
+            if (existingImages.size() == uploadedFiles.size()) {
+                house.setCoverImage(uploadedFiles.get(0));
+            }
+            
+            houseMapper.updateById(house);
+            log.info("数据库更新成功, houseId={}", houseId);
+            return uploadedFiles;
+            
+        } catch (Exception e) {
+            log.error("数据库更新失败，开始回滚MinIO文件, houseId={}, error={}", houseId, e.getMessage(), e);
+            
+            for (String fileName : uploadedFiles) {
+                try {
+                    fileService.delete(fileName);
+                    log.info("已删除MinIO文件: {}", fileName);
+                } catch (Exception deleteEx) {
+                    log.error("删除MinIO文件失败, fileName={}, error={}", fileName, deleteEx.getMessage(), deleteEx);
+                }
+            }
+            
+            throw new BusinessException("图片上传失败：" + e.getMessage(), e);
         }
-        
-        existingImages.addAll(uploadedFiles);
-        house.setImages(JSON.toJSONString(existingImages));
-        
-        // 如果是第一张图片，自动设置为封面
-        if (existingImages.size() == uploadedFiles.size()) {
-            house.setCoverImage(uploadedFiles.get(0));
-        }
-        
-        houseMapper.updateById(house);
-        return uploadedFiles;
     }
 
     @Override
@@ -578,9 +627,23 @@ public class HouseServiceImpl implements HouseService {
 
     @Override
     public List<House> searchByKeyword(String keyword) {
-        // 暂时禁用Elasticsearch搜索
-        log.info("暂时禁用Elasticsearch搜索: {}", keyword);
-        return java.util.Collections.emptyList();
+        log.info("使用MySQL降级方案搜索: {}", keyword);
+        
+        QueryWrapper<House> wrapper = new QueryWrapper<>();
+        wrapper.eq("deleted", 0)
+               .eq("status", 2);
+        
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            wrapper.and(w -> w.like("title", keyword)
+                             .or()
+                             .like("description", keyword)
+                             .or()
+                             .like("address", keyword));
+        }
+        
+        wrapper.orderByDesc("create_time");
+        
+        return houseMapper.selectList(wrapper);
     }
 
     @Override
@@ -588,9 +651,51 @@ public class HouseServiceImpl implements HouseService {
                                        Double minPrice, Double maxPrice, 
                                        Double minArea, Double maxArea, 
                                        Integer rentWay) {
-        // 暂时禁用Elasticsearch综合搜索
-        log.info("暂时禁用Elasticsearch综合搜索");
-        return java.util.Collections.emptyList();
+        log.info("使用MySQL降级方案综合搜索: keyword={}, city={}, district={}", keyword, city, district);
+        
+        QueryWrapper<House> wrapper = new QueryWrapper<>();
+        wrapper.eq("deleted", 0)
+               .eq("status", 2);
+        
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            wrapper.and(w -> w.like("title", keyword)
+                             .or()
+                             .like("description", keyword)
+                             .or()
+                             .like("address", keyword));
+        }
+        
+        if (city != null && !city.trim().isEmpty()) {
+            wrapper.eq("city", city);
+        }
+        
+        if (district != null && !district.trim().isEmpty()) {
+            wrapper.eq("district", district);
+        }
+        
+        if (minPrice != null) {
+            wrapper.ge("rent_price", new BigDecimal(minPrice.toString()));
+        }
+        
+        if (maxPrice != null) {
+            wrapper.le("rent_price", new BigDecimal(maxPrice.toString()));
+        }
+        
+        if (minArea != null) {
+            wrapper.ge("area", new BigDecimal(minArea.toString()));
+        }
+        
+        if (maxArea != null) {
+            wrapper.le("area", new BigDecimal(maxArea.toString()));
+        }
+        
+        if (rentWay != null) {
+            wrapper.eq("rent_way", rentWay);
+        }
+        
+        wrapper.orderByDesc("create_time");
+        
+        return houseMapper.selectList(wrapper);
     }
 
     @Override

@@ -24,7 +24,7 @@ public class AppointmentController {
      * @return 结果
      */
     @PostMapping
-    public Result createAppointment(@RequestBody Appointment appointment) {
+    public Result<Long> createAppointment(@RequestBody Appointment appointment) {
         Long id = appointmentService.createAppointment(appointment);
         return Result.success(id);
     }
@@ -35,7 +35,7 @@ public class AppointmentController {
      * @return 结果
      */
     @PutMapping("/confirm/{id}")
-    public Result confirmAppointment(@PathVariable Long id) {
+    public Result<Void> confirmAppointment(@PathVariable Long id) {
         boolean success = appointmentService.confirmAppointment(id);
         return success ? Result.success() : Result.error("确认预约失败");
     }
@@ -46,7 +46,7 @@ public class AppointmentController {
      * @return 结果
      */
     @PutMapping("/complete/{id}")
-    public Result completeAppointment(@PathVariable Long id) {
+    public Result<Void> completeAppointment(@PathVariable Long id) {
         boolean success = appointmentService.completeAppointment(id);
         return success ? Result.success() : Result.error("完成预约失败");
     }
@@ -58,7 +58,7 @@ public class AppointmentController {
      * @return 结果
      */
     @PutMapping("/cancel/{id}")
-    public Result cancelAppointment(@PathVariable Long id, @RequestParam String reason) {
+    public Result<Void> cancelAppointment(@PathVariable Long id, @RequestParam String reason) {
         boolean success = appointmentService.cancelAppointment(id, reason);
         return success ? Result.success() : Result.error("取消预约失败");
     }
@@ -70,7 +70,7 @@ public class AppointmentController {
      * @return 结果
      */
     @PutMapping("/reject/{id}")
-    public Result rejectAppointment(@PathVariable Long id, @RequestParam String reason) {
+    public Result<Void> rejectAppointment(@PathVariable Long id, @RequestParam String reason) {
         boolean success = appointmentService.rejectAppointment(id, reason);
         return success ? Result.success() : Result.error("拒绝预约失败");
     }
@@ -81,7 +81,7 @@ public class AppointmentController {
      * @return 结果
      */
     @GetMapping("/page")
-    public Result pageAppointments(@RequestParam Map<String, Object> params) {
+    public Result<Object> pageAppointments(@RequestParam Map<String, Object> params) {
         return Result.success(appointmentService.pageAppointments(params));
     }
 
@@ -91,7 +91,7 @@ public class AppointmentController {
      * @return 结果
      */
     @GetMapping("/{id}")
-    public Result getAppointmentById(@PathVariable Long id) {
+    public Result<Appointment> getAppointmentById(@PathVariable Long id) {
         return Result.success(appointmentService.getAppointmentById(id));
     }
 }

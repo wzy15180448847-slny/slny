@@ -24,7 +24,7 @@ public class LeaseAgreementController {
      * @return 结果
      */
     @PostMapping
-    public Result createLease(@RequestBody LeaseAgreement lease) {
+    public Result<Long> createLease(@RequestBody LeaseAgreement lease) {
         Long id = leaseAgreementService.createLease(lease);
         return Result.success(id);
     }
@@ -38,7 +38,7 @@ public class LeaseAgreementController {
      * @return 结果
      */
     @PutMapping("/sign/{id}")
-    public Result signLease(@PathVariable Long id, @RequestParam Long userId, @RequestParam String userType, @RequestParam String signatureData) {
+    public Result<Void> signLease(@PathVariable Long id, @RequestParam Long userId, @RequestParam String userType, @RequestParam String signatureData) {
         boolean success = leaseAgreementService.signLease(id, userId, userType, signatureData);
         return success ? Result.success() : Result.error("签署租约失败");
     }
@@ -49,7 +49,7 @@ public class LeaseAgreementController {
      * @return 结果
      */
     @PutMapping("/effective/{id}")
-    public Result effectiveLease(@PathVariable Long id) {
+    public Result<Void> effectiveLease(@PathVariable Long id) {
         boolean success = leaseAgreementService.effectiveLease(id);
         return success ? Result.success() : Result.error("生效租约失败");
     }
@@ -61,7 +61,7 @@ public class LeaseAgreementController {
      * @return 结果
      */
     @PutMapping("/terminate/{id}")
-    public Result terminateLease(@PathVariable Long id, @RequestParam String reason) {
+    public Result<Void> terminateLease(@PathVariable Long id, @RequestParam String reason) {
         boolean success = leaseAgreementService.terminateLease(id, reason);
         return success ? Result.success() : Result.error("终止租约失败");
     }
@@ -72,7 +72,7 @@ public class LeaseAgreementController {
      * @return 结果
      */
     @GetMapping("/page")
-    public Result pageLeases(@RequestParam Map<String, Object> params) {
+    public Result<Object> pageLeases(@RequestParam Map<String, Object> params) {
         return Result.success(leaseAgreementService.pageLeases(params));
     }
 
@@ -82,7 +82,7 @@ public class LeaseAgreementController {
      * @return 结果
      */
     @GetMapping("/{id}")
-    public Result getLeaseById(@PathVariable Long id) {
+    public Result<LeaseAgreement> getLeaseById(@PathVariable Long id) {
         return Result.success(leaseAgreementService.getLeaseById(id));
     }
 }

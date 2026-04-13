@@ -25,7 +25,7 @@ public class TerminationApplicationController {
      * @return 结果
      */
     @PostMapping
-    public Result createApplication(@RequestBody TerminationApplication application) {
+    public Result<Long> createApplication(@RequestBody TerminationApplication application) {
         Long id = terminationApplicationService.createApplication(application);
         return Result.success(id);
     }
@@ -39,7 +39,7 @@ public class TerminationApplicationController {
      * @return 结果
      */
     @PutMapping("/process/{id}")
-    public Result processApplication(@PathVariable Long id, @RequestParam Integer status, @RequestParam String processingOpinion, @RequestParam BigDecimal penaltyAmount) {
+    public Result<Void> processApplication(@PathVariable Long id, @RequestParam Integer status, @RequestParam String processingOpinion, @RequestParam BigDecimal penaltyAmount) {
         boolean success = terminationApplicationService.processApplication(id, status, processingOpinion, penaltyAmount);
         return success ? Result.success() : Result.error("处理解约申请失败");
     }
@@ -50,7 +50,7 @@ public class TerminationApplicationController {
      * @return 结果
      */
     @PutMapping("/complete/{id}")
-    public Result completeTermination(@PathVariable Long id) {
+    public Result<Void> completeTermination(@PathVariable Long id) {
         boolean success = terminationApplicationService.completeTermination(id);
         return success ? Result.success() : Result.error("完成解约失败");
     }
@@ -62,7 +62,7 @@ public class TerminationApplicationController {
      * @return 结果
      */
     @GetMapping("/calculate-penalty")
-    public Result calculatePenalty(@RequestParam Long leaseId, @RequestParam String terminationReason) {
+    public Result<BigDecimal> calculatePenalty(@RequestParam Long leaseId, @RequestParam String terminationReason) {
         BigDecimal penalty = terminationApplicationService.calculatePenalty(leaseId, terminationReason);
         return Result.success(penalty);
     }
@@ -73,7 +73,7 @@ public class TerminationApplicationController {
      * @return 结果
      */
     @GetMapping("/page")
-    public Result pageApplications(@RequestParam Map<String, Object> params) {
+    public Result<Object> pageApplications(@RequestParam Map<String, Object> params) {
         return Result.success(terminationApplicationService.pageApplications(params));
     }
 
@@ -83,7 +83,7 @@ public class TerminationApplicationController {
      * @return 结果
      */
     @GetMapping("/{id}")
-    public Result getApplicationById(@PathVariable Long id) {
+    public Result<TerminationApplication> getApplicationById(@PathVariable Long id) {
         return Result.success(terminationApplicationService.getApplicationById(id));
     }
 }

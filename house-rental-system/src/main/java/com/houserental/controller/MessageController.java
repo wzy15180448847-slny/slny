@@ -25,7 +25,7 @@ public class MessageController {
      * @return 发送结果
      */
     @PostMapping("/send")
-    public Result sendMessage(@RequestBody MessageDTO messageDTO) {
+    public Result<String> sendMessage(@RequestBody MessageDTO messageDTO) {
         try {
             messageService.sendMessage(messageDTO);
             return Result.success("消息发送成功");
@@ -40,7 +40,7 @@ public class MessageController {
      * @return 发送结果
      */
     @PostMapping("/send/notification")
-    public Result sendNotification(@RequestBody MessageDTO messageDTO) {
+    public Result<String> sendNotification(@RequestBody MessageDTO messageDTO) {
         try {
             messageService.sendNotification(messageDTO);
             return Result.success("站内消息发送成功");
@@ -55,7 +55,7 @@ public class MessageController {
      * @return 发送结果
      */
     @PostMapping("/send/sms")
-    public Result sendSms(@RequestBody MessageDTO messageDTO) {
+    public Result<String> sendSms(@RequestBody MessageDTO messageDTO) {
         try {
             messageService.sendSms(messageDTO);
             return Result.success("短信发送成功");
@@ -70,7 +70,7 @@ public class MessageController {
      * @return 发送结果
      */
     @PostMapping("/send/email")
-    public Result sendEmail(@RequestBody MessageDTO messageDTO) {
+    public Result<String> sendEmail(@RequestBody MessageDTO messageDTO) {
         try {
             messageService.sendEmail(messageDTO);
             return Result.success("邮件发送成功");

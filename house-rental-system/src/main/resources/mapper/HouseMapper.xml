@@ -92,4 +92,19 @@
         SELECT COUNT(*) FROM biz_house WHERE status = #{status} AND deleted = #{deleted}
     </select>
 
+    <!-- 统计今日新增房源数量 -->
+    <select id="countTodayNew" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM biz_house WHERE DATE(created_time) = CURDATE() AND deleted = 0
+    </select>
+
+    <!-- 统计待审核房源数量 -->
+    <select id="countPendingAudit" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM biz_house WHERE audit_status = 0 AND deleted = 0
+    </select>
+
+    <!-- 统计所有未删除房源数量 -->
+    <select id="countAllByDeleted" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM biz_house WHERE deleted = #{deleted}
+    </select>
+
 </mapper>

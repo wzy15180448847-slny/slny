@@ -63,4 +63,14 @@
         WHERE ur.user_id = #{userId} AND p.deleted = 0
     </select>
 
+    <!-- 根据用户类型统计数量 -->
+    <select id="countByUserType" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM sys_user WHERE user_type = #{userType} AND deleted = 0
+    </select>
+
+    <!-- 统计今日新增用户数量 -->
+    <select id="countTodayNew" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM sys_user WHERE DATE(created_time) = CURDATE() AND deleted = 0
+    </select>
+
 </mapper>

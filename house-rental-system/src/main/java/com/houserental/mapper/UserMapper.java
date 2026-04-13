@@ -68,4 +68,14 @@ public interface UserMapper extends BaseMapper<User> {
      */
     List<String> selectPermissionsByUserId(@Param("userId") Long userId);
 
+    /**
+     * 根据用户类型统计数量
+     */
+    Long countByUserType(@Param("userType") String userType);
+
+    /**
+     * 统计今日新增用户数量
+     */
+    Long countTodayNew();
+
 }

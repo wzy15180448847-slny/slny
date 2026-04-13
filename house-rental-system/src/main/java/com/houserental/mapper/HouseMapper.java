@@ -89,4 +89,19 @@ public interface HouseMapper extends BaseMapper<House> {
      */
     long countByStatusAndDeleted(@Param("status") Integer status, @Param("deleted") Integer deleted);
 
+    /**
+     * 统计今日新增房源数量
+     */
+    Long countTodayNew();
+
+    /**
+     * 统计待审核房源数量
+     */
+    Long countPendingAudit();
+
+    /**
+     * 统计所有未删除房源数量
+     */
+    Long countAllByDeleted(@Param("deleted") Integer deleted);
+
 }

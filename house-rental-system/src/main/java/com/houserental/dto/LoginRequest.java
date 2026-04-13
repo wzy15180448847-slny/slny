@@ -1,7 +1,6 @@
 package com.houserental.dto;
 
 import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.Pattern;
 
 /**
  * 登录请求DTO

@@ -2,7 +2,6 @@ package com.houserental.entity;
 
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
-import java.time.LocalDateTime;
 
 /**
  * 审核日志实体
