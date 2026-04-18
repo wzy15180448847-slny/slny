@@ -108,30 +108,44 @@ house-rental-platform/
 
 ### 数据库初始化
 
-```sql
-CREATE DATABASE house_rental CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+使用项目根目录下的 `database/init_project_v2.sql` 文件初始化数据库：
+
+```bash
+# 创建数据库
+CREATE DATABASE IF NOT EXISTS house_rental CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+# 执行初始化脚本
+mysql -u root -p house_rental < database/init_project_v2.sql
 ```
 
 ### 配置文件
 
-修改 `application.yml` 中的数据库、Redis、RabbitMQ连接配置：
+项目支持通过环境变量注入敏感配置，开发环境可直接使用 `application-dev.yml` 模板。
 
-```yaml
-spring:
-  datasource:
-    url: jdbc:mysql://localhost:3306/house_rental?useUnicode=true&characterEncoding=utf-8&useSSL=false
-    username: root
-    password: your_password
-  
-  redis:
-    host: localhost
-    port: 6379
-  
-  rabbitmq:
-    host: localhost
-    port: 5672
-    username: guest
-    password: guest
+**环境变量说明：**
+
+| 环境变量 | 说明 | 默认值 |
+|---------|------|--------|
+| DB_URL | 数据库连接URL | jdbc:mysql://localhost:3306/house_rental |
+| DB_USER | 数据库用户名 | root |
+| DB_PASSWORD | 数据库密码 | root |
+| APP_JWT_SECRET | JWT密钥 | house-rental-platform-secret-key |
+| APP_MINIO_URL | MinIO服务地址 | http://localhost:9000 |
+| APP_MINIO_ACCESS_KEY | MinIO访问密钥 | minioadmin |
+| APP_MINIO_SECRET_KEY | MinIO秘密密钥 | minioadmin |
+| ALIPAY_APP_ID | 支付宝应用ID | - |
+| ALIPAY_PRIVATE_KEY | 支付宝私钥 | - |
+| ALIPAY_PUBLIC_KEY | 支付宝公钥 | - |
+| ALIYUN_SMS_ACCESS_KEY_ID | 阿里云AccessKey ID | - |
+| ALIYUN_SMS_ACCESS_KEY_SECRET | 阿里云AccessKey Secret | - |
+
+**开发环境配置：**
+
+复制 `application-dev.yml` 并修改相关配置：
+
+```bash
+# 使用开发环境配置启动
+java -jar house-rental-system/target/house-rental-system-1.0.0.jar --spring.profiles.active=dev
 ```
 
 ### 启动项目

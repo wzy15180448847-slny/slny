@@ -26,11 +26,6 @@ public class VerifyCodeServiceImpl implements VerifyCodeService {
     private static final int CODE_EXPIRATION = 5;
 
     /**
-     * 验证码长度
-     */
-    private static final int CODE_LENGTH = 6;
-
-    /**
      * 验证码前缀
      */
     private static final String CODE_PREFIX = "verify:code:";
@@ -51,6 +46,7 @@ public class VerifyCodeServiceImpl implements VerifyCodeService {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public boolean verifyCode(String phone, String code) {
         if (!StringUtils.hasText(phone) || !StringUtils.hasText(code)) {
             return false;

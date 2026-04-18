@@ -1,9 +1,7 @@
 package com.houserental.service.impl;
 
 import com.houserental.entity.PaymentRecord;
-import com.houserental.entity.LeaseAgreement;
 import com.houserental.mapper.PaymentRecordMapper;
-import com.houserental.mapper.LeaseAgreementMapper;
 import com.houserental.service.PaymentService;
 import com.houserental.dto.PaymentRequest;
 import com.houserental.dto.PaymentResponse;
@@ -15,10 +13,11 @@ import javax.annotation.Resource;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
 
-
+/**
+ * 支付服务实现
+ * 注：第三方支付（微信、支付宝）已移除，当前仅支持钱包支付
+ */
 @Service
 public class PaymentServiceImpl implements PaymentService {
 
@@ -26,9 +25,6 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Resource
     private PaymentRecordMapper paymentRecordMapper;
-
-    @Resource
-    private LeaseAgreementMapper leaseAgreementMapper;
 
     @Override
     public PaymentResponse createPayment(PaymentRequest paymentRequest) {
@@ -40,7 +36,9 @@ public class PaymentServiceImpl implements PaymentService {
             paymentRecord.setTenantId(paymentRequest.getUserId());
             paymentRecord.setLeaseAgreementId(paymentRequest.getLeaseId());
             paymentRecord.setAmount(new BigDecimal(String.valueOf(paymentRequest.getAmount())));
-            paymentRecord.setPaymentMethod("wechat".equals(paymentRequest.getPaymentMethod()) ? 1 : 2);
+            
+            // 默认使用钱包支付
+            paymentRecord.setPaymentMethod(3);
             paymentRecord.setStatus(0);
 
             paymentRecordMapper.insert(paymentRecord);
@@ -51,136 +49,10 @@ public class PaymentServiceImpl implements PaymentService {
             response.setOrderNo(paymentRequest.getOrderNo());
             response.setStatus("CREATED");
 
-            if ("wechat".equals(paymentRequest.getPaymentMethod())) {
-                response.setPaymentUrl(generateWechatPaymentUrl(paymentRecord));
-            } else if ("alipay".equals(paymentRequest.getPaymentMethod())) {
-                response.setPaymentUrl(generateAlipayPaymentUrl(paymentRecord));
-            }
-
             return response;
         } catch (Exception e) {
             log.error("创建支付订单失败, orderNo={}, error={}", paymentRequest.getOrderNo(), e.getMessage(), e);
             throw new RuntimeException("创建支付订单失败", e);
-        }
-    }
-
-    @Override
-    public String handleWechatCallback(String notifyData) {
-        log.info("收到微信支付回调, notifyData={}", notifyData);
-        try {
-            Map<String, String> params = parseWechatNotifyData(notifyData);
-            String orderNo = params.get("out_trade_no");
-            String tradeNo = params.get("transaction_id");
-            String resultCode = params.get("result_code");
-
-            if (!"SUCCESS".equals(resultCode)) {
-                log.warn("微信支付失败, orderNo={}, resultCode={}", orderNo, resultCode);
-                return "<xml><return_code><![CDATA[FAIL]]></return_code><return_msg><![CDATA[支付失败]]></return_msg></xml>";
-            }
-
-            PaymentRecord paymentRecord = paymentRecordMapper.selectByOrderNo(orderNo);
-            if (paymentRecord == null) {
-                log.error("未找到支付记录, orderNo={}", orderNo);
-                return "<xml><return_code><![CDATA[FAIL]]></return_code><return_msg><![CDATA[订单不存在]]></return_msg></xml>";
-            }
-
-            if (paymentRecord.getStatus() == 1) {
-                log.warn("支付记录已处理, orderNo={}", orderNo);
-                return "<xml><return_code><![CDATA[SUCCESS]]></return_code><return_msg><![CDATA[OK]]></return_msg></xml>";
-            }
-
-            paymentRecord.setStatus(1);
-            paymentRecord.setTradeNo(tradeNo);
-            paymentRecord.setPaymentTime(new Date());
-            paymentRecordMapper.updateById(paymentRecord);
-            log.info("支付记录更新成功, paymentId={}, orderNo={}", paymentRecord.getId(), orderNo);
-
-            updateLeaseAgreementStatus(paymentRecord.getLeaseAgreementId());
-
-            return "<xml><return_code><![CDATA[SUCCESS]]></return_code><return_msg><![CDATA[OK]]></return_msg></xml>";
-        } catch (Exception e) {
-            log.error("处理微信支付回调失败, notifyData={}, error={}", notifyData, e.getMessage(), e);
-            return "<xml><return_code><![CDATA[FAIL]]></return_code><return_msg><![CDATA[处理失败]]></return_msg></xml>";
-        }
-    }
-
-    private Map<String, String> parseWechatNotifyData(String notifyData) {
-        Map<String, String> params = new HashMap<>();
-        String[] pairs = notifyData.split("&");
-        for (String pair : pairs) {
-            String[] keyValue = pair.split("=");
-            if (keyValue.length == 2) {
-                params.put(keyValue[0], keyValue[1]);
-            }
-        }
-        return params;
-    }
-
-    @Override
-    public String handleAlipayCallback(String notifyData) {
-        log.info("收到支付宝支付回调, notifyData={}", notifyData);
-        try {
-            Map<String, String> params = parseAlipayNotifyData(notifyData);
-            String orderNo = params.get("out_trade_no");
-            String tradeNo = params.get("trade_no");
-            String tradeStatus = params.get("trade_status");
-
-            if (!"TRADE_SUCCESS".equals(tradeStatus) && !"TRADE_FINISHED".equals(tradeStatus)) {
-                log.warn("支付宝支付失败, orderNo={}, tradeStatus={}", orderNo, tradeStatus);
-                return "fail";
-            }
-
-            PaymentRecord paymentRecord = paymentRecordMapper.selectByOrderNo(orderNo);
-            if (paymentRecord == null) {
-                log.error("未找到支付记录, orderNo={}", orderNo);
-                return "fail";
-            }
-
-            if (paymentRecord.getStatus() == 1) {
-                log.warn("支付记录已处理, orderNo={}", orderNo);
-                return "success";
-            }
-
-            paymentRecord.setStatus(1);
-            paymentRecord.setTradeNo(tradeNo);
-            paymentRecord.setPaymentTime(new Date());
-            paymentRecordMapper.updateById(paymentRecord);
-            log.info("支付记录更新成功, paymentId={}, orderNo={}", paymentRecord.getId(), orderNo);
-
-            updateLeaseAgreementStatus(paymentRecord.getLeaseAgreementId());
-
-            return "success";
-        } catch (Exception e) {
-            log.error("处理支付宝支付回调失败, notifyData={}, error={}", notifyData, e.getMessage(), e);
-            return "fail";
-        }
-    }
-
-    private Map<String, String> parseAlipayNotifyData(String notifyData) {
-        Map<String, String> params = new HashMap<>();
-        String[] pairs = notifyData.split("&");
-        for (String pair : pairs) {
-            String[] keyValue = pair.split("=");
-            if (keyValue.length == 2) {
-                params.put(keyValue[0], keyValue[1]);
-            }
-        }
-        return params;
-    }
-
-    private void updateLeaseAgreementStatus(Long leaseAgreementId) {
-        if (leaseAgreementId == null) {
-            log.warn("租赁合同ID为空");
-            return;
-        }
-        LeaseAgreement leaseAgreement = leaseAgreementMapper.selectById(leaseAgreementId);
-        if (leaseAgreement != null) {
-            leaseAgreement.setStatus(2);
-            leaseAgreement.setEffectiveDate(new Date());
-            leaseAgreementMapper.updateById(leaseAgreement);
-            log.info("租赁合同状态更新成功, leaseAgreementId={}", leaseAgreementId);
-        } else {
-            log.warn("未找到租赁合同, leaseAgreementId={}", leaseAgreementId);
         }
     }
 
@@ -229,17 +101,6 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     public String getRefundStatus(Long paymentId) {
-        // TODO: 查询支付平台的退款状态
         return "PENDING";
-    }
-
-    private String generateWechatPaymentUrl(PaymentRecord paymentRecord) {
-        // 生成微信支付链接
-        return "https://wx.tenpay.com/pay?orderId=" + paymentRecord.getPaymentNo();
-    }
-
-    private String generateAlipayPaymentUrl(PaymentRecord paymentRecord) {
-        // 生成支付宝支付链接
-        return "https://openapi.alipay.com/gateway.do?orderId=" + paymentRecord.getPaymentNo();
     }
 }

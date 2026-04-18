@@ -8,7 +8,6 @@ import com.houserental.dto.HouseQueryRequest;
 import com.houserental.entity.AuditLog;
 import com.houserental.entity.Favorite;
 import com.houserental.entity.House;
-import com.houserental.entity.HouseDocument;
 import com.houserental.mapper.FavoriteMapper;
 import com.houserental.mapper.HouseMapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -124,6 +123,7 @@ public class HouseServiceImpl implements HouseService {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public PageResult<House> search(HouseQueryRequest request) {
         // 生成缓存键
         String cacheKey = generateSearchCacheKey(request);
@@ -183,6 +183,7 @@ public class HouseServiceImpl implements HouseService {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public List<House> getRecommendHouses(int limit) {
         String cacheKey = "house:recommend:" + limit;
         List<House> houses = (List<House>) redisTemplate.opsForValue().get(cacheKey);
@@ -196,6 +197,7 @@ public class HouseServiceImpl implements HouseService {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public List<House> getLatestHouses(int limit) {
         String cacheKey = "house:latest:" + limit;
         List<House> houses = (List<House>) redisTemplate.opsForValue().get(cacheKey);
@@ -521,109 +523,7 @@ public class HouseServiceImpl implements HouseService {
         log.info("暂时禁用Elasticsearch删除: {}", houseId);
     }
 
-    /**
-     * 将House实体转换为HouseDocument
-     */
-    private HouseDocument convertToDocument(House house) {
-        HouseDocument document = new HouseDocument();
-        document.setId(house.getId());
-        document.setHouseNo(house.getHouseNo());
-        document.setLandlordId(house.getLandlordId());
-        document.setTitle(house.getTitle());
-        document.setDescription(house.getDescription());
-        document.setProvince(house.getProvince());
-        document.setCity(house.getCity());
-        document.setDistrict(house.getDistrict());
-        document.setStreet(house.getStreet());
-        document.setAddress(house.getAddress());
-        document.setLongitude(house.getLongitude());
-        document.setLatitude(house.getLatitude());
-        document.setHouseType(house.getHouseType());
-        document.setRoomCount(house.getRoomCount());
-        document.setHallCount(house.getHallCount());
-        document.setBathroomCount(house.getBathroomCount());
-        document.setArea(house.getArea());
-        document.setFloor(house.getFloor());
-        document.setTotalFloor(house.getTotalFloor());
-        document.setHasElevator(house.getHasElevator());
-        document.setDecoration(house.getDecoration());
-        document.setOrientation(house.getOrientation());
-        document.setRentPrice(house.getRentPrice());
-        document.setDepositMonth(house.getDepositMonth());
-        document.setPaymentWay(house.getPaymentWay());
-        document.setRentWay(house.getRentWay());
-        document.setFacilities(house.getFacilities());
-        document.setImages(house.getImages());
-        document.setCoverImage(house.getCoverImage());
-        document.setContactName(house.getContactName());
-        document.setContactPhone(house.getContactPhone());
-        document.setViewTimeType(house.getViewTimeType());
-        document.setAvailableDate(house.getAvailableDate());
-        document.setMinLeaseTerm(house.getMinLeaseTerm());
-        document.setStatus(house.getStatus());
-        document.setAuditStatus(house.getAuditStatus());
-        document.setAuditRemark(house.getAuditRemark());
-        document.setAuditorId(house.getAuditorId());
-        document.setAuditTime(house.getAuditTime());
-        document.setViewCount(house.getViewCount());
-        document.setFavoriteCount(house.getFavoriteCount());
-        document.setAppointmentCount(house.getAppointmentCount());
-        document.setCreateTime(house.getCreateTime());
-        document.setUpdateTime(house.getUpdateTime());
-        return document;
-    }
-
-    /**
-     * 将HouseDocument转换为House实体
-     */
-    private House convertToEntity(HouseDocument document) {
-        House house = new House();
-        house.setId(document.getId());
-        house.setHouseNo(document.getHouseNo());
-        house.setLandlordId(document.getLandlordId());
-        house.setTitle(document.getTitle());
-        house.setDescription(document.getDescription());
-        house.setProvince(document.getProvince());
-        house.setCity(document.getCity());
-        house.setDistrict(document.getDistrict());
-        house.setStreet(document.getStreet());
-        house.setAddress(document.getAddress());
-        house.setLongitude(document.getLongitude());
-        house.setLatitude(document.getLatitude());
-        house.setHouseType(document.getHouseType());
-        house.setRoomCount(document.getRoomCount());
-        house.setHallCount(document.getHallCount());
-        house.setBathroomCount(document.getBathroomCount());
-        house.setArea(document.getArea());
-        house.setFloor(document.getFloor());
-        house.setTotalFloor(document.getTotalFloor());
-        house.setHasElevator(document.getHasElevator());
-        house.setDecoration(document.getDecoration());
-        house.setOrientation(document.getOrientation());
-        house.setRentPrice(document.getRentPrice());
-        house.setDepositMonth(document.getDepositMonth());
-        house.setPaymentWay(document.getPaymentWay());
-        house.setRentWay(document.getRentWay());
-        house.setFacilities(document.getFacilities());
-        house.setImages(document.getImages());
-        house.setCoverImage(document.getCoverImage());
-        house.setContactName(document.getContactName());
-        house.setContactPhone(document.getContactPhone());
-        house.setViewTimeType(document.getViewTimeType());
-        house.setAvailableDate(document.getAvailableDate());
-        house.setMinLeaseTerm(document.getMinLeaseTerm());
-        house.setStatus(document.getStatus());
-        house.setAuditStatus(document.getAuditStatus());
-        house.setAuditRemark(document.getAuditRemark());
-        house.setAuditorId(document.getAuditorId());
-        house.setAuditTime(document.getAuditTime());
-        house.setViewCount(document.getViewCount());
-        house.setFavoriteCount(document.getFavoriteCount());
-        house.setAppointmentCount(document.getAppointmentCount());
-        house.setCreateTime(document.getCreateTime());
-        house.setUpdateTime(document.getUpdateTime());
-        return house;
-    }
+    
 
     @Override
     public List<House> searchByKeyword(String keyword) {

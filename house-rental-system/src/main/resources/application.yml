@@ -54,12 +54,13 @@ spring:
       log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
       map-underscore-to-camel-case: true
 
-  # Redis配置
+  # Redis配置 (本地开发环境开箱即用配置)
+  # 启动Redis: docker run -p 6379:6379 redis:6.2
   redis:
-    host: localhost
-    port: 6379
-    password:
-    database: 0
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:}
+    database: ${REDIS_DATABASE:0}
     timeout: 6000ms
     lettuce:
       pool:
@@ -139,20 +140,13 @@ logging:
     max-size: 10MB
     max-history: 30
 
-# 阿里云SMS配置
-ali yun:
-  sms:
-    accessKeyId: ${ALIYUN_SMS_ACCESS_KEY_ID:your-access-key-id}
-    accessKeySecret: ${ALIYUN_SMS_ACCESS_KEY_SECRET:your-access-key-secret}
-    signName: ${ALIYUN_SMS_SIGN_NAME:房屋租赁平台}
-
 # 自定义配置
 app:
   # JWT配置
   jwt:
-    secret: house-rental-platform-secret-key-2024-secure-jwt-token
-    expiration: 86400000
-    refresh-expiration: 604800000
+    secret: ${APP_JWT_SECRET:house-rental-platform-secret-key-2024-secure-jwt-token}
+    expiration: ${APP_JWT_EXPIRATION:86400000}
+    refresh-expiration: ${APP_JWT_REFRESH_EXPIRATION:604800000}
     header: Authorization
     prefix: Bearer
 
@@ -162,31 +156,28 @@ app:
     allowed-types: jpg,jpeg,png,gif,pdf,doc,docx
     max-size: 10485760
 
-  # MinIO配置
+  # MinIO配置 (本地开发环境开箱即用配置)
+  # 启动MinIO: docker run -p 9000:9000 -p 9001:9001 minio/minio server /data --console-address ":9001"
   minio:
-    url: http://localhost:9000
-    access-key: minioadmin
-    secret-key: minioadmin
-    bucket-name: house-rental
-    secure: false
+    url: ${APP_MINIO_URL:http://localhost:9000}
+    access-key: ${APP_MINIO_ACCESS_KEY:minioadmin}
+    secret-key: ${APP_MINIO_SECRET_KEY:minioadmin}
+    bucket-name: ${APP_MINIO_BUCKET_NAME:house-rental}
+    secure: ${APP_MINIO_SECURE:false}
 
   # Elasticsearch配置
   elasticsearch:
-    enabled: false
-    uris: http://localhost:9200
-    username: elastic
-    password: changeme
+    enabled: ${APP_ELASTICSEARCH_ENABLED:false}
+    uris: ${APP_ELASTICSEARCH_URIS:http://localhost:9200}
+    username: ${APP_ELASTICSEARCH_USERNAME:elastic}
+    password: ${APP_ELASTICSEARCH_PASSWORD:changeme}
     socket-timeout: 30s
     connection-timeout: 10s
 
-  # 短信配置
+  # 短信配置（模拟模式）
   sms:
-    enabled: false
-    provider: aliyun
-    access-key: your-access-key
-    secret-key: your-secret-key
-    sign-name: 房屋租赁平台
-    template-code: your-template-code
+    enabled: ${APP_SMS_ENABLED:false}
+    sign-name: ${APP_SMS_SIGN_NAME:房屋租赁平台}
 
 
 

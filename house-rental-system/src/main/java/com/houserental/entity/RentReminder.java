@@ -3,6 +3,7 @@ package com.houserental.entity;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.math.BigDecimal;
 import java.util.Date;
@@ -11,6 +12,7 @@ import java.util.Date;
  * 租金催缴实体类
  */
 @Data
+@EqualsAndHashCode(callSuper = true)
 @TableName("biz_rent_reminder")
 public class RentReminder extends BaseEntity {
 

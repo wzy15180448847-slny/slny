@@ -175,6 +175,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public User getById(Long id) {
         String cacheKey = "user:id:" + id;
         User user = (User) redisTemplate.opsForValue().get(cacheKey);
@@ -193,6 +194,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public User getByUsername(String username) {
         String cacheKey = "user:username:" + username;
         User user = (User) redisTemplate.opsForValue().get(cacheKey);

@@ -1,6 +1,7 @@
 package com.houserental.entity;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
@@ -10,6 +11,7 @@ import java.time.LocalDateTime;
  * 消息发送记录实体
  */
 @Data
+@EqualsAndHashCode(callSuper = true)
 @TableName("message_record")
 public class MessageRecord extends BaseEntity {
 

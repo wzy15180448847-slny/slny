@@ -2,6 +2,7 @@ package com.houserental.entity;
 
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.math.BigDecimal;
 
@@ -9,6 +10,7 @@ import java.math.BigDecimal;
  * 违约金规则实体类
  */
 @Data
+@EqualsAndHashCode(callSuper = true)
 @TableName("biz_penalty_rule")
 public class PenaltyRule extends BaseEntity {
 

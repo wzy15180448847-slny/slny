@@ -94,6 +94,10 @@ public class WalletServiceImpl implements WalletService {
             throw new BusinessException("支付金额必须大于0");
         }
 
+        if (tenantId.equals(landlordId)) {
+            throw new BusinessException("不能向自己支付");
+        }
+
         PaymentRecord paymentRecord = paymentRecordMapper.selectByOrderNo(orderNo);
         if (paymentRecord == null) {
             throw new BusinessException("支付记录不存在");
@@ -111,9 +115,32 @@ public class WalletServiceImpl implements WalletService {
             throw new BusinessException("余额不足");
         }
 
-        int deductCount = userWalletMapper.decreaseBalanceWithCheck(tenantId, amount);
-        if (deductCount == 0) {
-            throw new BusinessException("扣款失败，余额不足或并发冲突");
+        int retryCount = 3;
+        boolean success = false;
+        int currentVersion = tenantWallet.getVersion();
+
+        while (retryCount > 0 && !success) {
+            int deductCount = userWalletMapper.decreaseBalanceWithOptimisticLock(tenantId, amount, currentVersion);
+            if (deductCount > 0) {
+                success = true;
+            } else {
+                retryCount--;
+                tenantWallet = userWalletMapper.selectByUserId(tenantId);
+                if (tenantWallet == null) {
+                    throw new BusinessException("租户钱包不存在");
+                }
+                currentVersion = tenantWallet.getVersion();
+                BigDecimal currentBalance = tenantWallet.getBalance();
+                if (currentBalance.compareTo(amount) < 0) {
+                    throw new BusinessException("余额不足");
+                }
+                log.warn("乐观锁重试, tenantId={}, retryCount={}, currentVersion={}", 
+                        tenantId, retryCount, currentVersion);
+            }
+        }
+
+        if (!success) {
+            throw new BusinessException("支付失败，系统繁忙，请稍后重试");
         }
 
         BigDecimal tenantBalanceAfter = tenantBalanceBefore.subtract(amount);

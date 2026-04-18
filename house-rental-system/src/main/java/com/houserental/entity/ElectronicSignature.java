@@ -3,6 +3,7 @@ package com.houserental.entity;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.util.Date;
 
@@ -10,6 +11,7 @@ import java.util.Date;
  * 电子签章实体类
  */
 @Data
+@EqualsAndHashCode(callSuper = true)
 @TableName("biz_electronic_signature")
 public class ElectronicSignature extends BaseEntity {
 

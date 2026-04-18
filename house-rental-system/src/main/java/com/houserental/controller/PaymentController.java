@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 /**
  * 支付控制器
+ * 注：第三方支付接口已移除，当前仅支持钱包支付
  */
 @RestController
 @RequestMapping("/api/payment")
@@ -23,22 +24,6 @@ public class PaymentController {
     @PostMapping
     public Result<PaymentResponse> createPayment(@RequestBody PaymentRequest paymentRequest) {
         return Result.success(paymentService.createPayment(paymentRequest));
-    }
-
-    /**
-     * 处理微信支付回调
-     */
-    @PostMapping("/wechat/callback")
-    public String wechatCallback(@RequestBody String xmlData) {
-        return paymentService.handleWechatCallback(xmlData);
-    }
-
-    /**
-     * 处理支付宝支付回调
-     */
-    @PostMapping("/alipay/callback")
-    public String alipayCallback(@RequestBody String notifyData) {
-        return paymentService.handleAlipayCallback(notifyData);
     }
 
     /**

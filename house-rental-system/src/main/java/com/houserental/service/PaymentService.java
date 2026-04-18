@@ -16,20 +16,6 @@ public interface PaymentService {
     PaymentResponse createPayment(PaymentRequest paymentRequest);
 
     /**
-     * 处理微信支付回调
-     * @param notifyData 回调数据
-     * @return 回调响应
-     */
-    String handleWechatCallback(String notifyData);
-
-    /**
-     * 处理支付宝回调
-     * @param notifyData 回调数据
-     * @return 回调响应
-     */
-    String handleAlipayCallback(String notifyData);
-
-    /**
      * 查询支付记录
      * @param paymentId 支付ID
      * @return 支付记录

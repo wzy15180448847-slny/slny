@@ -1,0 +1,102 @@
+# =============================================
+# 开发环境配置文件
+# =============================================
+# 注意：此文件仅用于本地开发环境
+# 生产环境请通过环境变量或配置中心注入敏感配置
+
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+spring:
+  # 数据源配置
+  datasource:
+    url: jdbc:mysql://localhost:3306/house_rental?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: root
+    password: root
+
+  # Redis配置 (启动命令: docker run -p 6379:6379 redis:6.2)
+  redis:
+    host: localhost
+    port: 6379
+    password:
+    database: 0
+
+  # RabbitMQ配置 (启动命令: docker run -p 5672:5672 -p 15672:15672 rabbitmq:3.9-management)
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+
+  # 邮件发送配置（开发环境使用测试配置）
+  mail:
+    host: smtp.qq.com
+    port: 587
+    username: your-email@qq.com
+    password: your-email-password
+
+# 日志配置（开发环境开启DEBUG级别）
+logging:
+  level:
+    root: INFO
+    com.houserental: DEBUG
+    org.springframework.web: DEBUG
+
+# 自定义配置
+app:
+  # JWT配置
+  jwt:
+    secret: house-rental-platform-secret-key-2024-secure-jwt-token
+    expiration: 86400000
+    refresh-expiration: 604800000
+
+  # MinIO配置 (启动命令: docker run -p 9000:9000 -p 9001:9001 minio/minio server /data --console-address ":9001")
+  minio:
+    url: http://localhost:9000
+    access-key: minioadmin
+    secret-key: minioadmin
+    bucket-name: house-rental
+    secure: false
+
+  # Elasticsearch配置（开发环境默认关闭）
+  elasticsearch:
+    enabled: false
+
+  # 短信配置（开发环境使用模拟模式）
+  sms:
+    enabled: false
+    sign-name: 房屋租赁平台
+
+# Knife4j配置（开发环境开启）
+knife4j:
+  enable: true
+
+# =============================================
+# 环境变量说明
+# =============================================
+# 以下环境变量可用于覆盖默认配置：
+#
+# 数据库配置：
+#   DB_URL: 数据库连接URL
+#   DB_USER: 数据库用户名
+#   DB_PASSWORD: 数据库密码
+#
+# Redis配置：
+#   REDIS_HOST: Redis服务地址
+#   REDIS_PORT: Redis端口
+#   REDIS_PASSWORD: Redis密码
+#   REDIS_DATABASE: Redis数据库索引
+#
+# JWT配置：
+#   APP_JWT_SECRET: JWT密钥
+#   APP_JWT_EXPIRATION: 访问令牌过期时间（毫秒）
+#   APP_JWT_REFRESH_EXPIRATION: 刷新令牌过期时间（毫秒）
+#
+# MinIO配置：
+#   APP_MINIO_URL: MinIO服务地址
+#   APP_MINIO_ACCESS_KEY: MinIO访问密钥
+#   APP_MINIO_SECRET_KEY: MinIO秘密密钥
+#   APP_MINIO_BUCKET_NAME: 存储桶名称
+#   APP_MINIO_SECURE: 是否启用HTTPS
