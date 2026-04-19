@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.houserental.entity.LeaseAgreement;
 import com.houserental.common.result.PageResult;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.Map;
 
 /**
@@ -56,4 +58,26 @@ public interface LeaseAgreementService extends IService<LeaseAgreement> {
      * @return 租约信息
      */
     LeaseAgreement getLeaseById(Long id);
+
+    /**
+     * 发送合同
+     * @param id 租约ID
+     * @return 是否成功
+     */
+    boolean sendContract(Long id);
+
+    /**
+     * 导出合同
+     * @param id 租约ID
+     * @param response 响应对象
+     * @throws IOException IO异常
+     */
+    void exportContract(Long id, HttpServletResponse response) throws IOException;
+
+    /**
+     * 生成账单
+     * @param id 租约ID
+     * @return 是否成功
+     */
+    boolean generateBill(Long id);
 }

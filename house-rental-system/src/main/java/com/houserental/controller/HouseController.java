@@ -130,6 +130,18 @@ public class HouseController {
         return Result.success(result);
     }
 
+    @GetMapping("/favorites/list")
+    public Result<PageResult<House>> getFavoriteHouses(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        if (userId == null) {
+            return Result.error("用户未登录");
+        }
+        PageResult<House> result = houseService.getFavoriteHouses(page, size, userId);
+        return Result.success(result);
+    }
+
     @GetMapping
     public Result<List<House>> getAll() {
         List<House> houses = houseService.getRecommendHouses(10);

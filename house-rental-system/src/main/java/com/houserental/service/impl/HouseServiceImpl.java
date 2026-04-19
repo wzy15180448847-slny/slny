@@ -128,7 +128,6 @@ public class HouseServiceImpl implements HouseService {
     @Override
     @SuppressWarnings("unchecked")
     public PageResult<House> search(HouseQueryRequest request) {
-        // 生成缓存键
         String cacheKey = generateSearchCacheKey(request);
         PageResult<House> cachedResult = (PageResult<House>) redisTemplate.opsForValue().get(cacheKey);
         if (cachedResult != null) {
@@ -137,23 +136,45 @@ public class HouseServiceImpl implements HouseService {
 
         IPage<House> page = new Page<>(request.getCurrent(), request.getSize());
 
-        BigDecimal minPrice = request.getMinPrice() != null ? new BigDecimal(request.getMinPrice()) : null;
-        BigDecimal maxPrice = request.getMaxPrice() != null ? new BigDecimal(request.getMaxPrice()) : null;
-        BigDecimal minArea = request.getMinArea() != null ? new BigDecimal(request.getMinArea()) : null;
-        BigDecimal maxArea = request.getMaxArea() != null ? new BigDecimal(request.getMaxArea()) : null;
+        QueryWrapper<House> wrapper = new QueryWrapper<>();
+        wrapper.eq("status", 2);
 
-        IPage<House> result = houseMapper.searchHouses(
-                page,
-                2,
-                request.getCity(),
-                request.getDistrict(),
-                request.getHouseType(),
-                minPrice,
-                maxPrice,
-                minArea,
-                maxArea,
-                request.getRentWay()
-        );
+        if (request.getCity() != null && !request.getCity().trim().isEmpty()) {
+            wrapper.eq("city", request.getCity());
+        }
+        if (request.getDistrict() != null && !request.getDistrict().trim().isEmpty()) {
+            wrapper.eq("district", request.getDistrict());
+        }
+        if (request.getHouseType() != null && !request.getHouseType().trim().isEmpty()) {
+            wrapper.like("house_type", request.getHouseType());
+        }
+        if (request.getMinPrice() != null) {
+            wrapper.ge("rent_price", new BigDecimal(request.getMinPrice()));
+        }
+        if (request.getMaxPrice() != null) {
+            wrapper.le("rent_price", new BigDecimal(request.getMaxPrice()));
+        }
+        if (request.getMinArea() != null) {
+            wrapper.ge("area", new BigDecimal(request.getMinArea()));
+        }
+        if (request.getMaxArea() != null) {
+            wrapper.le("area", new BigDecimal(request.getMaxArea()));
+        }
+        if (request.getRentWay() != null) {
+            wrapper.eq("rent_way", request.getRentWay());
+        }
+
+        if ("rentPrice".equals(request.getSortBy())) {
+            wrapper.orderByAsc("rent_price");
+        } else if ("area".equals(request.getSortBy())) {
+            wrapper.orderByDesc("area");
+        } else if ("viewCount".equals(request.getSortBy())) {
+            wrapper.orderByDesc("view_count");
+        } else {
+            wrapper.orderByDesc("create_time");
+        }
+
+        IPage<House> result = houseMapper.selectPage(page, wrapper);
 
         PageResult<House> pageResult = PageResult.build(
                 request.getCurrent().longValue(),
@@ -162,7 +183,6 @@ public class HouseServiceImpl implements HouseService {
                 result.getRecords()
         );
         
-        // 设置缓存，有效期5分钟
         redisTemplate.opsForValue().set(cacheKey, pageResult, 5, TimeUnit.MINUTES);
         return pageResult;
     }
@@ -353,10 +373,32 @@ public class HouseServiceImpl implements HouseService {
             for (Long houseId : houseIds) {
                 redisTemplate.opsForSet().add(key, houseId);
             }
-            redisTemplate.expire(key, 30, TimeUnit.DAYS);
         }
         
         return houseIds != null ? houseIds : java.util.Collections.emptyList();
+    }
+
+    @Override
+    public PageResult<House> getFavoriteHouses(int page, int size, Long userId) {
+        List<Long> favoriteIds = getFavorites(userId);
+        
+        if (favoriteIds == null || favoriteIds.isEmpty()) {
+            return PageResult.build((long) page, (long) size, 0L, java.util.Collections.emptyList());
+        }
+        
+        List<House> houses = houseMapper.selectBatchIds(favoriteIds);
+        
+        int start = (page - 1) * size;
+        int end = Math.min(start + size, houses.size());
+        
+        List<House> pageList;
+        if (start >= houses.size()) {
+            pageList = java.util.Collections.emptyList();
+        } else {
+            pageList = houses.subList(start, end);
+        }
+        
+        return PageResult.build((long) page, (long) size, (long) houses.size(), pageList);
     }
 
     @Override
@@ -540,8 +582,7 @@ public class HouseServiceImpl implements HouseService {
         log.info("使用MySQL降级方案搜索: {}", keyword);
         
         QueryWrapper<House> wrapper = new QueryWrapper<>();
-        wrapper.eq("deleted", 0)
-               .eq("status", 0);
+        wrapper.eq("status", 0);
         
         if (keyword != null && !keyword.trim().isEmpty()) {
             wrapper.and(w -> w.like("title", keyword)
@@ -561,11 +602,17 @@ public class HouseServiceImpl implements HouseService {
                                        Double minPrice, Double maxPrice, 
                                        Double minArea, Double maxArea, 
                                        Integer rentWay) {
+        return searchWithFilters(keyword, city, district, minPrice, maxPrice, minArea, maxArea, rentWay, "createTime");
+    }
+
+    public List<House> searchWithFilters(String keyword, String city, String district, 
+                                       Double minPrice, Double maxPrice, 
+                                       Double minArea, Double maxArea, 
+                                       Integer rentWay, String sortBy) {
         log.info("使用MySQL降级方案综合搜索: keyword={}, city={}, district={}", keyword, city, district);
         
         QueryWrapper<House> wrapper = new QueryWrapper<>();
-        wrapper.eq("deleted", 0)
-               .eq("status", 0);
+        wrapper.eq("status", 0);
         
         if (keyword != null && !keyword.trim().isEmpty()) {
             wrapper.and(w -> w.like("title", keyword)
@@ -603,7 +650,15 @@ public class HouseServiceImpl implements HouseService {
             wrapper.eq("rent_way", rentWay);
         }
         
-        wrapper.orderByDesc("create_time");
+        if ("rentPrice".equals(sortBy)) {
+            wrapper.orderByAsc("rent_price");
+        } else if ("area".equals(sortBy)) {
+            wrapper.orderByDesc("area");
+        } else if ("viewCount".equals(sortBy)) {
+            wrapper.orderByDesc("view_count");
+        } else {
+            wrapper.orderByDesc("create_time");
+        }
         
         return houseMapper.selectList(wrapper);
     }
@@ -617,7 +672,7 @@ public class HouseServiceImpl implements HouseService {
     public com.houserental.common.result.PageResult<House> getPendingAuditList(int page, int size) {
         com.baomidou.mybatisplus.core.metadata.IPage<House> pageInfo = new com.baomidou.mybatisplus.extension.plugins.pagination.Page<>(page, size);
         com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<House> wrapper = new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>();
-        wrapper.eq("audit_status", 0).eq("deleted", 0).orderByDesc("created_time");
+        wrapper.eq("audit_status", 0).orderByDesc("create_time");
         com.baomidou.mybatisplus.core.metadata.IPage<House> result = houseMapper.selectPage(pageInfo, wrapper);
         return com.houserental.common.result.PageResult.build(
                 pageInfo.getCurrent(),
@@ -629,9 +684,7 @@ public class HouseServiceImpl implements HouseService {
 
     @Override
     public List<House> list() {
-        com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<House> wrapper = new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>();
-        wrapper.eq("deleted", 0);
-        return houseMapper.selectList(wrapper);
+        return houseMapper.selectList(null);
     }
 
     @Override

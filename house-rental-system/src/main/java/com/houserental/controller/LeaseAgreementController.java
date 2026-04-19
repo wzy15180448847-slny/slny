@@ -6,6 +6,8 @@ import com.houserental.service.LeaseAgreementService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.Map;
 
 /**
@@ -84,5 +86,37 @@ public class LeaseAgreementController {
     @GetMapping("/{id}")
     public Result<LeaseAgreement> getLeaseById(@PathVariable Long id) {
         return Result.success(leaseAgreementService.getLeaseById(id));
+    }
+
+    /**
+     * 发送合同
+     * @param id 租约ID
+     * @return 结果
+     */
+    @PostMapping("/send/{id}")
+    public Result<Void> sendContract(@PathVariable Long id) {
+        boolean success = leaseAgreementService.sendContract(id);
+        return success ? Result.success() : Result.error("发送合同失败");
+    }
+
+    /**
+     * 导出合同
+     * @param id 租约ID
+     * @param response 响应对象
+     */
+    @GetMapping("/export/{id}")
+    public void exportContract(@PathVariable Long id, HttpServletResponse response) throws IOException {
+        leaseAgreementService.exportContract(id, response);
+    }
+
+    /**
+     * 生成账单
+     * @param id 租约ID
+     * @return 结果
+     */
+    @PostMapping("/bill/{id}")
+    public Result<Void> generateBill(@PathVariable Long id) {
+        boolean success = leaseAgreementService.generateBill(id);
+        return success ? Result.success() : Result.error("生成账单失败");
     }
 }

@@ -93,6 +93,11 @@ public interface HouseService {
     List<Long> getFavorites(Long userId);
 
     /**
+     * 获取用户收藏的房源列表（分页）
+     */
+    PageResult<House> getFavoriteHouses(int page, int size, Long userId);
+
+    /**
      * 上传房源图片
      */
     List<String> uploadHouseImages(Long houseId, List<MultipartFile> files);

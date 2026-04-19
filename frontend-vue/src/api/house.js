@@ -46,9 +46,9 @@ export function searchHouses(params) {
   })
 }
 
-export function getMyHouses(params) {
+export function getFavorites(params) {
   return request({
-    url: '/houses/my',
+    url: '/houses/favorites/list',
     method: 'get',
     params
   })
@@ -68,18 +68,10 @@ export function removeFavorite(houseId) {
   })
 }
 
-export function getFavorites(params) {
+export function isFavorited(houseId) {
   return request({
-    url: '/houses/favorites',
-    method: 'get',
-    params
-  })
-}
-
-export function incrementViewCount(id) {
-  return request({
-    url: `/houses/${id}/view`,
-    method: 'post'
+    url: `/houses/${houseId}/favorite`,
+    method: 'get'
   })
 }
 
@@ -102,10 +94,40 @@ export function getPendingAuditList(params) {
   })
 }
 
-export function auditHouse(id, params) {
+export function auditHouse(id, auditStatus, auditRemark) {
   return request({
     url: `/houses/${id}/audit`,
     method: 'post',
-    data: params
+    params: { auditStatus, auditRemark }
+  })
+}
+
+export function onlineHouse(id) {
+  return request({
+    url: `/houses/${id}/online`,
+    method: 'post'
+  })
+}
+
+export function offlineHouse(id) {
+  return request({
+    url: `/houses/${id}/offline`,
+    method: 'post'
+  })
+}
+
+export function getRecommendHouses(limit) {
+  return request({
+    url: '/houses/recommend',
+    method: 'get',
+    params: { limit }
+  })
+}
+
+export function getLatestHouses(limit) {
+  return request({
+    url: '/houses/latest',
+    method: 'get',
+    params: { limit }
   })
 }

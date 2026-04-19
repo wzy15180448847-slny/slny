@@ -202,6 +202,7 @@ const fetchHouses = async () => {
     const { data } = await searchHouses({
       current: pagination.current,
       size: pagination.size,
+      sortBy: sortBy.value,
       ...searchForm
     })
     houseList.value = data.records || []

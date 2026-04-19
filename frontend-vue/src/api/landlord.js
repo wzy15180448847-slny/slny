@@ -8,17 +8,23 @@ export function getMyHouses(params) {
   })
 }
 
-export function updateHouseStatus(id, status) {
+export function onlineHouse(id) {
   return request({
-    url: `/houses/${id}/status`,
-    method: 'put',
-    data: { status }
+    url: `/houses/${id}/online`,
+    method: 'post'
+  })
+}
+
+export function offlineHouse(id) {
+  return request({
+    url: `/houses/${id}/offline`,
+    method: 'post'
   })
 }
 
 export function getLandlordAppointments(params) {
   return request({
-    url: '/appointments/landlord',
+    url: '/api/appointment/page',
     method: 'get',
     params
   })
@@ -26,51 +32,52 @@ export function getLandlordAppointments(params) {
 
 export function confirmAppointment(id) {
   return request({
-    url: `/appointments/${id}/confirm`,
-    method: 'post'
+    url: `/api/appointment/confirm/${id}`,
+    method: 'put'
   })
 }
 
-export function rejectAppointment(id, data) {
+export function rejectAppointment(id, reason) {
   return request({
-    url: `/appointments/${id}/reject`,
-    method: 'post',
-    data
+    url: `/api/appointment/reject/${id}`,
+    method: 'put',
+    params: { reason }
   })
 }
 
 export function completeAppointment(id) {
   return request({
-    url: `/appointments/${id}/complete`,
-    method: 'post'
+    url: `/api/appointment/complete/${id}`,
+    method: 'put'
   })
 }
 
 export function createContract(data) {
   return request({
-    url: '/contracts',
+    url: '/api/lease',
     method: 'post',
     data
   })
 }
 
-export function getLandlordContracts() {
+export function getLandlordContracts(params) {
   return request({
-    url: '/contracts/landlord',
-    method: 'get'
+    url: '/api/lease/page',
+    method: 'get',
+    params
   })
 }
 
 export function sendContract(id) {
   return request({
-    url: `/contracts/${id}/send`,
+    url: `/api/lease/send/${id}`,
     method: 'post'
   })
 }
 
 export function exportContract(id) {
   return request({
-    url: `/contracts/${id}/export`,
+    url: `/api/lease/export/${id}`,
     method: 'get',
     responseType: 'blob'
   })
@@ -78,7 +85,7 @@ export function exportContract(id) {
 
 export function generateBill(id) {
   return request({
-    url: `/contracts/${id}/bill`,
+    url: `/api/lease/bill/${id}`,
     method: 'post'
   })
 }

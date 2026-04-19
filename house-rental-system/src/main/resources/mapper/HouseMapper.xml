@@ -55,6 +55,14 @@
         <if test="rentWay != null">
             AND rent_way = #{rentWay}
         </if>
+        ORDER BY 
+        <choose>
+            <when test="sortBy == 'createTime'">create_time DESC</when>
+            <when test="sortBy == 'rentPrice'">rent_price ASC</when>
+            <when test="sortBy == 'area'">area DESC</when>
+            <when test="sortBy == 'viewCount'">view_count DESC</when>
+            <otherwise>create_time DESC</otherwise>
+        </choose>
     </select>
 
     <!-- 查询推荐房源（按浏览量排序） -->

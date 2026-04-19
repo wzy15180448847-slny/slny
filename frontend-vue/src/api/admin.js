@@ -2,28 +2,28 @@ import request from '@/utils/request'
 
 export function getDashboardStats() {
   return request({
-    url: '/admin/dashboard/stats',
+    url: '/api/admin/dashboard/overview',
     method: 'get'
   })
 }
 
-export function getChartData() {
+export function getHouseStatusDistribution() {
   return request({
-    url: '/admin/dashboard/charts',
+    url: '/api/admin/dashboard/house-status',
     method: 'get'
   })
 }
 
-export function getRecentLogs() {
+export function getMonthlyRevenueTrend() {
   return request({
-    url: '/admin/dashboard/logs',
+    url: '/api/admin/dashboard/revenue-trend',
     method: 'get'
   })
 }
 
 export function getUsers(params) {
   return request({
-    url: '/admin/users',
+    url: '/api/admin/users',
     method: 'get',
     params
   })
@@ -31,7 +31,7 @@ export function getUsers(params) {
 
 export function updateUserStatus(id, status) {
   return request({
-    url: `/admin/users/${id}/status`,
+    url: `/api/admin/users/${id}/status`,
     method: 'put',
     data: { status }
   })
@@ -39,14 +39,14 @@ export function updateUserStatus(id, status) {
 
 export function deleteUser(id) {
   return request({
-    url: `/admin/users/${id}`,
+    url: `/api/admin/users/${id}`,
     method: 'delete'
   })
 }
 
 export function getComplaints(params) {
   return request({
-    url: '/admin/complaints',
+    url: '/api/admin/complaints',
     method: 'get',
     params
   })
@@ -54,7 +54,7 @@ export function getComplaints(params) {
 
 export function arbitrateComplaint(id, data) {
   return request({
-    url: `/admin/complaints/${id}/arbitrate`,
+    url: `/api/admin/complaints/${id}/arbitrate`,
     method: 'put',
     data
   })

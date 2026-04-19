@@ -2,7 +2,7 @@ import request from '@/utils/request'
 
 export function createAppointment(data) {
   return request({
-    url: '/appointments',
+    url: '/api/appointment',
     method: 'post',
     data
   })
@@ -10,22 +10,45 @@ export function createAppointment(data) {
 
 export function getMyAppointments(params) {
   return request({
-    url: '/appointments/my',
+    url: '/api/appointment/page',
     method: 'get',
     params
   })
 }
 
-export function cancelAppointment(id) {
+export function cancelAppointment(id, reason) {
   return request({
-    url: `/appointments/${id}/cancel`,
-    method: 'post'
+    url: `/api/appointment/cancel/${id}`,
+    method: 'put',
+    params: { reason }
   })
 }
 
 export function getAppointmentById(id) {
   return request({
-    url: `/appointments/${id}`,
+    url: `/api/appointment/${id}`,
     method: 'get'
+  })
+}
+
+export function confirmAppointment(id) {
+  return request({
+    url: `/api/appointment/confirm/${id}`,
+    method: 'put'
+  })
+}
+
+export function completeAppointment(id) {
+  return request({
+    url: `/api/appointment/complete/${id}`,
+    method: 'put'
+  })
+}
+
+export function rejectAppointment(id, reason) {
+  return request({
+    url: `/api/appointment/reject/${id}`,
+    method: 'put',
+    params: { reason }
   })
 }

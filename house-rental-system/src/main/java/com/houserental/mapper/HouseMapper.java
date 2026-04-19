@@ -52,7 +52,8 @@ public interface HouseMapper extends BaseMapper<House> {
                               @Param("maxPrice") BigDecimal maxPrice,
                               @Param("minArea") BigDecimal minArea,
                               @Param("maxArea") BigDecimal maxArea,
-                              @Param("rentWay") Integer rentWay);
+                              @Param("rentWay") Integer rentWay,
+                              @Param("sortBy") String sortBy);
 
     /**
      * 查询推荐房源（按浏览量排序）

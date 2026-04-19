@@ -23,10 +23,26 @@ export function getComplaintDetail(id) {
   })
 }
 
-export function processComplaint(id, data) {
+export function processComplaint(id, status, processResult) {
   return request({
     url: `/api/complaints/process/${id}`,
     method: 'post',
-    params: data
+    params: { status, processResult }
+  })
+}
+
+export function getAdminComplaints(params) {
+  return request({
+    url: '/api/admin/complaints',
+    method: 'get',
+    params
+  })
+}
+
+export function arbitrateComplaint(id, data) {
+  return request({
+    url: `/api/admin/complaints/${id}/arbitrate`,
+    method: 'put',
+    data
   })
 }

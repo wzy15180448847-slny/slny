@@ -3,37 +3,44 @@ package com.houserental.controller;
 import com.houserental.common.result.Result;
 import com.houserental.dto.DashboardStats;
 import com.houserental.dto.HouseStatusStats;
+import com.houserental.dto.LoginLogDTO;
 import com.houserental.dto.MonthlyRevenue;
 import com.houserental.service.AdminDashboardService;
+import com.houserental.service.LoginLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
-@RequestMapping("/api/admin/dashboard")
+@RequestMapping("/admin/dashboard")
 @RequiredArgsConstructor
 public class AdminDashboardController {
 
     private final AdminDashboardService adminDashboardService;
+    private final LoginLogService loginLogService;
 
-    @GetMapping("/overview")
-    public Result<DashboardStats> getOverview() {
+    @GetMapping("/stats")
+    public Result<DashboardStats> getStats() {
         DashboardStats stats = adminDashboardService.getOverviewStats();
         return Result.success(stats);
     }
 
-    @GetMapping("/house-status")
-    public Result<List<HouseStatusStats>> getHouseStatusDistribution() {
-        List<HouseStatusStats> stats = adminDashboardService.getHouseStatusDistribution();
-        return Result.success(stats);
+    @GetMapping("/charts")
+    public Result<Map<String, Object>> getCharts() {
+        Map<String, Object> result = new HashMap<>();
+        result.put("houseStatus", adminDashboardService.getHouseStatusDistribution());
+        result.put("revenueTrend", adminDashboardService.getMonthlyRevenueTrend());
+        return Result.success(result);
     }
 
-    @GetMapping("/revenue-trend")
-    public Result<List<MonthlyRevenue>> getMonthlyRevenueTrend() {
-        List<MonthlyRevenue> trend = adminDashboardService.getMonthlyRevenueTrend();
-        return Result.success(trend);
+    @GetMapping("/logs")
+    public Result<List<LoginLogDTO>> getLogs() {
+        List<LoginLogDTO> logs = loginLogService.getRecentLogs(10);
+        return Result.success(logs);
     }
 }

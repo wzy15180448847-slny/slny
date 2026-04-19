@@ -1,15 +1,20 @@
 package com.houserental.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.houserental.dto.LoginLogDTO;
 import com.houserental.entity.LoginLog;
 import com.houserental.mapper.LoginLogMapper;
 import com.houserental.service.LoginLogService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
+import java.util.stream.Collectors;
 
 
 /**
@@ -127,7 +132,6 @@ public class LoginLogServiceImpl implements LoginLogService {
     public static String getRealIp(HttpServletRequest request) {
         String ip = request.getHeader("X-Forwarded-For");
         if (StringUtils.hasText(ip) && !"unknown".equalsIgnoreCase(ip)) {
-            // 多次反向代理后会有多个IP值，第一个为真实IP
             int index = ip.indexOf(',');
             if (index != -1) {
                 return ip.substring(0, index);
@@ -140,6 +144,20 @@ public class LoginLogServiceImpl implements LoginLogService {
             return ip;
         }
         return request.getRemoteAddr();
+    }
+
+    @Override
+    public List<LoginLogDTO> getRecentLogs(int limit) {
+        QueryWrapper<LoginLog> wrapper = new QueryWrapper<>();
+        wrapper.orderByDesc("create_time").last("LIMIT " + limit);
+        
+        List<LoginLog> logs = loginLogMapper.selectList(wrapper);
+        
+        return logs.stream().map(log -> {
+            LoginLogDTO dto = new LoginLogDTO();
+            BeanUtils.copyProperties(log, dto);
+            return dto;
+        }).collect(Collectors.toList());
     }
 
 }

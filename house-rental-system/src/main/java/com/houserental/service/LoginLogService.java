@@ -1,6 +1,9 @@
 package com.houserental.service;
 
+import com.houserental.dto.LoginLogDTO;
 import com.houserental.entity.LoginLog;
+
+import java.util.List;
 
 /**
  * 登录日志服务
@@ -26,5 +29,10 @@ public interface LoginLogService {
      * 保存登录日志
      */
     void saveLoginLog(LoginLog loginLog);
+
+    /**
+     * 获取最近的登录日志
+     */
+    List<LoginLogDTO> getRecentLogs(int limit);
 
 }

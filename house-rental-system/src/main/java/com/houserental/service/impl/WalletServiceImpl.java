@@ -14,6 +14,7 @@ import com.houserental.service.WalletService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,7 +22,6 @@ import java.math.BigDecimal;
 import java.util.List;
 
 @Service
-@RequiredArgsConstructor
 public class WalletServiceImpl implements WalletService {
 
     private static final Logger log = LoggerFactory.getLogger(WalletServiceImpl.class);
@@ -30,6 +30,16 @@ public class WalletServiceImpl implements WalletService {
     private final WalletTransactionLogMapper transactionLogMapper;
     private final PaymentRecordMapper paymentRecordMapper;
     private final LeaseAgreementService leaseAgreementService;
+
+    public WalletServiceImpl(UserWalletMapper userWalletMapper, 
+                            WalletTransactionLogMapper transactionLogMapper,
+                            PaymentRecordMapper paymentRecordMapper,
+                            @Lazy LeaseAgreementService leaseAgreementService) {
+        this.userWalletMapper = userWalletMapper;
+        this.transactionLogMapper = transactionLogMapper;
+        this.paymentRecordMapper = paymentRecordMapper;
+        this.leaseAgreementService = leaseAgreementService;
+    }
 
     private static final int TRANSACTION_TYPE_RECHARGE = 1;
     private static final int TRANSACTION_TYPE_CONSUME = 2;

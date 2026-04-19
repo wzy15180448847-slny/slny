@@ -9,6 +9,7 @@ import com.houserental.entity.ElectronicSignature;
 import com.houserental.entity.House;
 import com.houserental.entity.LeaseAgreement;
 import com.houserental.entity.User;
+import com.houserental.mapper.BillMapper;
 import com.houserental.mapper.ElectronicSignatureMapper;
 import com.houserental.mapper.HouseMapper;
 import com.houserental.mapper.LeaseAgreementMapper;
@@ -51,6 +52,9 @@ public class LeaseAgreementServiceImpl extends ServiceImpl<LeaseAgreementMapper,
 
     @Autowired
     private ElectronicSignatureMapper electronicSignatureMapper;
+
+    @Autowired
+    private BillMapper billMapper;
 
     @Autowired
     private FileService fileService;
@@ -376,5 +380,64 @@ public class LeaseAgreementServiceImpl extends ServiceImpl<LeaseAgreementMapper,
         wrapper.eq("lease_id", lease.getId());
         List<ElectronicSignature> signatures = electronicSignatureMapper.selectList(wrapper);
         lease.setSignatures(signatures);
+    }
+
+    @Override
+    public boolean sendContract(Long id) {
+        LeaseAgreement lease = baseMapper.selectById(id);
+        if (lease == null) {
+            return false;
+        }
+        lease.setStatus(1);
+        lease.setUpdateTime(LocalDateTime.now());
+        return baseMapper.updateById(lease) > 0;
+    }
+
+    @Override
+    public void exportContract(Long id, javax.servlet.http.HttpServletResponse response) throws IOException {
+        LeaseAgreement lease = baseMapper.selectById(id);
+        if (lease == null) {
+            response.sendError(404, "合同不存在");
+            return;
+        }
+        
+        String fileUrl = generateContract(lease);
+        if (fileUrl == null) {
+            response.sendError(500, "合同生成失败");
+            return;
+        }
+        
+        response.setContentType("application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+        response.setHeader("Content-Disposition", "attachment; filename=\"contract_" + lease.getLeaseNo() + ".docx\"");
+        
+        java.net.URL url = new java.net.URL(fileUrl);
+        try (java.io.InputStream is = url.openStream();
+             java.io.OutputStream os = response.getOutputStream()) {
+            byte[] buffer = new byte[8192];
+            int bytesRead;
+            while ((bytesRead = is.read(buffer)) != -1) {
+                os.write(buffer, 0, bytesRead);
+            }
+        }
+    }
+
+    @Override
+    public boolean generateBill(Long id) {
+        LeaseAgreement lease = baseMapper.selectById(id);
+        if (lease == null) {
+            return false;
+        }
+        
+        com.houserental.entity.Bill bill = new com.houserental.entity.Bill();
+        bill.setLeaseId(id);
+        bill.setHouseId(lease.getHouseId());
+        bill.setTenantId(lease.getTenantId());
+        bill.setLandlordId(lease.getLandlordId());
+        bill.setAmount(lease.getRentPrice());
+        bill.setStatus(1);
+        bill.setBillType(1);
+        bill.setCreateTime(LocalDateTime.now());
+        
+        return billMapper.insert(bill) > 0;
     }
 }
