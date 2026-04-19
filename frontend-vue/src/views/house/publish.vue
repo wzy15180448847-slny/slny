@@ -322,13 +322,11 @@ const amenities = [
   { label: '停车位', value: 'PARKING', icon: 'Car' }
 ]
 
-const handleImageChange = (file, fileList) => {
-  // 模拟图片上传，实际项目中需要调用上传接口
-  if (file.status === 'ready') {
-    // 这里应该是真实的上传逻辑
-    // 暂时使用本地路径模拟
-    publishForm.images = fileList.map(f => URL.createObjectURL(f.raw))
-  }
+const fileList = ref([])
+
+const handleImageChange = (file, files) => {
+  fileList.value = files
+  publishForm.images = files.map(f => URL.createObjectURL(f.raw))
 }
 
 const resetForm = () => {
@@ -345,11 +343,12 @@ const submitForm = async () => {
     if (!valid) return
     
     try {
-      await houseStore.publishHouse(publishForm)
+      await houseStore.publishHouse(publishForm, fileList.value)
       ElMessage.success('房源发布成功')
       router.push('/my-houses')
     } catch (error) {
       console.error(error)
+      ElMessage.error('房源发布失败')
     }
   })
 }

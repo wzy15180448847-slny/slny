@@ -1,12 +1,15 @@
 package com.houserental.service.impl;
 
 import com.houserental.common.exception.BusinessException;
+import com.houserental.common.utils.SecurityUtils;
+import com.houserental.entity.LeaseAgreement;
 import com.houserental.entity.PaymentRecord;
 import com.houserental.entity.UserWallet;
 import com.houserental.entity.WalletTransactionLog;
 import com.houserental.mapper.PaymentRecordMapper;
 import com.houserental.mapper.UserWalletMapper;
 import com.houserental.mapper.WalletTransactionLogMapper;
+import com.houserental.service.LeaseAgreementService;
 import com.houserental.service.WalletService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -26,6 +29,7 @@ public class WalletServiceImpl implements WalletService {
     private final UserWalletMapper userWalletMapper;
     private final WalletTransactionLogMapper transactionLogMapper;
     private final PaymentRecordMapper paymentRecordMapper;
+    private final LeaseAgreementService leaseAgreementService;
 
     private static final int TRANSACTION_TYPE_RECHARGE = 1;
     private static final int TRANSACTION_TYPE_CONSUME = 2;
@@ -55,23 +59,31 @@ public class WalletServiceImpl implements WalletService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public UserWallet recharge(Long userId, BigDecimal amount, String remark) {
-        log.info("开始充值, userId={}, amount={}", userId, amount);
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+        
+        if (!currentUserId.equals(userId)) {
+            throw new BusinessException("无权为他人充值");
+        }
 
         if (amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new BusinessException("充值金额必须大于0");
         }
 
-        UserWallet wallet = getWallet(userId);
+        if (amount.compareTo(new BigDecimal("50000")) > 0) {
+            throw new BusinessException("单次充值金额超限");
+        }
+
+        UserWallet wallet = getWallet(currentUserId);
         BigDecimal balanceBefore = wallet.getBalance();
         BigDecimal balanceAfter = balanceBefore.add(amount);
 
-        int updateCount = userWalletMapper.increaseBalance(userId, amount);
+        int updateCount = userWalletMapper.increaseBalance(currentUserId, amount);
         if (updateCount == 0) {
             throw new BusinessException("充值失败");
         }
 
         WalletTransactionLog logEntry = new WalletTransactionLog();
-        logEntry.setUserId(userId);
+        logEntry.setUserId(currentUserId);
         logEntry.setTransactionType(TRANSACTION_TYPE_RECHARGE);
         logEntry.setAmount(amount);
         logEntry.setBalanceBefore(balanceBefore);
@@ -80,22 +92,17 @@ public class WalletServiceImpl implements WalletService {
         transactionLogMapper.insert(logEntry);
 
         wallet.setBalance(balanceAfter);
-        log.info("充值成功, userId={}, amount={}, balance={}", userId, amount, balanceAfter);
+        log.info("充值成功, userId={}, amount={}, balance={}", currentUserId, amount, balanceAfter);
         return wallet;
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public boolean payRent(Long tenantId, Long landlordId, BigDecimal amount, String orderNo) {
-        log.info("开始支付租金, tenantId={}, landlordId={}, amount={}, orderNo={}", 
-                tenantId, landlordId, amount, orderNo);
+    public boolean payRent(String orderNo) {
+        log.info("开始支付租金, orderNo={}", orderNo);
 
-        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new BusinessException("支付金额必须大于0");
-        }
-
-        if (tenantId.equals(landlordId)) {
-            throw new BusinessException("不能向自己支付");
+        if (orderNo == null || orderNo.trim().isEmpty()) {
+            throw new BusinessException("订单号不能为空");
         }
 
         PaymentRecord paymentRecord = paymentRecordMapper.selectByOrderNo(orderNo);
@@ -105,6 +112,29 @@ public class WalletServiceImpl implements WalletService {
 
         if (paymentRecord.getStatus() != 0) {
             throw new BusinessException("订单状态不允许支付");
+        }
+
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+        Long tenantId = paymentRecord.getTenantId();
+        
+        if (!tenantId.equals(currentUserId)) {
+            throw new BusinessException("无权支付此订单");
+        }
+
+        LeaseAgreement lease = leaseAgreementService.getLeaseById(paymentRecord.getLeaseAgreementId());
+        if (lease == null) {
+            throw new BusinessException("租约不存在");
+        }
+
+        Long landlordId = lease.getLandlordId();
+        BigDecimal amount = paymentRecord.getAmount();
+
+        if (tenantId.equals(landlordId)) {
+            throw new BusinessException("不能向自己支付");
+        }
+
+        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessException("支付金额必须大于0");
         }
 
         UserWallet tenantWallet = getWallet(tenantId);

@@ -109,96 +109,118 @@
   </div>
 </template>
 
-<script setup>
-import { ref, reactive } from 'vue'
-import { ElMessage } from 'element-plus'
-
-const activeTab = ref('pending')
-
-const pendingHouses = ref([
-  { id: 1, houseName: '锦绣家园1室1厅', address: '西城区锦绣路36号', landlordName: '王房东', rent: 2000, area: 55, rooms: '1室1厅', createTime: '2024-01-15 10:30', images: ['https://picsum.photos/seed/audit1/800/600'], description: '单身公寓，适合年轻人居住。' },
-  { id: 2, houseName: '绿城花园3室1厅', address: '南城区绿环路18号', landlordName: '刘房东', rent: 3200, area: 100, rooms: '3室1厅', createTime: '2024-01-15 09:00', images: ['https://picsum.photos/seed/audit2/800/600', 'https://picsum.photos/seed/audit2a/800/600'], description: '交通便利，周边配套齐全。' }
-])
-
-const approvedHouses = ref([
-  { id: 3, houseName: '阳光小区3室2厅', address: '朝阳区阳光路88号', landlordName: '张房东', rent: 3500, area: 120, rooms: '3室2厅', auditTime: '2024-01-10 14:00', images: ['https://picsum.photos/seed/audit3/800/600', 'https://picsum.photos/seed/audit3a/800/600'], description: '阳光充足，视野开阔。' },
-  { id: 4, houseName: '幸福花园2室1厅', address: '海淀区幸福街12号', landlordName: '李房东', rent: 2800, area: 85, rooms: '2室1厅', auditTime: '2024-01-08 10:00', images: ['https://picsum.photos/seed/audit4/800/600'], description: '温馨舒适，拎包入住。' }
-])
-
-const rejectedHouses = ref([
-  { id: 5, houseName: '老旧小区1室1厅', address: '北城区旧路街5号', landlordName: '陈房东', rent: 1500, area: 40, rooms: '1室1厅', rejectReason: '房源照片不清晰，信息不完整', auditTime: '2024-01-14 16:00', images: ['https://picsum.photos/seed/audit5/800/600'], description: '老旧小区，设施陈旧。' }
-])
-
-const selectedHouse = ref(null)
-const showDetailDialog = ref(false)
-const showRejectDialog = ref(false)
-
+<script setup>import { ref, reactive, onMounted } from 'vue';
+import { ElMessage } from 'element-plus';
+import { getPendingAuditList, auditHouse } from '@/api/house';
+const activeTab = ref('pending');
+const pendingHouses = ref([]);
+const approvedHouses = ref([]);
+const rejectedHouses = ref([]);
+const selectedHouse = ref(null);
+const showDetailDialog = ref(false);
+const showRejectDialog = ref(false);
 const rejectForm = reactive({
-  reason: ''
-})
-
+ reason: ''
+});
+const rentWayMapping = {
+ 1: '整租',
+ 2: '合租',
+ 3: '单间'
+};
+const houseTypeMapping = {
+ 'ONE_BEDROOM': '一室一厅',
+ 'TWO_BEDROOM': '两室一厅',
+ 'THREE_BEDROOM': '三室一厅',
+ 'FOUR_PLUS_BEDROOM': '四室及以上'
+};
+const formatHouse = (house) => {
+ return {
+ id: house.id,
+ houseName: house.title,
+ address: house.address,
+ landlordName: '房东',
+ rent: house.rentPrice,
+ area: house.area,
+ rooms: houseTypeMapping[house.houseType] || '未知',
+ rentWay: rentWayMapping[house.rentWay] || '未知',
+ createTime: house.createdTime,
+ auditTime: house.auditTime,
+ images: house.images ? JSON.parse(house.images) : [],
+ description: house.description,
+ rejectReason: house.auditRemark,
+ status: house.auditStatus === 0 ? 'PENDING' : (house.auditStatus === 1 ? 'ACTIVE' : 'REJECTED'),
+ auditStatus: house.auditStatus
+ };
+};
+const loadPendingAuditList = async () => {
+ try {
+ const response = await getPendingAuditList({ page: 1, size: 20 });
+ pendingHouses.value = response.data.records.map(formatHouse);
+ }
+ catch (error) {
+ console.error('加载待审核列表失败:', error);
+ ElMessage.error('加载待审核列表失败');
+ }
+};
 const viewDetail = (house) => {
-  selectedHouse.value = house
-  showDetailDialog.value = true
-}
-
-const approveHouse = (house) => {
-  const index = pendingHouses.value.findIndex(h => h.id === house.id)
-  if (index > -1) {
-    pendingHouses.value.splice(index, 1)
-    approvedHouses.value.unshift({
-      ...house,
-      status: 'ACTIVE',
-      auditTime: new Date().toLocaleString()
-    })
-  }
-  ElMessage.success('审核通过')
-  showDetailDialog.value = false
-}
-
+ selectedHouse.value = house;
+ showDetailDialog.value = true;
+};
+const approveHouse = async (house) => {
+ try {
+ await auditHouse(house.id, { auditStatus: 1 });
+ ElMessage.success('审核通过');
+ loadPendingAuditList();
+ showDetailDialog.value = false;
+ }
+ catch (error) {
+ console.error('审核通过失败:', error);
+ ElMessage.error('审核通过失败');
+ }
+};
 const openRejectDialog = () => {
-  showRejectDialog.value = true
-}
-
-const confirmReject = () => {
-  if (!rejectForm.reason) {
-    ElMessage.error('请输入拒绝原因')
-    return
-  }
-  
-  const index = pendingHouses.value.findIndex(h => h.id === selectedHouse.value.id)
-  if (index > -1) {
-    pendingHouses.value.splice(index, 1)
-    rejectedHouses.value.unshift({
-      ...selectedHouse.value,
-      status: 'REJECTED',
-      rejectReason: rejectForm.reason,
-      auditTime: new Date().toLocaleString()
-    })
-  }
-  
-  ElMessage.success('已拒绝')
-  showRejectDialog.value = false
-  showDetailDialog.value = false
-  rejectForm.reason = ''
-}
-
+ showRejectDialog.value = true;
+};
+const confirmReject = async () => {
+ if (!rejectForm.reason) {
+ ElMessage.error('请输入拒绝原因');
+ return;
+ }
+ try {
+ await auditHouse(selectedHouse.value.id, {
+ auditStatus: 2,
+ auditRemark: rejectForm.reason
+ });
+ ElMessage.success('已拒绝');
+ loadPendingAuditList();
+ showRejectDialog.value = false;
+ showDetailDialog.value = false;
+ rejectForm.reason = '';
+ }
+ catch (error) {
+ console.error('拒绝审核失败:', error);
+ ElMessage.error('拒绝审核失败');
+ }
+};
 const rejectHouse = (house) => {
-  selectedHouse.value = house
-  showRejectDialog.value = true
-}
-
+ selectedHouse.value = house;
+ showRejectDialog.value = true;
+};
 const reApprove = (house) => {
-  const index = rejectedHouses.value.findIndex(h => h.id === house.id)
-  if (index > -1) {
-    rejectedHouses.value.splice(index, 1)
-    pendingHouses.value.unshift({
-      ...house,
-      status: 'PENDING'
-    })
-  }
-  ElMessage.success('已重新提交审核')
-}
+ const index = rejectedHouses.value.findIndex(h => h.id === house.id);
+ if (index > -1) {
+ rejectedHouses.value.splice(index, 1);
+ pendingHouses.value.unshift({
+ ...house,
+ status: 'PENDING',
+ auditStatus: 0
+ });
+ }
+ ElMessage.success('已重新提交审核');
+};
+onMounted(() => {
+ loadPendingAuditList();
+});
 </script>
 
 <style lang="scss" scoped>

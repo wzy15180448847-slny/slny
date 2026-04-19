@@ -231,7 +231,7 @@ public class HouseServiceImpl implements HouseService {
         house.setAuditTime(LocalDateTime.now());
         
         if (auditStatus == 1) {
-            house.setStatus(2);
+            house.setStatus(0);
             // 审核通过，同步到Elasticsearch
             syncToElasticsearch(house);
         } else if (auditStatus == 2) {

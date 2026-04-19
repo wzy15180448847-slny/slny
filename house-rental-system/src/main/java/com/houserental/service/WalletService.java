@@ -14,7 +14,7 @@ public interface WalletService {
 
     UserWallet recharge(Long userId, BigDecimal amount, String remark);
 
-    boolean payRent(Long tenantId, Long landlordId, BigDecimal amount, String orderNo);
+    boolean payRent(String orderNo);
 
     List<WalletTransactionLog> getTransactionLogs(Long userId);
 

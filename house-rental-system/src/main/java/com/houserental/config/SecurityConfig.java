@@ -77,6 +77,10 @@ public class SecurityConfig {
                 .requestMatchers(new AntPathRequestMatcher("/**/*.js")).permitAll()
                 .requestMatchers(new AntPathRequestMatcher("/**/*.ico")).permitAll()
                 .requestMatchers(new AntPathRequestMatcher("/druid/**")).permitAll()
+                // 角色隔离配置
+                .requestMatchers(new AntPathRequestMatcher("/admin/**")).hasRole("ADMIN")
+                .requestMatchers(new AntPathRequestMatcher("/landlord/**")).hasRole("LANDLORD")
+                .requestMatchers(new AntPathRequestMatcher("/tenant/**")).hasRole("TENANT")
                 // 其他请求需要认证
                 .anyRequest().authenticated();
 

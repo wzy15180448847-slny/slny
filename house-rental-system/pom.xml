@@ -125,6 +125,13 @@
             <version>1.4</version>
         </dependency>
 
+        <!-- poi-tl Word模板引擎 -->
+        <dependency>
+            <groupId>com.deepoove</groupId>
+            <artifactId>poi-tl</artifactId>
+            <version>1.12.2</version>
+        </dependency>
+
         <!-- Elasticsearch -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

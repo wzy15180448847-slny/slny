@@ -92,6 +92,11 @@ public class LeaseAgreement extends BaseEntity {
     private String agreementContent;
 
     /**
+     * 合同文件URL
+     */
+    private String contractUrl;
+
+    /**
      * 房源信息
      */
     @TableField(exist = false)

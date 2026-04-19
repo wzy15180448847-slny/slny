@@ -82,3 +82,30 @@ export function incrementViewCount(id) {
     method: 'post'
   })
 }
+
+export function uploadHouseImages(houseId, data) {
+  return request({
+    url: `/houses/${houseId}/images`,
+    method: 'post',
+    data,
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+}
+
+export function getPendingAuditList(params) {
+  return request({
+    url: '/houses/pending-audit',
+    method: 'get',
+    params
+  })
+}
+
+export function auditHouse(id, params) {
+  return request({
+    url: `/houses/${id}/audit`,
+    method: 'post',
+    data: params
+  })
+}
