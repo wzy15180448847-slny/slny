@@ -5,10 +5,10 @@ import com.houserental.common.result.ResultCode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DuplicateKeyException;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -16,8 +16,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import javax.servlet.http.HttpServletRequest;
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 全局异常处理器
@@ -36,18 +36,38 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 处理参数校验异常
+     * 处理参数校验异常 (@Valid)
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Result<Object>> handleValidationException(MethodArgumentNotValidException e, HttpServletRequest request) {
-        Map<String, String> errors = new HashMap<>();
-        e.getBindingResult().getAllErrors().forEach((error) -> {
-            String fieldName = ((FieldError) error).getField();
-            String errorMessage = error.getDefaultMessage();
-            errors.put(fieldName, errorMessage);
-        });
-        log.warn("参数校验失败: url={}, errors={}", request.getRequestURI(), errors);
-        return ResponseEntity.ok(Result.error(ResultCode.PARAM_ERROR.getCode(), "参数校验失败", errors));
+        List<FieldError> fieldErrors = e.getBindingResult().getFieldErrors();
+        String errorMessage = fieldErrors.stream()
+                .map(error -> error.getDefaultMessage())
+                .collect(Collectors.joining(", "));
+        log.warn("参数校验失败: url={}, errors={}", request.getRequestURI(), errorMessage);
+        return ResponseEntity.ok(Result.error(ResultCode.PARAM_ERROR.getCode(), errorMessage));
+    }
+
+    /**
+     * 处理表单绑定异常 (@ModelAttribute)
+     */
+    @ExceptionHandler(BindException.class)
+    public ResponseEntity<Result<Object>> handleBindException(BindException e, HttpServletRequest request) {
+        List<FieldError> fieldErrors = e.getBindingResult().getFieldErrors();
+        String errorMessage = fieldErrors.stream()
+                .map(error -> error.getDefaultMessage())
+                .collect(Collectors.joining(", "));
+        log.warn("表单绑定失败: url={}, errors={}", request.getRequestURI(), errorMessage);
+        return ResponseEntity.ok(Result.error(ResultCode.PARAM_ERROR.getCode(), errorMessage));
+    }
+
+    /**
+     * 处理凭证错误异常（必须放在 AuthenticationException 之前）
+     */
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<Result<Object>> handleBadCredentialsException(BadCredentialsException e, HttpServletRequest request) {
+        log.warn("凭证错误: url={}, message={}", request.getRequestURI(), e.getMessage());
+        return ResponseEntity.ok(Result.error(ResultCode.UNAUTHORIZED.getCode(), "用户名或密码错误"));
     }
 
     /**
@@ -57,15 +77,6 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Result<Object>> handleAuthenticationException(AuthenticationException e, HttpServletRequest request) {
         log.warn("认证异常: url={}, message={}", request.getRequestURI(), e.getMessage());
         return ResponseEntity.ok(Result.error(ResultCode.UNAUTHORIZED.getCode(), "认证失败，请重新登录"));
-    }
-
-    /**
-     * 处理凭证错误异常
-     */
-    @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<Result<Object>> handleBadCredentialsException(BadCredentialsException e, HttpServletRequest request) {
-        log.warn("凭证错误: url={}, message={}", request.getRequestURI(), e.getMessage());
-        return ResponseEntity.ok(Result.error(ResultCode.UNAUTHORIZED.getCode(), "用户名或密码错误"));
     }
 
     /**
@@ -96,16 +107,6 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 处理其他异常
-     */
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<Result<Object>> handleException(Exception e, HttpServletRequest request) {
-        log.error("系统异常: url={}, message={}", request.getRequestURI(), e.getMessage(), e);
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Result.error(ResultCode.SYSTEM_ERROR.getCode(), "系统繁忙，请稍后重试"));
-    }
-
-    /**
      * 处理非法参数异常
      */
     @ExceptionHandler(IllegalArgumentException.class)
@@ -115,11 +116,20 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 处理运行时异常
+     * 处理运行时异常（必须放在 Exception 之前）
      */
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Result<Object>> handleRuntimeException(RuntimeException e, HttpServletRequest request) {
         log.error("运行时异常: url={}, message={}", request.getRequestURI(), e.getMessage(), e);
         return ResponseEntity.ok(Result.error(ResultCode.ERROR.getCode(), e.getMessage()));
+    }
+
+    /**
+     * 处理其他异常（放在最后作为兜底）
+     */
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Result<Object>> handleException(Exception e, HttpServletRequest request) {
+        log.error("系统异常: url={}, message={}", request.getRequestURI(), e.getMessage(), e);
+        return ResponseEntity.ok(Result.error(ResultCode.SYSTEM_ERROR.getCode(), "系统繁忙，请稍后重试"));
     }
 }

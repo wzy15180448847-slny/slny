@@ -1,6 +1,10 @@
 package com.houserental.security;
 
+import com.houserental.common.result.Result;
 import com.houserental.common.utils.JwtUtils;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,30 +44,34 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws ServletException, IOException {
         try {
-            // 从请求头中获取token
             String token = getTokenFromRequest(request);
 
-            // 验证token
-            if (StringUtils.hasText(token) && JwtUtils.validateToken(token)) {
-                // 从token中获取用户名
-                String username = JwtUtils.getUsername(token);
-
-                // 加载用户信息
-                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-
-                // 创建认证对象
-                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, userDetails.getAuthorities());
-                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-                // 设置认证信息到SecurityContext
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+            if (StringUtils.hasText(token)) {
+                if (JwtUtils.validateToken(token)) {
+                    String username = JwtUtils.getUsername(token);
+                    UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                            userDetails, null, userDetails.getAuthorities());
+                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                }
             }
+        } catch (ExpiredJwtException e) {
+            log.warn("Token已过期: {}", e.getMessage());
+            response.setContentType("application/json;charset=UTF-8");
+            response.setStatus(HttpServletResponse.SC_OK);
+            response.getWriter().write(new ObjectMapper().writeValueAsString(Result.error(401, "Token已过期，请重新登录")));
+            return;
+        } catch (JwtException e) {
+            log.warn("JWT解析失败: {}", e.getMessage());
+            response.setContentType("application/json;charset=UTF-8");
+            response.setStatus(HttpServletResponse.SC_OK);
+            response.getWriter().write(new ObjectMapper().writeValueAsString(Result.error(401, "Token无效，请重新登录")));
+            return;
         } catch (Exception e) {
             log.warn("JWT认证失败: {}", e.getMessage());
         }
 
-        // 继续过滤器链
         chain.doFilter(request, response);
     }
 
