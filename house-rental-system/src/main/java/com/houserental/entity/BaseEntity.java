@@ -52,8 +52,8 @@ public abstract class BaseEntity implements Serializable {
      * 删除标志（0-未删除，1-已删除）
      */
     @TableLogic
-    @TableField(value = "deleted")
-    private Integer deleted = 0;
+    @TableField(value = "is_deleted")
+    private Integer isDeleted = 0;
 
     /**
      * 备注
@@ -109,12 +109,12 @@ public abstract class BaseEntity implements Serializable {
         this.updateBy = updateBy;
     }
 
-    public Integer getDeleted() {
-        return deleted;
+    public Integer getIsDeleted() {
+        return isDeleted;
     }
 
-    public void setDeleted(Integer deleted) {
-        this.deleted = deleted;
+    public void setIsDeleted(Integer isDeleted) {
+        this.isDeleted = isDeleted;
     }
 
     public String getRemark() {

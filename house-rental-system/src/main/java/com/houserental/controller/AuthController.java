@@ -8,6 +8,7 @@ import com.houserental.dto.RegisterRequest;
 import com.houserental.dto.ResetPasswordRequest;
 import com.houserental.dto.UpdatePasswordRequest;
 import com.houserental.entity.User;
+import com.houserental.mapper.UserMapper;
 import com.houserental.service.UserService;
 import com.houserental.service.VerifyCodeService;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +16,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.HashSet;
 
 /**
  * 认证控制器
@@ -25,6 +27,7 @@ import javax.servlet.http.HttpServletRequest;
 public class AuthController {
 
     private final UserService userService;
+    private final UserMapper userMapper;
     private final VerifyCodeService verifyCodeService;
 
     @PostMapping("/register")
@@ -53,15 +56,58 @@ public class AuthController {
         return Result.success();
     }
 
-    @GetMapping("/userinfo")
+    @GetMapping("/info")
     public Result<UserContext> getUserInfo() {
-        return Result.success();
+        Long userId = com.houserental.common.utils.SecurityUtils.getCurrentUserId();
+        if (userId == null) {
+            return Result.error("用户未登录");
+        }
+        User user = userService.getById(userId);
+        java.util.List<String> roles = userMapper.selectRolesByUserId(userId);
+        java.util.List<String> permissions = userMapper.selectPermissionsByUserId(userId);
+        UserContext userContext = UserContext.builder()
+                .userId(user.getId())
+                .username(user.getUsername())
+                .nickname(user.getNickname())
+                .realName(user.getRealName())
+                .phone(user.getPhone())
+                .email(user.getEmail())
+                .avatar(user.getAvatar())
+                .userType(user.getUserType())
+                .status(user.getStatus())
+                .roles(new HashSet<>(roles))
+                .permissions(new HashSet<>(permissions))
+                .build();
+        return Result.success(userContext);
     }
 
     @PutMapping("/password")
     public Result<Void> updatePassword(@Validated @RequestBody UpdatePasswordRequest request) {
         userService.updatePassword(request);
         return Result.success();
+    }
+
+    @PutMapping("/profile")
+    public Result<UserContext> updateProfile(@RequestBody User user) {
+        Long userId = com.houserental.common.utils.SecurityUtils.getCurrentUserId();
+        user.setId(userId);
+        User updatedUser = userService.update(user);
+        java.util.List<String> roles = userMapper.selectRolesByUserId(userId);
+        java.util.List<String> permissions = userMapper.selectPermissionsByUserId(userId);
+        UserContext userContext = UserContext.builder()
+                .userId(updatedUser.getId())
+                .username(updatedUser.getUsername())
+                .nickname(updatedUser.getNickname())
+                .realName(updatedUser.getRealName())
+                .phone(updatedUser.getPhone())
+                .email(updatedUser.getEmail())
+                .avatar(updatedUser.getAvatar())
+                .userType(updatedUser.getUserType())
+                .status(updatedUser.getStatus())
+                .roles(new java.util.HashSet<>(roles))
+                .permissions(new java.util.HashSet<>(permissions))
+                .build();
+        return Result.success(userContext);
     }
 
     @PostMapping("/send-code")

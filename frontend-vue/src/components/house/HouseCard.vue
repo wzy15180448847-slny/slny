@@ -2,8 +2,8 @@
   <div class="house-card" @click="handleClick">
     <div class="house-image">
       <img 
-        v-if="house.images && house.images.length > 0" 
-        :src="house.images[0]" 
+        v-if="houseImages && houseImages.length > 0" 
+        :src="houseImages[0]" 
         :alt="house.title"
       />
       <div v-else class="image-placeholder">
@@ -37,7 +37,7 @@
         <span class="divider">|</span>
         <span class="detail-item">{{ house.area }}㎡</span>
         <span class="divider">|</span>
-        <span class="detail-item">{{ house.orientation }}</span>
+        <span class="detail-item">{{ orientationText }}</span>
       </div>
       
       <div class="house-footer">
@@ -90,6 +90,21 @@ const userStore = useUserStore()
 
 const isFavorited = computed(() => {
   return props.house.isFavorited || false
+})
+
+const houseImages = computed(() => {
+  const images = props.house.images
+  if (!images) return []
+  try {
+    return typeof images === 'string' ? JSON.parse(images) : images
+  } catch {
+    return []
+  }
+})
+
+const orientationText = computed(() => {
+  const map = { 1: '东', 2: '南', 3: '西', 4: '北', 5: '东南', 6: '西南', 7: '东北', 8: '西北' }
+  return map[props.house.orientation] || '未知'
 })
 
 const handleClick = () => {

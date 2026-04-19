@@ -33,30 +33,6 @@ const routes = [
         name: 'PublishHouse',
         component: () => import('@/views/house/publish.vue'),
         meta: { title: '发布房源', requiresAuth: true, roles: ['LANDLORD', 'AGENT'] }
-      },
-      {
-        path: 'profile',
-        name: 'Profile',
-        component: () => import('@/views/user/profile.vue'),
-        meta: { title: '个人中心', requiresAuth: true }
-      },
-      {
-        path: 'my-houses',
-        name: 'MyHouses',
-        component: () => import('@/views/user/my-houses.vue'),
-        meta: { title: '我的房源', requiresAuth: true, roles: ['LANDLORD', 'AGENT'] }
-      },
-      {
-        path: 'my-favorites',
-        name: 'MyFavorites',
-        component: () => import('@/views/user/favorites.vue'),
-        meta: { title: '我的收藏', requiresAuth: true }
-      },
-      {
-        path: 'my-appointments',
-        name: 'MyAppointments',
-        component: () => import('@/views/user/appointments.vue'),
-        meta: { title: '我的预约', requiresAuth: true }
       }
     ]
   },
@@ -72,6 +48,199 @@ const routes = [
     component: () => import('@/views/auth/register.vue'),
     meta: { title: '注册', requiresAuth: false }
   },
+  
+  {
+    path: '/tenant',
+    component: () => import('@/layouts/TenantLayout.vue'),
+    meta: { requiresAuth: true, roles: ['TENANT'] },
+    children: [
+      {
+        path: '',
+        name: 'TenantHome',
+        component: () => import('@/views/tenant/index.vue'),
+        meta: { title: '租客中心', requiresAuth: true, roles: ['TENANT'] }
+      },
+      {
+        path: 'profile',
+        name: 'TenantProfile',
+        component: () => import('@/views/tenant/profile.vue'),
+        meta: { title: '个人中心', requiresAuth: true, roles: ['TENANT'] }
+      },
+      {
+        path: 'favorites',
+        name: 'TenantFavorites',
+        component: () => import('@/views/tenant/favorites.vue'),
+        meta: { title: '我的收藏', requiresAuth: true, roles: ['TENANT'] }
+      },
+      {
+        path: 'appointments',
+        name: 'TenantAppointments',
+        component: () => import('@/views/tenant/appointments.vue'),
+        meta: { title: '我的预约', requiresAuth: true, roles: ['TENANT'] }
+      },
+      {
+        path: 'contracts',
+        name: 'TenantContracts',
+        component: () => import('@/views/tenant/contracts.vue'),
+        meta: { title: '我的合同', requiresAuth: true, roles: ['TENANT'] }
+      },
+      {
+        path: 'bills',
+        name: 'TenantBills',
+        component: () => import('@/views/tenant/bills.vue'),
+        meta: { title: '账单支付', requiresAuth: true, roles: ['TENANT'] }
+      },
+      {
+        path: 'repairs',
+        name: 'TenantRepairs',
+        component: () => import('@/views/tenant/repairs.vue'),
+        meta: { title: '报修管理', requiresAuth: true, roles: ['TENANT'] }
+      },
+      {
+        path: 'wallet',
+        name: 'TenantWallet',
+        component: () => import('@/views/tenant/wallet.vue'),
+        meta: { title: '我的钱包', requiresAuth: true, roles: ['TENANT'] }
+      }
+    ]
+  },
+  
+  {
+    path: '/landlord',
+    component: () => import('@/layouts/LandlordLayout.vue'),
+    meta: { requiresAuth: true, roles: ['LANDLORD'] },
+    children: [
+      {
+        path: '',
+        name: 'LandlordHome',
+        component: () => import('@/views/landlord/index.vue'),
+        meta: { title: '房东中心', requiresAuth: true, roles: ['LANDLORD'] }
+      },
+      {
+        path: 'profile',
+        name: 'LandlordProfile',
+        component: () => import('@/views/landlord/profile.vue'),
+        meta: { title: '个人中心', requiresAuth: true, roles: ['LANDLORD'] }
+      },
+      {
+        path: 'houses',
+        name: 'LandlordHouses',
+        component: () => import('@/views/landlord/houses.vue'),
+        meta: { title: '房源管理', requiresAuth: true, roles: ['LANDLORD'] }
+      },
+      {
+        path: 'houses/add',
+        name: 'LandlordAddHouse',
+        component: () => import('@/views/landlord/add-house.vue'),
+        meta: { title: '发布房源', requiresAuth: true, roles: ['LANDLORD'] }
+      },
+      {
+        path: 'houses/edit/:id',
+        name: 'LandlordEditHouse',
+        component: () => import('@/views/landlord/edit-house.vue'),
+        meta: { title: '编辑房源', requiresAuth: true, roles: ['LANDLORD'] }
+      },
+      {
+        path: 'appointments',
+        name: 'LandlordAppointments',
+        component: () => import('@/views/landlord/appointments.vue'),
+        meta: { title: '预约处理', requiresAuth: true, roles: ['LANDLORD'] }
+      },
+      {
+        path: 'contracts',
+        name: 'LandlordContracts',
+        component: () => import('@/views/landlord/contracts.vue'),
+        meta: { title: '合同管理', requiresAuth: true, roles: ['LANDLORD'] }
+      },
+      {
+        path: 'bills',
+        name: 'LandlordBills',
+        component: () => import('@/views/landlord/bills.vue'),
+        meta: { title: '账单管理', requiresAuth: true, roles: ['LANDLORD'] }
+      },
+      {
+        path: 'repairs',
+        name: 'LandlordRepairs',
+        component: () => import('@/views/landlord/repairs.vue'),
+        meta: { title: '报修处理', requiresAuth: true, roles: ['LANDLORD'] }
+      }
+    ]
+  },
+  
+  {
+    path: '/admin',
+    component: () => import('@/layouts/AdminLayout.vue'),
+    meta: { requiresAuth: true, roles: ['ADMIN'] },
+    children: [
+      {
+        path: '',
+        name: 'AdminDashboard',
+        component: () => import('@/views/admin/dashboard.vue'),
+        meta: { title: '数据大屏', requiresAuth: true, roles: ['ADMIN'] }
+      },
+      {
+        path: 'dashboard',
+        name: 'AdminDashboardView',
+        component: () => import('@/views/admin/dashboard.vue'),
+        meta: { title: '数据大屏', requiresAuth: true, roles: ['ADMIN'] }
+      },
+      {
+        path: 'houses',
+        name: 'AdminHouses',
+        component: () => import('@/views/admin/houses.vue'),
+        meta: { title: '房源列表', requiresAuth: true, roles: ['ADMIN'] }
+      },
+      {
+        path: 'houses/edit/:id',
+        name: 'AdminEditHouse',
+        component: () => import('@/views/admin/edit-house.vue'),
+        meta: { title: '编辑房源', requiresAuth: true, roles: ['ADMIN'] }
+      },
+      {
+        path: 'house-audit',
+        name: 'AdminHouseAudit',
+        component: () => import('@/views/admin/house-audit.vue'),
+        meta: { title: '房源审核', requiresAuth: true, roles: ['ADMIN'] }
+      },
+      {
+        path: 'users',
+        name: 'AdminUsers',
+        component: () => import('@/views/admin/users.vue'),
+        meta: { title: '用户管理', requiresAuth: true, roles: ['ADMIN'] }
+      },
+      {
+        path: 'qualification',
+        name: 'AdminQualification',
+        component: () => import('@/views/admin/qualification.vue'),
+        meta: { title: '资质审核', requiresAuth: true, roles: ['ADMIN'] }
+      },
+      {
+        path: 'credit',
+        name: 'AdminCredit',
+        component: () => import('@/views/admin/credit.vue'),
+        meta: { title: '信用管理', requiresAuth: true, roles: ['ADMIN'] }
+      },
+      {
+        path: 'logs',
+        name: 'AdminLogs',
+        component: () => import('@/views/admin/logs.vue'),
+        meta: { title: '系统日志', requiresAuth: true, roles: ['ADMIN'] }
+      },
+      {
+        path: 'complaints',
+        name: 'AdminComplaints',
+        component: () => import('@/views/admin/complaints.vue'),
+        meta: { title: '投诉仲裁', requiresAuth: true, roles: ['ADMIN'] }
+      },
+      {
+        path: 'profile',
+        name: 'AdminProfile',
+        component: () => import('@/views/admin/profile.vue'),
+        meta: { title: '个人中心', requiresAuth: true, roles: ['ADMIN'] }
+      }
+    ]
+  },
+  
   {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
@@ -99,17 +268,43 @@ router.beforeEach((to, from, next) => {
   
   const userStore = useUserStore()
   
+  console.log('=== Route Guard Start ===')
+  console.log('to.path:', to.path, 'to.meta:', JSON.stringify(to.meta))
+  console.log('from.path:', from.path)
+  console.log('userStore.isLoggedIn:', userStore.isLoggedIn)
+  console.log('userStore.userType:', userStore.userType)
+  console.log('userStore.userInfo:', JSON.stringify(userStore.userInfo))
+  
   if (to.meta.requiresAuth && !userStore.isLoggedIn) {
+    console.log('Route guard: Not logged in, redirect to login')
     next({
       path: '/login',
       query: { redirect: to.fullPath }
     })
-  } else if (to.meta.roles && !to.meta.roles.includes(userStore.userType)) {
-    next({ path: '/' })
-    NProgress.done()
-  } else {
-    next()
+    return
   }
+  
+  if (to.meta.roles && userStore.isLoggedIn && userStore.userInfo) {
+    console.log('Route guard: Checking roles. Required:', to.meta.roles, 'UserType:', userStore.userType)
+    if (!to.meta.roles.includes(userStore.userType)) {
+      console.log('Route guard: Role mismatch! Redirecting to appropriate dashboard')
+      let redirectPath = '/'
+      if (userStore.userType === 'ADMIN') {
+        redirectPath = '/admin'
+      } else if (userStore.userType === 'LANDLORD') {
+        redirectPath = '/landlord'
+      } else if (userStore.userType === 'TENANT') {
+        redirectPath = '/tenant'
+      }
+      
+      console.log('Route guard: Redirecting to:', redirectPath)
+      next(redirectPath)
+      return
+    }
+  }
+  
+  console.log('Route guard: Proceeding to:', to.path)
+  next()
 })
 
 router.afterEach(() => {

@@ -4,18 +4,18 @@
 
     <!-- 统计指定用户的登录失败次数（24小时内） -->
     <select id="countLoginFailuresByUsername" resultType="java.lang.Integer">
-        SELECT COUNT(*) FROM biz_login_log 
+        SELECT COUNT(*) FROM sys_login_log 
         WHERE username = #{username} 
-        AND login_result = 0 
-        AND created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
+        AND login_status = 0 
+        AND login_time >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
     </select>
 
     <!-- 统计指定IP的登录失败次数（24小时内） -->
     <select id="countLoginFailuresByIp" resultType="java.lang.Integer">
-        SELECT COUNT(*) FROM biz_login_log 
+        SELECT COUNT(*) FROM sys_login_log 
         WHERE login_ip = #{ip} 
-        AND login_result = 0 
-        AND created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
+        AND login_status = 0 
+        AND login_time >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
     </select>
 
 </mapper>

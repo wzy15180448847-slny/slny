@@ -42,18 +42,23 @@ public class LoginLogServiceImpl implements LoginLogService {
 
     @Override
     public boolean checkLoginFailureLimit(String username, String ip) {
-        // 检查用户登录失败次数
-        int userFailureCount = loginLogMapper.countLoginFailuresByUsername(username);
-        if (userFailureCount >= loginFailureLimit) {
-            log.warn("用户 {} 登录失败次数超过限制: {}次", username, userFailureCount);
-            return true;
-        }
+        try {
+            // 检查用户登录失败次数
+            int userFailureCount = loginLogMapper.countLoginFailuresByUsername(username);
+            if (userFailureCount >= loginFailureLimit) {
+                log.warn("用户 {} 登录失败次数超过限制: {}次", username, userFailureCount);
+                return true;
+            }
 
-        // 检查IP登录失败次数
-        int ipFailureCount = loginLogMapper.countLoginFailuresByIp(ip);
-        if (ipFailureCount >= loginFailureLimit * 2) { // IP限制更严格
-            log.warn("IP {} 登录失败次数超过限制: {}次", ip, ipFailureCount);
-            return true;
+            // 检查IP登录失败次数
+            int ipFailureCount = loginLogMapper.countLoginFailuresByIp(ip);
+            if (ipFailureCount >= loginFailureLimit * 2) { // IP限制更严格
+                log.warn("IP {} 登录失败次数超过限制: {}次", ip, ipFailureCount);
+                return true;
+            }
+        } catch (Exception e) {
+            log.warn("检查登录失败次数时发生异常: {}", e.getMessage());
+            // 如果表不存在或其他异常，不限制登录
         }
 
         return false;
@@ -61,7 +66,12 @@ public class LoginLogServiceImpl implements LoginLogService {
 
     @Override
     public void saveLoginLog(LoginLog loginLog) {
-        loginLogMapper.insert(loginLog);
+        try {
+            loginLogMapper.insert(loginLog);
+        } catch (Exception e) {
+            log.warn("保存登录日志时发生异常: {}", e.getMessage());
+            // 如果表不存在或其他异常，忽略日志保存
+        }
     }
 
     /**

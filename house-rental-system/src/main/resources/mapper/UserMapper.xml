@@ -4,73 +4,73 @@
 
     <!-- 根据用户名查询用户 -->
     <select id="selectByUsername" resultType="com.houserental.entity.User">
-        SELECT * FROM sys_user WHERE username = #{username} AND deleted = 0
+        SELECT * FROM sys_user WHERE username = #{username} AND is_deleted = 0
     </select>
 
     <!-- 根据手机号查询用户 -->
     <select id="selectByPhone" resultType="com.houserental.entity.User">
-        SELECT * FROM sys_user WHERE phone = #{phone} AND deleted = 0
+        SELECT * FROM sys_user WHERE phone = #{phone} AND is_deleted = 0
     </select>
 
     <!-- 根据邮箱查询用户 -->
     <select id="selectByEmail" resultType="com.houserental.entity.User">
-        SELECT * FROM sys_user WHERE email = #{email} AND deleted = 0
+        SELECT * FROM sys_user WHERE email = #{email} AND is_deleted = 0
     </select>
 
     <!-- 检查用户名是否存在 -->
     <select id="existsByUsername" resultType="java.lang.Boolean">
-        SELECT COUNT(*) > 0 FROM sys_user WHERE username = #{username} AND deleted = 0
+        SELECT COUNT(*) > 0 FROM sys_user WHERE username = #{username} AND is_deleted = 0
     </select>
 
     <!-- 检查手机号是否存在 -->
     <select id="existsByPhone" resultType="java.lang.Boolean">
-        SELECT COUNT(*) > 0 FROM sys_user WHERE phone = #{phone} AND deleted = 0
+        SELECT COUNT(*) > 0 FROM sys_user WHERE phone = #{phone} AND is_deleted = 0
     </select>
 
     <!-- 检查邮箱是否存在 -->
     <select id="existsByEmail" resultType="java.lang.Boolean">
-        SELECT COUNT(*) > 0 FROM sys_user WHERE email = #{email} AND deleted = 0
+        SELECT COUNT(*) > 0 FROM sys_user WHERE email = #{email} AND is_deleted = 0
     </select>
 
     <!-- 根据用户类型查询用户列表 -->
     <select id="selectByUserType" resultType="com.houserental.entity.User">
-        SELECT * FROM sys_user WHERE user_type = #{userType} AND deleted = 0
+        SELECT * FROM sys_user WHERE user_type = #{userType} AND is_deleted = 0
     </select>
 
     <!-- 根据状态查询用户列表 -->
     <select id="selectByStatus" resultType="com.houserental.entity.User">
-        SELECT * FROM sys_user WHERE status = #{status} AND deleted = 0
+        SELECT * FROM sys_user WHERE status = #{status} AND is_deleted = 0
     </select>
 
     <!-- 根据用户名或手机号查询用户 -->
     <select id="selectByUsernameOrPhone" resultType="com.houserental.entity.User">
         SELECT * FROM sys_user 
-        WHERE (username = #{account} OR phone = #{account}) AND deleted = 0
+        WHERE (username = #{account} OR phone = #{account}) AND is_deleted = 0
     </select>
 
     <!-- 查询用户角色 -->
     <select id="selectRolesByUserId" resultType="java.lang.String">
         SELECT r.role_code FROM sys_role r 
         INNER JOIN sys_user_role ur ON r.id = ur.role_id 
-        WHERE ur.user_id = #{userId} AND r.deleted = 0
+        WHERE ur.user_id = #{userId} AND r.is_deleted = 0
     </select>
 
     <!-- 查询用户权限 -->
     <select id="selectPermissionsByUserId" resultType="java.lang.String">
         SELECT DISTINCT p.perm_code FROM sys_permission p 
-        INNER JOIN sys_role_permission rp ON p.id = rp.perm_id 
+        INNER JOIN sys_role_permission rp ON p.id = rp.permission_id 
         INNER JOIN sys_user_role ur ON rp.role_id = ur.role_id 
-        WHERE ur.user_id = #{userId} AND p.deleted = 0
+        WHERE ur.user_id = #{userId} AND p.is_deleted = 0
     </select>
 
     <!-- 根据用户类型统计数量 -->
     <select id="countByUserType" resultType="java.lang.Long">
-        SELECT COUNT(*) FROM sys_user WHERE user_type = #{userType} AND deleted = 0
+        SELECT COUNT(*) FROM sys_user WHERE user_type = #{userType} AND is_deleted = 0
     </select>
 
     <!-- 统计今日新增用户数量 -->
     <select id="countTodayNew" resultType="java.lang.Long">
-        SELECT COUNT(*) FROM sys_user WHERE DATE(created_time) = CURDATE() AND deleted = 0
+        SELECT COUNT(*) FROM sys_user WHERE DATE(created_time) = CURDATE() AND is_deleted = 0
     </select>
 
 </mapper>

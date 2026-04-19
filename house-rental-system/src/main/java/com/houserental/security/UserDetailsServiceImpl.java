@@ -47,7 +47,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         permissions.forEach(permission -> authorities.add(new SimpleGrantedAuthority(permission)));
 
         return org.springframework.security.core.userdetails.User.builder()
-                .username(user.getUsername())
+                .username(String.valueOf(user.getId()))
                 .password(user.getPassword())
                 .authorities(authorities)
                 .accountLocked(user.getStatus() == 2)

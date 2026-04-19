@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName("notification")
+@TableName("sys_notification")
 public class Notification extends BaseEntity {
 
     /**

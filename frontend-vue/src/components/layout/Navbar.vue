@@ -23,9 +23,9 @@
           <el-dropdown @command="handleCommand">
             <div class="user-info">
               <el-avatar :size="35" class="user-avatar">
-                {{ userStore.nickname.charAt(0) }}
+                {{ (userStore.nickname || '用户').charAt(0) }}
               </el-avatar>
-              <span class="username">{{ userStore.nickname }}</span>
+              <span class="username">{{ userStore.nickname || '用户' }}</span>
               <el-icon><ArrowDown /></el-icon>
             </div>
             <template #dropdown>
@@ -45,6 +45,10 @@
                 <el-dropdown-item command="appointments">
                   <el-icon><Calendar /></el-icon>
                   我的预约
+                </el-dropdown-item>
+                <el-dropdown-item command="admin" v-if="isAdmin">
+                  <el-icon><Setting /></el-icon>
+                  管理员后台
                 </el-dropdown-item>
                 <el-dropdown-item divided command="logout">
                   <el-icon><SwitchButton /></el-icon>
@@ -76,6 +80,10 @@ const canPublish = computed(() => {
   return ['LANDLORD', 'AGENT'].includes(userStore.userType)
 })
 
+const isAdmin = computed(() => {
+  return userStore.userType === 'ADMIN'
+})
+
 const handleCommand = async (command) => {
   switch (command) {
     case 'profile':
@@ -89,6 +97,9 @@ const handleCommand = async (command) => {
       break
     case 'appointments':
       router.push('/my-appointments')
+      break
+    case 'admin':
+      router.push('/admin')
       break
     case 'logout':
       try {

@@ -9,7 +9,7 @@ import java.math.BigDecimal;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
-@TableName("user_wallet")
+@TableName("biz_user_wallet")
 public class UserWallet extends BaseEntity {
 
     private Long userId;

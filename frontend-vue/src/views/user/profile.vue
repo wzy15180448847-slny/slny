@@ -84,16 +84,12 @@
               </div>
               
               <div class="form-row">
-                <el-form-item prop="userType">
-                  <el-select 
-                    v-model="profileForm.userType"
-                    placeholder="用户类型"
+                <el-form-item prop="realName">
+                  <el-input 
+                    v-model="profileForm.realName"
+                    placeholder="真实姓名"
                     :disabled="!isEditing"
-                  >
-                    <el-option label="租客" value="TENANT" />
-                    <el-option label="房东" value="LANDLORD" />
-                    <el-option label="经纪人" value="AGENT" />
-                  </el-select>
+                  />
                 </el-form-item>
                 
                 <el-form-item prop="gender">
@@ -102,22 +98,10 @@
                     placeholder="性别"
                     :disabled="!isEditing"
                   >
-                    <el-option label="男" value="MALE" />
-                    <el-option label="女" value="FEMALE" />
-                    <el-option label="保密" value="OTHER" />
+                    <el-option label="男" :value="1" />
+                    <el-option label="女" :value="2" />
+                    <el-option label="保密" :value="0" />
                   </el-select>
-                </el-form-item>
-              </div>
-              
-              <div class="form-row">
-                <el-form-item prop="bio" class="full-width">
-                  <el-input 
-                    v-model="profileForm.bio"
-                    type="textarea"
-                    placeholder="个人简介"
-                    :disabled="!isEditing"
-                    rows="3"
-                  />
                 </el-form-item>
               </div>
               
@@ -265,7 +249,7 @@ const profileForm = reactive({
   nickname: '',
   userType: '',
   gender: '',
-  bio: ''
+  realName: ''
 })
 
 const profileRules = {

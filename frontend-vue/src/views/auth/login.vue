@@ -114,6 +114,8 @@ import { ref, reactive } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/store/user'
+import { login } from '@/api/auth'
+import { setToken } from '@/utils/auth'
 
 const router = useRouter()
 const route = useRoute()
@@ -147,17 +149,61 @@ const handleLogin = async () => {
     
     loading.value = true
     try {
-      await userStore.login({
+      const response = await login({
         username: loginForm.username,
         password: loginForm.password
       })
       
+      console.log('Full response:', response)
+      
+      if (!response) {
+        throw new Error('登录响应为空')
+      }
+      
+      let loginData = null
+      
+      if (response.data && response.data.token) {
+        loginData = response.data
+      } else if (response.data && response.data.data && response.data.data.token) {
+        loginData = response.data.data
+      } else {
+        throw new Error('登录数据格式错误')
+      }
+      
+      console.log('Login data:', loginData)
+      
+      userStore.token = loginData.token
+      userStore.userInfo = loginData.user || {}
+      setToken(loginData.token)
+      
       ElMessage.success('登录成功')
       
-      const redirect = route.query.redirect || '/'
-      router.push(redirect)
+      const userType = loginData.user?.userType
+      console.log('User type:', userType)
+      
+      const redirect = route.query.redirect
+      let targetPath = redirect
+      
+      if (!targetPath) {
+        if (userType === 'ADMIN') {
+          targetPath = '/admin'
+        } else if (userType === 'LANDLORD') {
+          targetPath = '/landlord'
+        } else {
+          targetPath = '/tenant'
+        }
+      }
+      
+      console.log('Navigating to:', targetPath)
+      await router.push(targetPath).then(() => {
+        console.log('Navigation successful')
+      }).catch((err) => {
+        console.error('Navigation failed:', err)
+        ElMessage.error('页面跳转失败: ' + err.message)
+      })
     } catch (error) {
-      console.error(error)
+      console.error('Login error:', error)
+      ElMessage.error(error.message || '登录失败')
     } finally {
       loading.value = false
     }

@@ -4,33 +4,33 @@
 
     <!-- 根据房源编号查询 -->
     <select id="selectByHouseNo" resultType="com.houserental.entity.House">
-        SELECT * FROM biz_house WHERE house_no = #{houseNo} AND deleted = 0
+        SELECT * FROM biz_house WHERE house_no = #{houseNo} AND is_deleted = 0
     </select>
 
     <!-- 根据房东ID查询房源列表 -->
     <select id="selectByLandlordId" resultType="com.houserental.entity.House">
-        SELECT * FROM biz_house WHERE landlord_id = #{landlordId} AND deleted = 0
+        SELECT * FROM biz_house WHERE landlord_id = #{landlordId} AND is_deleted = 0
     </select>
 
     <!-- 根据房东ID和状态查询房源列表 -->
     <select id="selectByLandlordIdAndStatus" resultType="com.houserental.entity.House">
-        SELECT * FROM biz_house WHERE landlord_id = #{landlordId} AND status = #{status} AND deleted = 0
+        SELECT * FROM biz_house WHERE landlord_id = #{landlordId} AND status = #{status} AND is_deleted = 0
     </select>
 
     <!-- 根据城市查询房源列表 -->
     <select id="selectByCityAndStatus" resultType="com.houserental.entity.House">
-        SELECT * FROM biz_house WHERE city = #{city} AND status = #{status} AND deleted = 0
+        SELECT * FROM biz_house WHERE city = #{city} AND status = #{status} AND is_deleted = 0
     </select>
 
     <!-- 根据城市和区域查询房源列表 -->
     <select id="selectByCityAndDistrictAndStatus" resultType="com.houserental.entity.House">
-        SELECT * FROM biz_house WHERE city = #{city} AND district = #{district} AND status = #{status} AND deleted = 0
+        SELECT * FROM biz_house WHERE city = #{city} AND district = #{district} AND status = #{status} AND is_deleted = 0
     </select>
 
     <!-- 多条件查询房源 -->
     <select id="searchHouses" resultType="com.houserental.entity.House">
         SELECT * FROM biz_house 
-        WHERE deleted = 0 AND status = #{status}
+        WHERE is_deleted = 0 AND status = #{status}
         <if test="city != null and city != ''">
             AND city = #{city}
         </if>
@@ -59,12 +59,12 @@
 
     <!-- 查询推荐房源（按浏览量排序） -->
     <select id="selectRecommendHouses" resultType="com.houserental.entity.House">
-        SELECT * FROM biz_house WHERE deleted = 0 AND status = 2 ORDER BY view_count DESC LIMIT #{limit}
+        SELECT * FROM biz_house WHERE is_deleted = 0 AND status = 2 ORDER BY view_count DESC LIMIT #{limit}
     </select>
 
     <!-- 查询最新房源 -->
     <select id="selectLatestHouses" resultType="com.houserental.entity.House">
-        SELECT * FROM biz_house WHERE deleted = 0 AND status = 2 ORDER BY create_time DESC LIMIT #{limit}
+        SELECT * FROM biz_house WHERE is_deleted = 0 AND status = 2 ORDER BY create_time DESC LIMIT #{limit}
     </select>
 
     <!-- 增加浏览次数 -->
@@ -84,27 +84,27 @@
 
     <!-- 统计房东的房源数量 -->
     <select id="countByLandlordIdAndDeleted" resultType="java.lang.Long">
-        SELECT COUNT(*) FROM biz_house WHERE landlord_id = #{landlordId} AND deleted = #{deleted}
+        SELECT COUNT(*) FROM biz_house WHERE landlord_id = #{landlordId} AND is_deleted = #{is_deleted}
     </select>
 
     <!-- 统计各状态的房源数量 -->
     <select id="countByStatusAndDeleted" resultType="java.lang.Long">
-        SELECT COUNT(*) FROM biz_house WHERE status = #{status} AND deleted = #{deleted}
+        SELECT COUNT(*) FROM biz_house WHERE status = #{status} AND is_deleted = #{is_deleted}
     </select>
 
     <!-- 统计今日新增房源数量 -->
     <select id="countTodayNew" resultType="java.lang.Long">
-        SELECT COUNT(*) FROM biz_house WHERE DATE(created_time) = CURDATE() AND deleted = 0
+        SELECT COUNT(*) FROM biz_house WHERE DATE(created_time) = CURDATE() AND is_deleted = 0
     </select>
 
     <!-- 统计待审核房源数量 -->
     <select id="countPendingAudit" resultType="java.lang.Long">
-        SELECT COUNT(*) FROM biz_house WHERE audit_status = 0 AND deleted = 0
+        SELECT COUNT(*) FROM biz_house WHERE audit_status = 0 AND is_deleted = 0
     </select>
 
     <!-- 统计所有未删除房源数量 -->
     <select id="countAllByDeleted" resultType="java.lang.Long">
-        SELECT COUNT(*) FROM biz_house WHERE deleted = #{deleted}
+        SELECT COUNT(*) FROM biz_house WHERE is_deleted = #{is_deleted}
     </select>
 
 </mapper>

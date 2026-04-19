@@ -102,7 +102,7 @@ public class ComplaintServiceImpl extends ServiceImpl<ComplaintMapper, Complaint
     public PageResult<Complaint> getProcessingList(int page, int size) {
         Page<Complaint> pageInfo = new Page<>(page, size);
         QueryWrapper<Complaint> wrapper = new QueryWrapper<>();
-        wrapper.eq("status", 1).orderByDesc("created_time");
+        wrapper.in("status", 2, 3).orderByDesc("process_time");
         page(pageInfo, wrapper);
 
         return PageResult.build((long) page, (long) size, pageInfo.getTotal(), pageInfo.getRecords());

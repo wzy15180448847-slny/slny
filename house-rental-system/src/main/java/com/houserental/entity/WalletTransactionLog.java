@@ -8,7 +8,7 @@ import java.math.BigDecimal;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
-@TableName("wallet_transaction_log")
+@TableName("biz_wallet_transaction")
 public class WalletTransactionLog extends BaseEntity {
 
     private Long userId;

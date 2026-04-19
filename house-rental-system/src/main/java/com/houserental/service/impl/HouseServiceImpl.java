@@ -104,7 +104,7 @@ public class HouseServiceImpl implements HouseService {
             throw new BusinessException("无权删除此房源");
         }
 
-        house.setDeleted(1);
+        house.setIsDeleted(1);
         house.setStatus(3); // 设置为已下架状态
         houseMapper.updateById(house);
         
@@ -116,7 +116,7 @@ public class HouseServiceImpl implements HouseService {
     @Cacheable(value = "houses", key = "#id")
     public House getById(Long id) {
         House house = houseMapper.selectById(id);
-        if (house == null || house.getDeleted() != 0) {
+        if (house == null || house.getIsDeleted() != 0) {
             throw new BusinessException(ResultCode.HOUSE_NOT_FOUND);
         }
         return house;

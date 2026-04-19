@@ -82,7 +82,7 @@ public class HouseServiceImplTest {
         House expectedHouse = new House();
         expectedHouse.setId(houseId);
         expectedHouse.setTitle("Test House");
-        expectedHouse.setDeleted(0);
+        expectedHouse.setIsDeleted(0);
 
         when(houseMapper.selectById(houseId)).thenReturn(expectedHouse);
 

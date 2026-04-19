@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { login, logout, getUserInfo } from '@/api/auth'
+import { login, logout, getUserInfo, updateProfile, updatePassword } from '@/api/auth'
 import { getToken, setToken, removeToken } from '@/utils/auth'
 
 export const useUserStore = defineStore('user', {
@@ -15,18 +15,39 @@ export const useUserStore = defineStore('user', {
     username: (state) => state.userInfo?.username || '',
     nickname: (state) => state.userInfo?.nickname || '',
     userType: (state) => state.userInfo?.userType || '',
-    avatar: (state) => state.userInfo?.avatar || ''
+    avatar: (state) => state.userInfo?.avatar || '',
+    phone: (state) => state.userInfo?.phone || '',
+    email: (state) => state.userInfo?.email || '',
+    gender: (state) => state.userInfo?.gender || '',
+    bio: (state) => state.userInfo?.bio || ''
   },
 
   actions: {
     async login(loginForm) {
       try {
-        const { data } = await login(loginForm)
+        const response = await login(loginForm)
+        const data = response.data
+        console.log('Login response:', response)
+        console.log('Login data:', data)
+        
         this.token = data.token
         setToken(data.token)
-        await this.getUserInfo()
+        
+        if (data.user) {
+          this.userInfo = data.user
+          const roles = data.user.roles
+          this.roles = typeof roles === 'string' ? (roles ? [roles] : []) : (roles || [])
+          const permissions = data.user.permissions
+          this.permissions = typeof permissions === 'string' ? (permissions ? [permissions] : []) : (permissions || [])
+        } else {
+          await this.getUserInfo()
+        }
+        
+        console.log('User type after login:', this.userType)
+        console.log('User roles:', this.roles)
         return Promise.resolve(data)
       } catch (error) {
+        console.error('Login error:', error)
         return Promise.reject(error)
       }
     },
@@ -64,6 +85,25 @@ export const useUserStore = defineStore('user', {
         this.getUserInfo().catch(() => {
           this.resetState()
         })
+      }
+    },
+
+    async updateProfile(profileData) {
+      try {
+        const { data } = await updateProfile(profileData)
+        this.userInfo = data
+        return Promise.resolve(data)
+      } catch (error) {
+        return Promise.reject(error)
+      }
+    },
+
+    async changePassword(passwordData) {
+      try {
+        const { data } = await updatePassword(passwordData)
+        return Promise.resolve(data)
+      } catch (error) {
+        return Promise.reject(error)
       }
     }
   },

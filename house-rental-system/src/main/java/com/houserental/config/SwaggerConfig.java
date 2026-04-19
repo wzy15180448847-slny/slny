@@ -1,16 +1,7 @@
 package com.houserental.config;
 
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
-import springfox.documentation.builders.ApiInfoBuilder;
-import springfox.documentation.builders.PathSelectors;
-import springfox.documentation.builders.RequestHandlerSelectors;
-import springfox.documentation.service.ApiInfo;
-import springfox.documentation.service.Contact;
-import springfox.documentation.spi.DocumentationType;
-import springfox.documentation.spring.web.plugins.Docket;
-import springfox.documentation.swagger2.annotations.EnableSwagger2WebMvc;
 
 /**
  * Swagger配置类
@@ -18,25 +9,7 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2WebMvc;
  */
 //@Configuration
 //@Profile({"dev", "test"})
-//@EnableSwagger2WebMvc
 public class SwaggerConfig {
-
-    @Bean
-    public Docket api() {
-        return new Docket(DocumentationType.OAS_30)
-                .apiInfo(apiInfo())
-                .select()
-                .apis(RequestHandlerSelectors.basePackage("com.houserental.controller"))
-                .paths(PathSelectors.any())
-                .build();
-    }
-
-    private ApiInfo apiInfo() {
-        return new ApiInfoBuilder()
-                .title("房屋租赁平台API文档")
-                .description("房屋租赁平台的RESTful API接口文档")
-                .version("1.0.0")
-                .contact(new Contact("房屋租赁平台", "http://localhost:8080/api", "service@example.com"))
-                .build();
-    }
+    // Swagger/Knife4j配置暂时禁用
+    // 如需启用，请在pom.xml中取消注释Knife4j依赖并配置相应的bean
 }

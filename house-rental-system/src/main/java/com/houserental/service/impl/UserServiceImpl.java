@@ -147,6 +147,7 @@ public class UserServiceImpl implements UserService {
                 .userId(user.getId())
                 .username(user.getUsername())
                 .nickname(user.getNickname())
+                .realName(user.getRealName())
                 .phone(user.getPhone())
                 .email(user.getEmail())
                 .avatar(user.getAvatar())
@@ -234,6 +235,12 @@ public class UserServiceImpl implements UserService {
         }
         if (user.getGender() != null) {
             existUser.setGender(user.getGender());
+        }
+        if (user.getPhone() != null) {
+            existUser.setPhone(user.getPhone());
+        }
+        if (user.getUserType() != null) {
+            existUser.setUserType(user.getUserType());
         }
 
         userMapper.updateById(existUser);

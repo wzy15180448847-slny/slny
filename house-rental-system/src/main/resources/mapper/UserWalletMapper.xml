@@ -3,27 +3,27 @@
 <mapper namespace="com.houserental.mapper.UserWalletMapper">
 
     <select id="selectByUserId" parameterType="java.lang.Long" resultType="com.houserental.entity.UserWallet">
-        SELECT id, user_id, balance, freeze_balance, created_time, updated_time, version
-        FROM user_wallet
-        WHERE user_id = #{userId}
+        SELECT user_id, balance, freeze_balance, version, is_deleted, create_time, update_time
+        FROM biz_user_wallet
+        WHERE user_id = #{userId} AND is_deleted = 0
     </select>
 
     <update id="decreaseBalanceWithOptimisticLock">
-        UPDATE user_wallet
-        SET balance = balance - #{amount}, version = version + 1
-        WHERE user_id = #{userId} AND version = #{version} AND balance >= #{amount}
+        UPDATE biz_user_wallet
+        SET balance = balance - #{amount}, version = version + 1, update_time = NOW()
+        WHERE user_id = #{userId} AND version = #{version} AND balance >= #{amount} AND is_deleted = 0
     </update>
 
     <update id="increaseBalance">
-        UPDATE user_wallet
-        SET balance = balance + #{amount}
-        WHERE user_id = #{userId}
+        UPDATE biz_user_wallet
+        SET balance = balance + #{amount}, update_time = NOW()
+        WHERE user_id = #{userId} AND is_deleted = 0
     </update>
 
     <update id="decreaseBalanceWithCheck">
-        UPDATE user_wallet
-        SET balance = balance - #{amount}
-        WHERE user_id = #{userId} AND balance >= #{amount}
+        UPDATE biz_user_wallet
+        SET balance = balance - #{amount}, update_time = NOW()
+        WHERE user_id = #{userId} AND balance >= #{amount} AND is_deleted = 0
     </update>
 
 </mapper>

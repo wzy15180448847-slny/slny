@@ -8,6 +8,7 @@ import com.houserental.service.HouseService;
 import com.houserental.service.UserService;
 import com.houserental.utils.TestDataGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -34,16 +35,46 @@ public class TestDataController {
     @Autowired
     private AppointmentService appointmentService;
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     /**
-     * 生成测试用户数据
+     * 生成管理员用户
      */
-    @PostMapping("/users")
-    public String generateUsers(@RequestParam(defaultValue = "10") int count) {
-        List<User> users = testDataGenerator.generateUsers(count);
-        for (User user : users) {
-            userService.save(user);
+    @PostMapping("/admins")
+    public String generateAdmins(@RequestParam(defaultValue = "3") int count) {
+        List<User> admins = testDataGenerator.generateAdmins(count);
+        for (User admin : admins) {
+            admin.setPassword(passwordEncoder.encode(admin.getPassword()));
+            userService.save(admin);
         }
-        return "成功生成 " + users.size() + " 个用户数据";
+        return "成功生成 " + admins.size() + " 个管理员数据";
+    }
+
+    /**
+     * 生成房东用户
+     */
+    @PostMapping("/landlords")
+    public String generateLandlords(@RequestParam(defaultValue = "10") int count) {
+        List<User> landlords = testDataGenerator.generateLandlords(count);
+        for (User landlord : landlords) {
+            landlord.setPassword(passwordEncoder.encode(landlord.getPassword()));
+            userService.save(landlord);
+        }
+        return "成功生成 " + landlords.size() + " 个房东数据";
+    }
+
+    /**
+     * 生成租客用户
+     */
+    @PostMapping("/tenants")
+    public String generateTenants(@RequestParam(defaultValue = "20") int count) {
+        List<User> tenants = testDataGenerator.generateTenants(count);
+        for (User tenant : tenants) {
+            tenant.setPassword(passwordEncoder.encode(tenant.getPassword()));
+            userService.save(tenant);
+        }
+        return "成功生成 " + tenants.size() + " 个租客数据";
     }
 
     /**
@@ -51,13 +82,11 @@ public class TestDataController {
      */
     @PostMapping("/houses")
     public String generateHouses(@RequestParam(defaultValue = "50") int count) {
-        // 获取所有房东用户
         List<User> landlords = userService.listByUserType("LANDLORD");
         if (landlords.isEmpty()) {
-            // 如果没有房东，先创建一些
-            landlords = testDataGenerator.generateUsers(5);
+            landlords = testDataGenerator.generateLandlords(5);
             for (User user : landlords) {
-                user.setUserType("LANDLORD");
+                user.setPassword(passwordEncoder.encode(user.getPassword()));
                 userService.save(user);
             }
         }
@@ -73,18 +102,15 @@ public class TestDataController {
      */
     @PostMapping("/appointments")
     public String generateAppointments(@RequestParam(defaultValue = "100") int count) {
-        // 获取所有房源
         List<House> houses = houseService.list();
         if (houses.isEmpty()) {
             return "请先生成房源数据";
         }
-        // 获取所有租客用户
         List<User> tenants = userService.listByUserType("TENANT");
         if (tenants.isEmpty()) {
-            // 如果没有租客，先创建一些
-            tenants = testDataGenerator.generateUsers(10);
+            tenants = testDataGenerator.generateTenants(10);
             for (User user : tenants) {
-                user.setUserType("TENANT");
+                user.setPassword(passwordEncoder.encode(user.getPassword()));
                 userService.save(user);
             }
         }
@@ -100,28 +126,38 @@ public class TestDataController {
      */
     @PostMapping("/all")
     public String generateAllTestData() {
-        // 生成用户数据
-        List<User> users = testDataGenerator.generateUsers(20);
-        for (User user : users) {
-            userService.save(user);
+        List<User> admins = testDataGenerator.generateAdmins(3);
+        for (User admin : admins) {
+            admin.setPassword(passwordEncoder.encode(admin.getPassword()));
+            userService.save(admin);
         }
 
-        // 生成房源数据
-        List<User> landlords = userService.listByUserType("LANDLORD");
+        List<User> landlords = testDataGenerator.generateLandlords(10);
+        for (User landlord : landlords) {
+            landlord.setPassword(passwordEncoder.encode(landlord.getPassword()));
+            userService.save(landlord);
+        }
+
+        List<User> tenants = testDataGenerator.generateTenants(20);
+        for (User tenant : tenants) {
+            tenant.setPassword(passwordEncoder.encode(tenant.getPassword()));
+            userService.save(tenant);
+        }
+
         List<House> houses = testDataGenerator.generateHouses(50, landlords);
         for (House house : houses) {
             houseService.save(house);
         }
 
-        // 生成预约数据
-        List<User> tenants = userService.listByUserType("TENANT");
         List<Appointment> appointments = testDataGenerator.generateAppointments(100, houses, tenants);
         for (Appointment appointment : appointments) {
             appointmentService.save(appointment);
         }
 
         return "成功生成所有测试数据：\n" +
-                "- 用户：" + users.size() + " 个\n" +
+                "- 管理员：" + admins.size() + " 个\n" +
+                "- 房东：" + landlords.size() + " 个\n" +
+                "- 租客：" + tenants.size() + " 个\n" +
                 "- 房源：" + houses.size() + " 个\n" +
                 "- 预约：" + appointments.size() + " 个";
     }

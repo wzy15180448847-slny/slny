@@ -27,9 +27,9 @@
             </div>
           </div>
           
-          <div v-if="house.images && house.images.length > 1" class="thumbnail-list">
+          <div v-if="houseImages && houseImages.length > 1" class="thumbnail-list">
             <div 
-              v-for="(image, index) in house.images"
+              v-for="(image, index) in houseImages"
               :key="index"
               :class="['thumbnail', { active: currentImageIndex === index }]"
               @click="currentImageIndex = index"
@@ -69,7 +69,7 @@
             </div>
             <div class="info-item">
               <span class="label">朝向</span>
-              <span class="value">{{ house.orientation }}</span>
+              <span class="value">{{ orientationText }}</span>
             </div>
             <div class="info-item">
               <span class="label">楼层</span>
@@ -179,11 +179,27 @@ const currentImageIndex = ref(0)
 const activeTab = ref('description')
 const isFavorited = ref(false)
 
+const houseImages = computed(() => {
+  if (!house.value || !house.value.images) return []
+  const images = house.value.images
+  try {
+    return typeof images === 'string' ? JSON.parse(images) : images
+  } catch {
+    return []
+  }
+})
+
 const currentImage = computed(() => {
-  if (house.value && house.value.images && house.value.images.length > 0) {
-    return house.value.images[currentImageIndex.value]
+  if (houseImages.value && houseImages.value.length > 0) {
+    return houseImages.value[currentImageIndex.value]
   }
   return null
+})
+
+const orientationText = computed(() => {
+  if (!house.value) return '未知'
+  const map = { 1: '东', 2: '南', 3: '西', 4: '北', 5: '东南', 6: '西南', 7: '东北', 8: '西北' }
+  return map[house.value.orientation] || '未知'
 })
 
 const fetchHouseDetail = async () => {

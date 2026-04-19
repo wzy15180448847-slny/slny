@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName("message_record")
+@TableName("biz_message_record")
 public class MessageRecord extends BaseEntity {
 
     /**
