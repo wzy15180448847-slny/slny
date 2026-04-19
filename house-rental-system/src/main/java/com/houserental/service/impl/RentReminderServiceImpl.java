@@ -6,6 +6,8 @@ import com.houserental.entity.LeaseAgreement;
 import com.houserental.entity.RentReminder;
 import com.houserental.mapper.LeaseAgreementMapper;
 import com.houserental.mapper.RentReminderMapper;
+import com.houserental.common.exception.BusinessException;
+import com.houserental.common.utils.SecurityUtils;
 import com.houserental.service.RentReminderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -31,13 +33,16 @@ public class RentReminderServiceImpl extends ServiceImpl<RentReminderMapper, Ren
     @Override
     @Transactional
     public RentReminder createRentReminder(Long leaseAgreementId, BigDecimal amount, Date dueDate) {
-        // 查询租约信息
         LeaseAgreement leaseAgreement = leaseAgreementMapper.selectById(leaseAgreementId);
         if (leaseAgreement == null) {
             throw new RuntimeException("租约不存在");
         }
 
-        // 创建催缴记录
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+        if (!currentUserId.equals(leaseAgreement.getLandlordId())) {
+            throw new BusinessException("无权为他人租约创建催缴单");
+        }
+
         RentReminder rentReminder = new RentReminder();
         rentReminder.setReminderNo(generateReminderNo());
         rentReminder.setLeaseAgreementId(leaseAgreementId);
@@ -45,7 +50,7 @@ public class RentReminderServiceImpl extends ServiceImpl<RentReminderMapper, Ren
         rentReminder.setLandlordId(leaseAgreement.getLandlordId());
         rentReminder.setAmount(amount);
         rentReminder.setDueDate(dueDate);
-        rentReminder.setStatus(0); // 待处理
+        rentReminder.setStatus(0);
         rentReminder.setReminderCount(0);
         rentReminder.setRemark("租金催缴 - 租约" + leaseAgreement.getLeaseNo());
 
@@ -140,12 +145,19 @@ public class RentReminderServiceImpl extends ServiceImpl<RentReminderMapper, Ren
      * 计算下一个缴费日期
      */
     private Date calculateNextDueDate(LeaseAgreement leaseAgreement) {
-        // 这里简化处理，实际应该根据付款方式和起租日期计算
-        // 例如：月付则每月同一天，季付则每三个月同一天，以此类推
-        Date now = new Date();
-        // 假设下个月的今天为缴费日期
+        RentReminder lastReminder = rentReminderMapper.selectOne(new QueryWrapper<RentReminder>()
+                .eq("lease_agreement_id", leaseAgreement.getId())
+                .orderByDesc("due_date")
+                .last("LIMIT 1"));
+
         java.util.Calendar calendar = java.util.Calendar.getInstance();
-        calendar.setTime(now);
+        
+        if (lastReminder != null && lastReminder.getDueDate() != null) {
+            calendar.setTime(lastReminder.getDueDate());
+        } else {
+            calendar.setTime(leaseAgreement.getStartDate());
+        }
+        
         calendar.add(java.util.Calendar.MONTH, 1);
         return calendar.getTime();
     }

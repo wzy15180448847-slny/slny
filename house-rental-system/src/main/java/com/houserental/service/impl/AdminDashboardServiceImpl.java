@@ -61,13 +61,11 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
 
         List<HouseStatusStats> result = new ArrayList<>();
 
-        Long pendingCount = houseMapper.countByStatusAndDeleted(0, 0);
-        Long auditedCount = houseMapper.countByStatusAndDeleted(1, 0);
-        Long onlineCount = houseMapper.countByStatusAndDeleted(2, 0);
-        Long offlineCount = houseMapper.countByStatusAndDeleted(3, 0);
-        Long terminatedCount = houseMapper.countByStatusAndDeleted(5, 0);
+        Long showingCount = houseMapper.countByStatusAndDeleted(0, 0);
+        Long rentedCount = houseMapper.countByStatusAndDeleted(1, 0);
+        Long offlineCount = houseMapper.countByStatusAndDeleted(2, 0);
 
-        Long total = pendingCount + auditedCount + onlineCount + offlineCount + terminatedCount;
+        Long total = showingCount + rentedCount + offlineCount;
 
         if (total == 0) {
             return result;
@@ -75,37 +73,23 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
 
         result.add(HouseStatusStats.builder()
                 .status(0)
-                .statusName("待审核")
-                .count(pendingCount)
-                .percentage(BigDecimal.valueOf(pendingCount * 100.0 / total))
+                .statusName("展示中")
+                .count(showingCount)
+                .percentage(BigDecimal.valueOf(showingCount * 100.0 / total))
                 .build());
 
         result.add(HouseStatusStats.builder()
                 .status(1)
-                .statusName("已审核")
-                .count(auditedCount)
-                .percentage(BigDecimal.valueOf(auditedCount * 100.0 / total))
+                .statusName("已出租")
+                .count(rentedCount)
+                .percentage(BigDecimal.valueOf(rentedCount * 100.0 / total))
                 .build());
 
         result.add(HouseStatusStats.builder()
                 .status(2)
-                .statusName("已上架")
-                .count(onlineCount)
-                .percentage(BigDecimal.valueOf(onlineCount * 100.0 / total))
-                .build());
-
-        result.add(HouseStatusStats.builder()
-                .status(3)
                 .statusName("已下架")
                 .count(offlineCount)
                 .percentage(BigDecimal.valueOf(offlineCount * 100.0 / total))
-                .build());
-
-        result.add(HouseStatusStats.builder()
-                .status(5)
-                .statusName("已终止")
-                .count(terminatedCount)
-                .percentage(BigDecimal.valueOf(terminatedCount * 100.0 / total))
                 .build());
 
         return result;

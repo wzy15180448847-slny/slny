@@ -7,7 +7,9 @@ import com.houserental.entity.Complaint;
 import com.houserental.entity.User;
 import com.houserental.mapper.ComplaintMapper;
 import com.houserental.mapper.UserMapper;
+import com.houserental.common.exception.BusinessException;
 import com.houserental.common.result.PageResult;
+import com.houserental.common.utils.SecurityUtils;
 import com.houserental.service.ComplaintService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -30,14 +32,17 @@ public class ComplaintServiceImpl extends ServiceImpl<ComplaintMapper, Complaint
     @Override
     @Transactional
     public boolean submitComplaint(Complaint complaint) {
-        // 检查投诉人和被投诉人是否存在
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+        if (!currentUserId.equals(complaint.getComplainantId())) {
+            throw new BusinessException("不能冒充他人进行投诉");
+        }
+
         User complainant = userMapper.selectById(complaint.getComplainantId());
         User respondent = userMapper.selectById(complaint.getRespondentId());
         if (complainant == null || respondent == null) {
             return false;
         }
 
-        // 设置默认值
         complaint.setStatus(0);
         complaint.setCreateTime(LocalDateTime.now());
         complaint.setUpdateTime(LocalDateTime.now());

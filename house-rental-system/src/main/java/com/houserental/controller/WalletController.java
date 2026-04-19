@@ -33,12 +33,7 @@ public class WalletController {
 
     @PostMapping("/pay-rent")
     public Result<Boolean> payRent(@Validated @RequestBody WalletPayRequest request) {
-        boolean success = walletService.payRent(
-                request.getTenantId(),
-                request.getLandlordId(),
-                request.getAmount(),
-                request.getOrderNo()
-        );
+        boolean success = walletService.payRent(request.getOrderNo());
         return Result.success(success);
     }
 

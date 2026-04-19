@@ -49,6 +49,12 @@ public class AbnormalOrder extends BaseEntity {
     private String processPlan;
 
     /**
+     * 提交人ID
+     */
+    @TableField(value = "submitter_id", exist = true)
+    private Long submitterId;
+
+    /**
      * 处理人ID
      */
     @TableField(value = "processor_id", exist = true)
@@ -107,6 +113,14 @@ public class AbnormalOrder extends BaseEntity {
 
     public void setProcessPlan(String processPlan) {
         this.processPlan = processPlan;
+    }
+
+    public Long getSubmitterId() {
+        return submitterId;
+    }
+
+    public void setSubmitterId(Long submitterId) {
+        this.submitterId = submitterId;
     }
 
     public Long getProcessorId() {

@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.houserental.entity.AbnormalOrder;
 import com.houserental.mapper.AbnormalOrderMapper;
 import com.houserental.common.result.PageResult;
+import com.houserental.common.utils.SecurityUtils;
 import com.houserental.service.AbnormalOrderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -25,14 +26,13 @@ public class AbnormalOrderServiceImpl extends ServiceImpl<AbnormalOrderMapper, A
     @Override
     @Transactional
     public boolean submitAbnormalOrder(AbnormalOrder abnormalOrder) {
-        // 检查是否已存在相同订单的异常记录
         AbnormalOrder existing = abnormalOrderMapper.selectByOrderTypeAndId(
                 abnormalOrder.getOrderType(), abnormalOrder.getOrderId());
         if (existing != null && existing.getStatus() < 2) {
             return false;
         }
 
-        // 设置默认值
+        abnormalOrder.setSubmitterId(SecurityUtils.getCurrentUserId());
         abnormalOrder.setStatus(0);
         abnormalOrder.setCreateTime(LocalDateTime.now());
         abnormalOrder.setUpdateTime(LocalDateTime.now());
@@ -48,10 +48,11 @@ public class AbnormalOrderServiceImpl extends ServiceImpl<AbnormalOrderMapper, A
             return false;
         }
 
-        // 更新处理状态
+        Long currentAdminId = SecurityUtils.getCurrentUserId();
+        
         abnormalOrder.setStatus(status);
         abnormalOrder.setProcessPlan(processPlan);
-        abnormalOrder.setProcessorId(processorId);
+        abnormalOrder.setProcessorId(currentAdminId);
         abnormalOrder.setProcessTime(LocalDateTime.now());
         abnormalOrder.setUpdateTime(LocalDateTime.now());
 

@@ -61,7 +61,7 @@ public class HouseServiceImpl implements HouseService {
     public House publish(House house) {
         house.setHouseNo(generateHouseNo());
         house.setLandlordId(SecurityUtils.getCurrentUserId());
-        house.setStatus(0);
+        house.setStatus(2);
         house.setAuditStatus(0);
         house.setViewCount(0);
         house.setFavoriteCount(0);
@@ -69,8 +69,9 @@ public class HouseServiceImpl implements HouseService {
         
         houseMapper.insert(house);
         
-        // 同步到Elasticsearch
         syncToElasticsearch(house);
+        
+        clearSearchCache();
         
         return house;
     }
@@ -88,8 +89,9 @@ public class HouseServiceImpl implements HouseService {
         updateHouseFields(existHouse, house);
         houseMapper.updateById(existHouse);
         
-        // 同步到Elasticsearch
         syncToElasticsearch(existHouse);
+        
+        clearSearchCache();
         
         return existHouse;
     }
@@ -105,11 +107,12 @@ public class HouseServiceImpl implements HouseService {
         }
 
         house.setIsDeleted(1);
-        house.setStatus(3); // 设置为已下架状态
+        house.setStatus(2);
         houseMapper.updateById(house);
         
-        // 从Elasticsearch删除
         deleteFromElasticsearch(id);
+        
+        clearSearchCache();
     }
 
     @Override
@@ -221,7 +224,6 @@ public class HouseServiceImpl implements HouseService {
     public House audit(Long houseId, Integer auditStatus, String auditRemark, Long auditorId) {
         House house = getById(houseId);
         
-        // 记录审核前的状态
         Integer beforeStatus = house.getStatus();
         Integer beforeAuditStatus = house.getAuditStatus();
         
@@ -232,20 +234,17 @@ public class HouseServiceImpl implements HouseService {
         
         if (auditStatus == 1) {
             house.setStatus(0);
-            // 审核通过，同步到Elasticsearch
             syncToElasticsearch(house);
         } else if (auditStatus == 2) {
-            // 审核拒绝，从Elasticsearch删除
             deleteFromElasticsearch(houseId);
         }
 
         houseMapper.updateById(house);
         
-        // 记录审核日志
         AuditLog auditLog = new AuditLog();
         auditLog.setHouseId(houseId);
         auditLog.setAuditorId(auditorId);
-        auditLog.setAuditorName("审核员"); // 这里可以从用户服务获取审核员姓名
+        auditLog.setAuditorName("审核员");
         auditLog.setBeforeStatus(beforeStatus);
         auditLog.setAfterStatus(house.getStatus());
         auditLog.setBeforeAuditStatus(beforeAuditStatus);
@@ -253,6 +252,8 @@ public class HouseServiceImpl implements HouseService {
         auditLog.setAuditRemark(auditRemark);
         auditLog.setAuditResult(auditStatus);
         auditLogService.save(auditLog);
+        
+        clearSearchCache();
         
         return house;
     }
@@ -267,11 +268,12 @@ public class HouseServiceImpl implements HouseService {
             throw new BusinessException("房源未通过审核，无法上架");
         }
 
-        house.setStatus(2);
+        house.setStatus(0);
         houseMapper.updateById(house);
         
-        // 上架，同步到Elasticsearch
         syncToElasticsearch(house);
+        
+        clearSearchCache();
     }
 
     @Override
@@ -279,11 +281,12 @@ public class HouseServiceImpl implements HouseService {
     @CacheEvict(value = "houses", key = "#id")
     public void offline(Long id) {
         House house = getById(id);
-        house.setStatus(3);
+        house.setStatus(2);
         houseMapper.updateById(house);
         
-        // 下架，从Elasticsearch删除
         deleteFromElasticsearch(id);
+        
+        clearSearchCache();
     }
 
     @Override
@@ -473,6 +476,13 @@ public class HouseServiceImpl implements HouseService {
         return "H" + System.currentTimeMillis() + UUID.randomUUID().toString().substring(0, 4).toUpperCase();
     }
 
+    private void clearSearchCache() {
+        Set<String> keys = redisTemplate.keys("house:search:*");
+        if (keys != null && !keys.isEmpty()) {
+            redisTemplate.delete(keys);
+        }
+    }
+
     private void updateHouseFields(House existHouse, House house) {
         if (house.getTitle() != null) existHouse.setTitle(house.getTitle());
         if (house.getDescription() != null) existHouse.setDescription(house.getDescription());
@@ -531,7 +541,7 @@ public class HouseServiceImpl implements HouseService {
         
         QueryWrapper<House> wrapper = new QueryWrapper<>();
         wrapper.eq("deleted", 0)
-               .eq("status", 2);
+               .eq("status", 0);
         
         if (keyword != null && !keyword.trim().isEmpty()) {
             wrapper.and(w -> w.like("title", keyword)
@@ -555,7 +565,7 @@ public class HouseServiceImpl implements HouseService {
         
         QueryWrapper<House> wrapper = new QueryWrapper<>();
         wrapper.eq("deleted", 0)
-               .eq("status", 2);
+               .eq("status", 0);
         
         if (keyword != null && !keyword.trim().isEmpty()) {
             wrapper.and(w -> w.like("title", keyword)

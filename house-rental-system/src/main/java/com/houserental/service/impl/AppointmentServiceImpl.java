@@ -9,7 +9,9 @@ import com.houserental.entity.User;
 import com.houserental.mapper.AppointmentMapper;
 import com.houserental.mapper.HouseMapper;
 import com.houserental.mapper.UserMapper;
+import com.houserental.common.exception.BusinessException;
 import com.houserental.common.result.PageResult;
+import com.houserental.common.utils.SecurityUtils;
 import com.houserental.service.AppointmentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -48,7 +50,13 @@ public class AppointmentServiceImpl extends ServiceImpl<AppointmentMapper, Appoi
         if (appointment == null) {
             return false;
         }
-        appointment.setStatus(1); // 已确认
+        
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+        if (!currentUserId.equals(appointment.getLandlordId())) {
+            throw new BusinessException("无权操作他人房源的预约");
+        }
+        
+        appointment.setStatus(1);
         appointment.setUpdateTime(LocalDateTime.now());
         return baseMapper.updateById(appointment) > 0;
     }
@@ -70,7 +78,13 @@ public class AppointmentServiceImpl extends ServiceImpl<AppointmentMapper, Appoi
         if (appointment == null) {
             return false;
         }
-        appointment.setStatus(3); // 已取消
+        
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+        if (!currentUserId.equals(appointment.getTenantId()) && !currentUserId.equals(appointment.getLandlordId())) {
+            throw new BusinessException("无权取消他人的预约");
+        }
+        
+        appointment.setStatus(3);
         appointment.setRemark(reason);
         appointment.setUpdateTime(LocalDateTime.now());
         return baseMapper.updateById(appointment) > 0;
@@ -82,7 +96,13 @@ public class AppointmentServiceImpl extends ServiceImpl<AppointmentMapper, Appoi
         if (appointment == null) {
             return false;
         }
-        appointment.setStatus(4); // 已拒绝
+        
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+        if (!currentUserId.equals(appointment.getLandlordId())) {
+            throw new BusinessException("无权操作他人房源的预约");
+        }
+        
+        appointment.setStatus(4);
         appointment.setRemark(reason);
         appointment.setUpdateTime(LocalDateTime.now());
         return baseMapper.updateById(appointment) > 0;
