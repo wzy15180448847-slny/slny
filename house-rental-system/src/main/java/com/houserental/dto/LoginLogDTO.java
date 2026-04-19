@@ -36,7 +36,7 @@ public class LoginLogDTO {
     private String loginDevice;
 
     /**
-     * 登录结果（0-失败，1-成功）
+     * 登录状态（0-失败，1-成功）
      */
     private Integer loginResult;
 

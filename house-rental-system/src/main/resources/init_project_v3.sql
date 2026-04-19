@@ -1,5 +1,9 @@
--- House-Eco 3.0 数据库初始化脚本
--- 执行前请确保数据库已创建: CREATE DATABASE IF NOT EXISTS house_eco CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+-- House-Eco V3.0 数据库初始化脚本
+
+-- 删除旧数据库
+DROP DATABASE IF EXISTS `house_eco`;
+CREATE DATABASE `house_eco` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE `house_eco`;
 
 -- 删除旧表结构（按外键依赖关系排序）
 SET FOREIGN_KEY_CHECKS = 0;
@@ -120,7 +124,7 @@ CREATE TABLE sys_login_log (
     FOREIGN KEY (user_id) REFERENCES sys_user(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='登录日志表';
 
--- 7. biz_house (房源主表)
+-- 7. biz_house (房源主表) - V3.0 结构修改
 CREATE TABLE biz_house (
     id BIGINT(20) PRIMARY KEY AUTO_INCREMENT COMMENT '房源ID',
     landlord_id BIGINT(20) NOT NULL COMMENT '房东ID',
@@ -156,7 +160,7 @@ CREATE TABLE biz_house (
     contact_phone VARCHAR(20) COMMENT '联系人电话',
     view_time_type TINYINT(1) COMMENT '看房时间类型: 1-随时, 2-周末, 3-工作日, 4-提前预约',
     available_date DATETIME COMMENT '可入住时间',
-    status TINYINT(1) DEFAULT 0 COMMENT '状态: 0-草稿, 1-待审核, 2-已发布, 3-已下架, 4-已出租',
+    house_status TINYINT(1) DEFAULT 2 COMMENT '房源状态: 0-展示中, 1-已租, 2-已下架',
     audit_status TINYINT(1) DEFAULT 0 COMMENT '审核状态: 0-待审核, 1-通过, 2-驳回',
     audit_remark VARCHAR(500) COMMENT '审核意见',
     auditor_id BIGINT(20) COMMENT '审核人ID',
@@ -207,19 +211,26 @@ CREATE TABLE biz_appointment (
     FOREIGN KEY (landlord_id) REFERENCES sys_user(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='预约表';
 
--- 10. biz_lease_agreement (合同表)
+-- 10. biz_lease_agreement (合同表) - V3.0 结构修改
 CREATE TABLE biz_lease_agreement (
     id BIGINT(20) PRIMARY KEY AUTO_INCREMENT COMMENT '合同ID',
-    agreement_no VARCHAR(50) UNIQUE NOT NULL COMMENT '合同编号',
+    contract_no VARCHAR(50) UNIQUE NOT NULL COMMENT '合同编号',
     house_id BIGINT(20) NOT NULL COMMENT '房源ID',
     tenant_id BIGINT(20) NOT NULL COMMENT '租客ID',
     landlord_id BIGINT(20) NOT NULL COMMENT '房东ID',
     start_date DATE NOT NULL COMMENT '开始日期',
     end_date DATE NOT NULL COMMENT '结束日期',
-    monthly_rent DECIMAL(15,2) NOT NULL COMMENT '月租金',
+    rent_price DECIMAL(15,2) NOT NULL COMMENT '月租金',
     deposit DECIMAL(15,2) NOT NULL COMMENT '押金',
-    status TINYINT(1) DEFAULT 0 COMMENT '状态: 0-待签, 1-生效, 2-到期, 3-终止',
+    payment_way TINYINT(1) COMMENT '付款方式',
+    status TINYINT(1) DEFAULT 0 COMMENT '状态: 0-待签, 1-已签署, 2-已生效, 3-已到期, 4-已解约, 5-已终止',
+    tenant_signature TEXT COMMENT '租客电子签名(Base64)',
+    landlord_signature TEXT COMMENT '房东电子签名(Base64)',
     contract_url VARCHAR(255) COMMENT '合同文件URL',
+    signing_date DATE COMMENT '签署日期',
+    effective_date DATE COMMENT '生效日期',
+    termination_date DATE COMMENT '终止日期',
+    penalty_rule VARCHAR(500) COMMENT '违约金规则',
     is_deleted TINYINT(1) DEFAULT 0 COMMENT '逻辑删除',
     create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
@@ -285,7 +296,8 @@ CREATE TABLE biz_wallet_transaction (
 CREATE TABLE biz_payment_record (
     id BIGINT(20) PRIMARY KEY AUTO_INCREMENT COMMENT '支付记录ID',
     order_no VARCHAR(50) UNIQUE NOT NULL COMMENT '订单号',
-    user_id BIGINT(20) NOT NULL COMMENT '用户ID',
+    tenant_id BIGINT(20) NOT NULL COMMENT '租客ID',
+    lease_id BIGINT(20) COMMENT '租约ID',
     amount DECIMAL(15,2) NOT NULL COMMENT '支付金额',
     pay_type TINYINT(1) COMMENT '支付类型: 1-支付宝, 2-微信, 3-钱包',
     status TINYINT(1) DEFAULT 0 COMMENT '状态: 0-待支付, 1-支付成功, 2-支付失败, 3-已退款',
@@ -293,7 +305,8 @@ CREATE TABLE biz_payment_record (
     is_deleted TINYINT(1) DEFAULT 0 COMMENT '逻辑删除',
     create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    FOREIGN KEY (user_id) REFERENCES sys_user(id)
+    FOREIGN KEY (tenant_id) REFERENCES sys_user(id),
+    FOREIGN KEY (lease_id) REFERENCES biz_lease_agreement(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='支付记录表';
 
 -- 16. biz_evaluation (双向评价表)
@@ -465,7 +478,7 @@ INSERT INTO sys_permission (perm_code, perm_name, path, method) VALUES
 ('tenant:bills', '账单管理', '/tenant/bills', 'GET'),
 ('tenant:wallet', '钱包管理', '/tenant/wallet', 'GET');
 
--- 初始化管理员账号
+-- 初始化管理员账号 (密码: admin123)
 INSERT INTO sys_user (username, password, real_name, user_type, status) VALUES 
 ('admin', '$2a$10$N9qo8uLOickgx2ZMRZoMye.IjzqAKL9xL5jvMFVdNJHvGCgTq/VEq', '系统管理员', 'ADMIN', 1);
 
@@ -476,3 +489,12 @@ INSERT INTO sys_role_permission (role_id, permission_id) VALUES
 (1, 1), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7),
 (2, 8), (2, 9), (2, 10), (2, 11), (2, 12),
 (3, 13), (3, 14), (3, 15), (3, 16), (3, 17);
+
+-- 初始化测试用户数据
+INSERT INTO sys_user (username, password, real_name, user_type, phone, status) VALUES 
+('landlord0', '$2a$10$N9qo8uLOickgx2ZMRZoMye.IjzqAKL9xL5jvMFVdNJHvGCgTq/VEq', '房东张', 'LANDLORD', '13800138001', 1),
+('landlord1', '$2a$10$N9qo8uLOickgx2ZMRZoMye.IjzqAKL9xL5jvMFVdNJHvGCgTq/VEq', '房东李', 'LANDLORD', '13800138002', 1),
+('tenant0', '$2a$10$N9qo8uLOickgx2ZMRZoMye.IjzqAKL9xL5jvMFVdNJHvGCgTq/VEq', '租客王', 'TENANT', '13900139001', 1),
+('tenant1', '$2a$10$N9qo8uLOickgx2ZMRZoMye.IjzqAKL9xL5jvMFVdNJHvGCgTq/VEq', '租客赵', 'TENANT', '13900139002', 1);
+
+INSERT INTO sys_user_role (user_id, role_id) VALUES (2, 2), (3, 2), (4, 3), (5, 3);

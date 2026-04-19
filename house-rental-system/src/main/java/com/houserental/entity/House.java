@@ -212,10 +212,10 @@ public class House extends BaseEntity {
     private Integer minLeaseTerm = 12;
 
     /**
-     * 状态（0-草稿，1-待审核，2-已发布，3-已下架，4-已出租）
+     * 房源状态（0-展示中，1-已租，2-已下架）
      */
-    @TableField(value = "status", exist = true)
-    private Integer status = 0;
+    @TableField(value = "house_status", exist = true)
+    private Integer houseStatus = 2;
 
     /**
      * 审核状态（0-待审核，1-审核通过，2-审核拒绝）
@@ -524,12 +524,12 @@ public class House extends BaseEntity {
         this.minLeaseTerm = minLeaseTerm;
     }
 
-    public Integer getStatus() {
-        return status;
+    public Integer getHouseStatus() {
+        return houseStatus;
     }
 
-    public void setStatus(Integer status) {
-        this.status = status;
+    public void setHouseStatus(Integer houseStatus) {
+        this.houseStatus = houseStatus;
     }
 
     public Integer getAuditStatus() {

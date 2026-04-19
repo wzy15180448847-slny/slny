@@ -74,7 +74,7 @@ public class LeaseAgreementServiceImpl extends ServiceImpl<LeaseAgreementMapper,
             throw new com.houserental.common.exception.BusinessException("房源不存在");
         }
 
-        if (house.getStatus() != null && house.getStatus() == 4) {
+        if (house.getHouseStatus() != null && house.getHouseStatus() == 1) {
             throw new com.houserental.common.exception.BusinessException("该房源已出租，无法重复发起合同");
         }
 

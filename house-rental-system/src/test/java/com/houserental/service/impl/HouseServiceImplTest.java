@@ -107,7 +107,7 @@ public class HouseServiceImplTest {
 
         houseService.online(houseId);
 
-        assertEquals(2, existingHouse.getStatus());
+        assertEquals(0, existingHouse.getHouseStatus());
         verify(houseMapper, times(1)).updateById(existingHouse);
     }
 
@@ -123,7 +123,7 @@ public class HouseServiceImplTest {
 
         houseService.offline(houseId);
 
-        assertEquals(3, existingHouse.getStatus());
+        assertEquals(2, existingHouse.getHouseStatus());
         verify(houseMapper, times(1)).updateById(existingHouse);
     }
 }

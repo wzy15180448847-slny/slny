@@ -12,6 +12,12 @@ public class LoginLog extends BaseEntity {
     private static final long serialVersionUID = 1L;
 
     /**
+     * 用户ID
+     */
+    @TableField(value = "user_id", exist = true)
+    private Long userId;
+
+    /**
      * 用户名
      */
     @TableField(value = "username", exist = true)
@@ -20,8 +26,8 @@ public class LoginLog extends BaseEntity {
     /**
      * 登录IP
      */
-    @TableField(value = "login_ip", exist = true)
-    private String loginIp;
+    @TableField(value = "ip_address", exist = true)
+    private String ipAddress;
 
     /**
      * 登录地点
@@ -36,10 +42,10 @@ public class LoginLog extends BaseEntity {
     private String loginDevice;
 
     /**
-     * 登录结果（0-失败，1-成功）
+     * 登录状态（0-失败，1-成功）
      */
-    @TableField(value = "login_result", exist = true)
-    private Integer loginResult;
+    @TableField(value = "status", exist = true)
+    private Integer status;
 
     /**
      * 失败原因
@@ -48,6 +54,14 @@ public class LoginLog extends BaseEntity {
     private String failReason;
 
     // Getters and Setters
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
+    }
+
     public String getUsername() {
         return username;
     }
@@ -56,12 +70,12 @@ public class LoginLog extends BaseEntity {
         this.username = username;
     }
 
-    public String getLoginIp() {
-        return loginIp;
+    public String getIpAddress() {
+        return ipAddress;
     }
 
-    public void setLoginIp(String loginIp) {
-        this.loginIp = loginIp;
+    public void setIpAddress(String ipAddress) {
+        this.ipAddress = ipAddress;
     }
 
     public String getLoginLocation() {
@@ -80,12 +94,12 @@ public class LoginLog extends BaseEntity {
         this.loginDevice = loginDevice;
     }
 
-    public Integer getLoginResult() {
-        return loginResult;
+    public Integer getStatus() {
+        return status;
     }
 
-    public void setLoginResult(Integer loginResult) {
-        this.loginResult = loginResult;
+    public void setStatus(Integer status) {
+        this.status = status;
     }
 
     public String getFailReason() {

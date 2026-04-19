@@ -49,7 +49,6 @@ public class HouseServiceImpl implements HouseService {
     private final FavoriteMapper favoriteMapper;
     private final RedisTemplate<String, Object> redisTemplate;
     private final FileService fileService;
-    // private final HouseRepository houseRepository;
     private final AuditLogService auditLogService;
 
 
@@ -61,7 +60,7 @@ public class HouseServiceImpl implements HouseService {
     public House publish(House house) {
         house.setHouseNo(generateHouseNo());
         house.setLandlordId(SecurityUtils.getCurrentUserId());
-        house.setStatus(2);
+        house.setHouseStatus(2);
         house.setAuditStatus(0);
         house.setViewCount(0);
         house.setFavoriteCount(0);
@@ -107,7 +106,7 @@ public class HouseServiceImpl implements HouseService {
         }
 
         house.setIsDeleted(1);
-        house.setStatus(2);
+        house.setHouseStatus(2);
         houseMapper.updateById(house);
         
         deleteFromElasticsearch(id);
@@ -137,7 +136,7 @@ public class HouseServiceImpl implements HouseService {
         IPage<House> page = new Page<>(request.getCurrent(), request.getSize());
 
         QueryWrapper<House> wrapper = new QueryWrapper<>();
-        wrapper.eq("status", 2);
+        wrapper.eq("house_status", 0);
 
         if (request.getCity() != null && !request.getCity().trim().isEmpty()) {
             wrapper.eq("city", request.getCity());
@@ -244,7 +243,7 @@ public class HouseServiceImpl implements HouseService {
     public House audit(Long houseId, Integer auditStatus, String auditRemark, Long auditorId) {
         House house = getById(houseId);
         
-        Integer beforeStatus = house.getStatus();
+        Integer beforeStatus = house.getHouseStatus();
         Integer beforeAuditStatus = house.getAuditStatus();
         
         house.setAuditStatus(auditStatus);
@@ -253,7 +252,7 @@ public class HouseServiceImpl implements HouseService {
         house.setAuditTime(LocalDateTime.now());
         
         if (auditStatus == 1) {
-            house.setStatus(0);
+            house.setHouseStatus(0);
             syncToElasticsearch(house);
         } else if (auditStatus == 2) {
             deleteFromElasticsearch(houseId);
@@ -266,7 +265,7 @@ public class HouseServiceImpl implements HouseService {
         auditLog.setAuditorId(auditorId);
         auditLog.setAuditorName("审核员");
         auditLog.setBeforeStatus(beforeStatus);
-        auditLog.setAfterStatus(house.getStatus());
+        auditLog.setAfterStatus(house.getHouseStatus());
         auditLog.setBeforeAuditStatus(beforeAuditStatus);
         auditLog.setAfterAuditStatus(auditStatus);
         auditLog.setAuditRemark(auditRemark);
@@ -288,7 +287,7 @@ public class HouseServiceImpl implements HouseService {
             throw new BusinessException("房源未通过审核，无法上架");
         }
 
-        house.setStatus(0);
+        house.setHouseStatus(0);
         houseMapper.updateById(house);
         
         syncToElasticsearch(house);
@@ -301,7 +300,7 @@ public class HouseServiceImpl implements HouseService {
     @CacheEvict(value = "houses", key = "#id")
     public void offline(Long id) {
         House house = getById(id);
-        house.setStatus(2);
+        house.setHouseStatus(2);
         houseMapper.updateById(house);
         
         deleteFromElasticsearch(id);
@@ -460,7 +459,6 @@ public class HouseServiceImpl implements HouseService {
             throw new BusinessException("无权操作此房源");
         }
 
-        // 验证图片是否存在于房源图片列表中
         List<String> existingImages = new ArrayList<>();
         if (house.getImages() != null && !house.getImages().isEmpty()) {
             JSONArray jsonArray = JSON.parseArray(house.getImages());
@@ -487,10 +485,8 @@ public class HouseServiceImpl implements HouseService {
             throw new BusinessException("无权操作此房源");
         }
 
-        // 从MinIO删除图片
         fileService.delete(imageName);
         
-        // 更新房源图片信息
         List<String> existingImages = new ArrayList<>();
         if (house.getImages() != null && !house.getImages().isEmpty()) {
             JSONArray jsonArray = JSON.parseArray(house.getImages());
@@ -502,7 +498,6 @@ public class HouseServiceImpl implements HouseService {
         existingImages.remove(imageName);
         house.setImages(JSON.toJSONString(existingImages));
         
-        // 如果删除的是封面图片，重新设置封面
         if (imageName.equals(house.getCoverImage())) {
             if (!existingImages.isEmpty()) {
                 house.setCoverImage(existingImages.get(0));
@@ -557,13 +552,14 @@ public class HouseServiceImpl implements HouseService {
         if (house.getViewTimeType() != null) existHouse.setViewTimeType(house.getViewTimeType());
         if (house.getAvailableDate() != null) existHouse.setAvailableDate(house.getAvailableDate());
         if (house.getMinLeaseTerm() != null) existHouse.setMinLeaseTerm(house.getMinLeaseTerm());
+        if (house.getHouseStatus() != null) existHouse.setHouseStatus(house.getHouseStatus());
+        if (house.getAuditStatus() != null) existHouse.setAuditStatus(house.getAuditStatus());
     }
 
     /**
      * 同步房源数据到Elasticsearch
      */
     private void syncToElasticsearch(House house) {
-        // 暂时禁用Elasticsearch同步
         log.info("暂时禁用Elasticsearch同步: {}", house.getId());
     }
 
@@ -571,18 +567,16 @@ public class HouseServiceImpl implements HouseService {
      * 从Elasticsearch删除房源数据
      */
     private void deleteFromElasticsearch(Long houseId) {
-        // 暂时禁用Elasticsearch删除
         log.info("暂时禁用Elasticsearch删除: {}", houseId);
     }
 
-    
 
     @Override
     public List<House> searchByKeyword(String keyword) {
         log.info("使用MySQL降级方案搜索: {}", keyword);
         
         QueryWrapper<House> wrapper = new QueryWrapper<>();
-        wrapper.eq("status", 0);
+        wrapper.eq("house_status", 0);
         
         if (keyword != null && !keyword.trim().isEmpty()) {
             wrapper.and(w -> w.like("title", keyword)
@@ -612,7 +606,7 @@ public class HouseServiceImpl implements HouseService {
         log.info("使用MySQL降级方案综合搜索: keyword={}, city={}, district={}", keyword, city, district);
         
         QueryWrapper<House> wrapper = new QueryWrapper<>();
-        wrapper.eq("status", 0);
+        wrapper.eq("house_status", 0);
         
         if (keyword != null && !keyword.trim().isEmpty()) {
             wrapper.and(w -> w.like("title", keyword)

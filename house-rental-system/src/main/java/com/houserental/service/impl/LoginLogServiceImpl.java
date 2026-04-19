@@ -85,10 +85,10 @@ public class LoginLogServiceImpl implements LoginLogService {
     private LoginLog createLoginLog(String username, String ip, String userAgent, int loginResult, String failReason) {
         LoginLog loginLog = new LoginLog();
         loginLog.setUsername(username);
-        loginLog.setLoginIp(ip);
-        loginLog.setLoginLocation(getLocationFromIp(ip)); // 这里可以集成IP地址解析服务
+        loginLog.setIpAddress(ip);
+        loginLog.setLoginLocation(getLocationFromIp(ip));
         loginLog.setLoginDevice(parseUserAgent(userAgent));
-        loginLog.setLoginResult(loginResult);
+        loginLog.setStatus(loginResult);
         loginLog.setFailReason(failReason);
         return loginLog;
     }
@@ -149,13 +149,20 @@ public class LoginLogServiceImpl implements LoginLogService {
     @Override
     public List<LoginLogDTO> getRecentLogs(int limit) {
         QueryWrapper<LoginLog> wrapper = new QueryWrapper<>();
-        wrapper.orderByDesc("create_time").last("LIMIT " + limit);
+        wrapper.eq("is_deleted", 0).orderByDesc("create_time").last("LIMIT " + limit);
         
         List<LoginLog> logs = loginLogMapper.selectList(wrapper);
         
         return logs.stream().map(log -> {
             LoginLogDTO dto = new LoginLogDTO();
-            BeanUtils.copyProperties(log, dto);
+            dto.setId(log.getId());
+            dto.setUsername(log.getUsername());
+            dto.setLoginIp(log.getIpAddress());
+            dto.setLoginLocation(log.getLoginLocation());
+            dto.setLoginDevice(log.getLoginDevice());
+            dto.setLoginResult(log.getStatus());
+            dto.setFailReason(log.getFailReason());
+            dto.setCreateTime(log.getCreateTime());
             return dto;
         }).collect(Collectors.toList());
     }
