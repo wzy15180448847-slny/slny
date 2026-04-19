@@ -4,7 +4,7 @@
       <h1>投诉仲裁</h1>
     </div>
     
-    <el-tabs v-model="activeTab" type="card">
+    <el-tabs v-model="activeTab" type="card" @tab-change="handleTabChange">
       <el-tab-pane label="待处理" name="pending">
         <el-table :data="pendingComplaints" border>
           <el-table-column prop="title" label="投诉标题" />
@@ -110,7 +110,7 @@
         <div v-if="handleForm.result === 'SUPPORT'" class="punishment-section">
           <h4>处罚措施</h4>
           <el-form-item label="扣除信用分">
-            <el-input v-model="handleForm.creditDeduct" placeholder="输入扣除的信用分数" />
+            <el-input v-model="handleForm.creditDeduct" type="number" placeholder="输入扣除的信用分数" />
           </el-form-item>
           <el-form-item label="其他处罚">
             <el-input type="textarea" v-model="handleForm.punishment" :rows="2" placeholder="其他处罚措施" />
@@ -128,23 +128,12 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { getComplaints, arbitrateComplaint } from '@/api/admin'
 
 const activeTab = ref('pending')
 
-const mockPendingComplaints = [
-  { id: 1, title: '房东拒绝维修', complainant: '用户A', defendant: '张房东', type: 'LANDLORD_BAD', content: '房屋漏水已经一周了，房东一直拒绝维修，影响正常居住。', createTime: '2024-01-15 10:30', status: 'PENDING', images: [] },
-  { id: 2, title: '租客拖欠租金', complainant: '李房东', defendant: '用户B', type: 'TENANT_BAD', content: '租客已经拖欠租金15天，多次沟通无效。', createTime: '2024-01-14 15:00', status: 'PENDING', images: [] },
-  { id: 3, title: '房源信息与实际不符', complainant: '租客C', defendant: '王房东', type: 'FALSE_INFO', content: '房源描述为精装修，但实际是毛坯房，存在严重误导。', createTime: '2024-01-13 09:00', status: 'PENDING', images: [] }
-]
-
-const mockHandledComplaints = [
-  { id: 4, title: '房源信息虚假', complainant: '用户C', defendant: '王房东', type: 'FALSE_INFO', content: '房源照片与实际不符，面积也有差异。', result: 'SUPPORT', handleRemark: '经核实，房源信息确实存在虚假，已扣除房东信用分10分。', handleTime: '2024-01-12 14:00', images: [] },
-  { id: 5, title: '不合理收费', complainant: '用户D', defendant: '赵房东', type: 'ILLEGAL_CHARGE', content: '房东额外收取物业费，但合同中未约定。', result: 'REJECT', handleRemark: '经核实，物业费包含在租金中，投诉不成立。', handleTime: '2024-01-11 10:00', images: [] },
-  { id: 6, title: '房屋设施损坏未维修', complainant: '租客E', defendant: '刘房东', type: 'LANDLORD_BAD', content: '空调坏了半个月，房东一直不来维修。', result: 'SUPPORT', handleRemark: '已联系房东限期整改，扣除信用分5分。', handleTime: '2024-01-10 16:00', images: [] }
-]
-
-const pendingComplaints = ref([...mockPendingComplaints])
-const handledComplaints = ref([...mockHandledComplaints])
+const pendingComplaints = ref([])
+const handledComplaints = ref([])
 
 const selectedComplaint = ref(null)
 const showDetailDialog = ref(false)
@@ -177,6 +166,26 @@ const getTypeText = (type) => {
   return texts[type] || type
 }
 
+const loadComplaints = async (status = 'PENDING') => {
+  try {
+    const { data } = await getComplaints({ status })
+    if (status === 'PENDING') {
+      pendingComplaints.value = data || []
+    } else {
+      handledComplaints.value = data || []
+    }
+  } catch (error) {
+    console.error('加载投诉列表失败:', error)
+    ElMessage.error('加载投诉列表失败')
+  }
+}
+
+const handleTabChange = (tab) => {
+  if (tab === 'handled' && handledComplaints.value.length === 0) {
+    loadComplaints('HANDLED')
+  }
+}
+
 const viewDetail = (complaint) => {
   selectedComplaint.value = complaint
   showDetailDialog.value = true
@@ -191,33 +200,43 @@ const openHandleDialog = () => {
   showHandleDialog.value = true
 }
 
-const confirmHandle = () => {
+const confirmHandle = async () => {
   if (!handleForm.result || !handleForm.remark) {
     ElMessage.error('请填写完整信息')
     return
   }
   
-  const index = pendingComplaints.value.findIndex(c => c.id === selectedComplaint.value.id)
-  if (index > -1) {
-    pendingComplaints.value.splice(index, 1)
-    handledComplaints.value.unshift({
-      ...selectedComplaint.value,
+  try {
+    const data = {
       result: handleForm.result,
-      handleRemark: handleForm.remark,
-      handleTime: new Date().toLocaleString()
-    })
+      remark: handleForm.remark
+    }
+    
+    if (handleForm.result === 'SUPPORT') {
+      data.creditDeduct = handleForm.creditDeduct
+      data.punishment = handleForm.punishment
+    }
+    
+    await arbitrateComplaint(selectedComplaint.value.id, data)
+    
+    pendingComplaints.value = pendingComplaints.value.filter(c => c.id !== selectedComplaint.value.id)
+    
+    ElMessage.success('投诉处理完成')
+    showHandleDialog.value = false
+    showDetailDialog.value = false
+    
+    handleForm.result = ''
+    handleForm.remark = ''
+    handleForm.creditDeduct = ''
+    handleForm.punishment = ''
+  } catch (error) {
+    console.error('处理投诉失败:', error)
+    ElMessage.error('处理投诉失败')
   }
-  
-  ElMessage.success('投诉处理完成')
-  showHandleDialog.value = false
-  showDetailDialog.value = false
-  handleForm.result = ''
-  handleForm.remark = ''
-  handleForm.creditDeduct = ''
-  handleForm.punishment = ''
 }
 
 onMounted(() => {
+  loadComplaints('PENDING')
 })
 </script>
 

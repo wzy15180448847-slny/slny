@@ -118,15 +118,15 @@
           </template>
           <div class="pending-list">
             <div class="pending-item">
-              <span class="pending-count">12</span>
+              <span class="pending-count">{{ pendingStats.houseAudit }}</span>
               <span class="pending-text">房源审核</span>
             </div>
             <div class="pending-item">
-              <span class="pending-count">5</span>
+              <span class="pending-count">{{ pendingStats.qualificationAudit }}</span>
               <span class="pending-text">资质审核</span>
             </div>
             <div class="pending-item">
-              <span class="pending-count">8</span>
+              <span class="pending-count">{{ pendingStats.complaintHandle }}</span>
               <span class="pending-text">投诉处理</span>
             </div>
           </div>
@@ -159,20 +159,22 @@
 <script setup>
 import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { TrendCharts, OfficeBuilding, User, Document } from '@element-plus/icons-vue'
+import { getDashboardStats, getChartData, getRecentLogs } from '@/api/admin'
 
 const stats = reactive({
-  totalRevenue: '2,850,000',
-  totalHouses: 520,
-  totalUsers: 3856,
-  totalOrders: 1240
+  totalRevenue: '0',
+  totalHouses: 0,
+  totalUsers: 0,
+  totalOrders: 0
 })
 
-const recentLogs = ref([
-  { id: 1, username: 'admin', ip: '192.168.1.100', time: '2024-01-15 14:30', status: 'SUCCESS' },
-  { id: 2, username: 'user0', ip: '192.168.1.101', time: '2024-01-15 14:25', status: 'SUCCESS' },
-  { id: 3, username: 'user1', ip: '192.168.1.102', time: '2024-01-15 14:20', status: 'SUCCESS' },
-  { id: 4, username: 'test', ip: '192.168.1.103', time: '2024-01-15 14:15', status: 'FAILURE' }
-])
+const pendingStats = reactive({
+  houseAudit: 0,
+  qualificationAudit: 0,
+  complaintHandle: 0
+})
+
+const recentLogs = ref([])
 
 const userChart = ref(null)
 const regionChart = ref(null)
@@ -180,9 +182,10 @@ const rentRateChart = ref(null)
 const userTypeChart = ref(null)
 
 let charts = []
+let chartData = ref({})
 
 onMounted(() => {
-  loadCharts()
+  loadDashboardData()
 })
 
 onUnmounted(() => {
@@ -193,21 +196,47 @@ onUnmounted(() => {
   })
 })
 
+const loadDashboardData = async () => {
+  try {
+    const [statsRes, chartsRes, logsRes] = await Promise.all([
+      getDashboardStats(),
+      getChartData(),
+      getRecentLogs()
+    ])
+    
+    Object.assign(stats, statsRes.data)
+    chartData.value = chartsRes.data
+    recentLogs.value = logsRes.data || []
+    
+    if (statsRes.data.pendingStats) {
+      Object.assign(pendingStats, statsRes.data.pendingStats)
+    }
+    
+    loadCharts()
+  } catch (error) {
+    console.error('加载仪表盘数据失败:', error)
+  }
+}
+
 const loadCharts = () => {
   if (typeof window !== 'undefined' && window.echarts) {
     const echarts = window.echarts
     
     if (userChart.value) {
       const uc = echarts.init(userChart.value)
+      const userData = chartData.value.userGrowth || {
+        dates: ['1/9', '1/10', '1/11', '1/12', '1/13', '1/14', '1/15'],
+        values: [120, 200, 150, 250, 180, 300, 280]
+      }
       uc.setOption({
         tooltip: { trigger: 'axis' },
         grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
-        xAxis: { type: 'category', data: ['1/9', '1/10', '1/11', '1/12', '1/13', '1/14', '1/15'] },
+        xAxis: { type: 'category', data: userData.dates },
         yAxis: { type: 'value' },
         series: [{
           name: '新增用户',
           type: 'line',
-          data: [120, 200, 150, 250, 180, 300, 280],
+          data: userData.values,
           smooth: true,
           areaStyle: { color: 'rgba(102, 126, 234, 0.1)' },
           lineStyle: { color: '#667eea', width: 3 }
@@ -218,19 +247,20 @@ const loadCharts = () => {
     
     if (regionChart.value) {
       const rc = echarts.init(regionChart.value)
+      const regionData = chartData.value.regionDistribution || [
+        { value: 35, name: '朝阳区' },
+        { value: 25, name: '海淀区' },
+        { value: 20, name: '西城区' },
+        { value: 15, name: '东城区' },
+        { value: 5, name: '其他' }
+      ]
       rc.setOption({
         tooltip: { trigger: 'item' },
         series: [{
           name: '区域分布',
           type: 'pie',
           radius: '50%',
-          data: [
-            { value: 35, name: '朝阳区' },
-            { value: 25, name: '海淀区' },
-            { value: 20, name: '西城区' },
-            { value: 15, name: '东城区' },
-            { value: 5, name: '其他' }
-          ],
+          data: regionData,
           itemStyle: {
             colors: ['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe']
           }
@@ -241,15 +271,19 @@ const loadCharts = () => {
     
     if (rentRateChart.value) {
       const rrc = echarts.init(rentRateChart.value)
+      const rentRateData = chartData.value.rentRate || {
+        months: ['1月', '2月', '3月', '4月', '5月', '6月'],
+        values: [65, 72, 68, 78, 82, 85]
+      }
       rrc.setOption({
         tooltip: { trigger: 'axis' },
         grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
-        xAxis: { type: 'category', data: ['1月', '2月', '3月', '4月', '5月', '6月'] },
+        xAxis: { type: 'category', data: rentRateData.months },
         yAxis: { type: 'value', max: 100 },
         series: [{
           name: '出租率',
           type: 'bar',
-          data: [65, 72, 68, 78, 82, 85],
+          data: rentRateData.values,
           itemStyle: { color: 'rgba(102, 126, 234, 0.8)' }
         }]
       })
@@ -258,17 +292,18 @@ const loadCharts = () => {
     
     if (userTypeChart.value) {
       const utc = echarts.init(userTypeChart.value)
+      const userTypeData = chartData.value.userType || [
+        { value: 65, name: '租客' },
+        { value: 25, name: '房东' },
+        { value: 10, name: '管理员' }
+      ]
       utc.setOption({
         tooltip: { trigger: 'item' },
         series: [{
           name: '用户类型',
           type: 'pie',
           radius: ['40%', '70%'],
-          data: [
-            { value: 65, name: '租客' },
-            { value: 25, name: '房东' },
-            { value: 10, name: '管理员' }
-          ],
+          data: userTypeData,
           itemStyle: {
             colors: ['#11998e', '#38ef7d', '#667eea']
           }

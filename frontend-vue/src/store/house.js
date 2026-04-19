@@ -105,16 +105,10 @@ export const useHouseStore = defineStore('house', {
     },
 
     async publishHouse(formData, fileList) {
-      const rentTypeMapping = {
-        'ENTIRE': 1,
-        'SHARED': 2,
-        'SINGLE_ROOM': 3
-      }
-
       const houseData = {
         title: formData.title,
-        rentPrice: Number(formData.price),
-        rentWay: rentTypeMapping[formData.rentType] || 1,
+        rentPrice: Number(formData.rentPrice),
+        rentWay: Number(formData.rentWay) || 1,
         houseType: formData.houseType,
         area: Number(formData.area),
         floor: Number(formData.floor),
@@ -124,7 +118,7 @@ export const useHouseStore = defineStore('house', {
         district: formData.district,
         community: formData.community,
         address: formData.address,
-        facilities: JSON.stringify(formData.amenities),
+        facilities: JSON.stringify(formData.facilities),
         description: formData.description,
         contactName: formData.contactName,
         contactPhone: formData.contactPhone

@@ -100,26 +100,44 @@
         </el-button>
       </template>
     </el-dialog>
+    
+    <el-dialog title="拒绝预约" v-model="showRejectDialog" width="400px">
+      <el-form :model="rejectForm" label-width="100px">
+        <el-form-item label="拒绝原因">
+          <el-input type="textarea" v-model="rejectForm.reason" :rows="3" placeholder="请输入拒绝原因" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showRejectDialog = false">取消</el-button>
+        <el-button type="danger" @click="submitReject">确认拒绝</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { 
+  getLandlordAppointments, 
+  confirmAppointment, 
+  rejectAppointment, 
+  completeAppointment,
+  createContract 
+} from '@/api/landlord'
 
 const router = useRouter()
 const activeTab = ref('all')
 
-const appointments = ref([
-  { id: 1, houseName: '阳光小区3室2厅', address: '朝阳区阳光路88号', tenantName: '用户A', tenantPhone: '138****8888', date: '2024-01-16 14:00-16:00', status: 'PENDING', remark: '希望下午看房' },
-  { id: 2, houseName: '幸福花园2室1厅', address: '海淀区幸福街12号', tenantName: '用户B', tenantPhone: '139****9999', date: '2024-01-17 10:00-11:00', status: 'PENDING', remark: '' },
-  { id: 3, houseName: '锦绣家园1室1厅', address: '西城区锦绣路36号', tenantName: '用户C', tenantPhone: '137****7777', date: '2024-01-15 09:00-11:00', status: 'CONFIRMED', remark: '' },
-  { id: 4, houseName: '阳光小区3室2厅', address: '朝阳区阳光路88号', tenantName: '用户D', tenantPhone: '136****6666', date: '2024-01-14 14:00-16:00', status: 'COMPLETED', remark: '' }
-])
-
+const appointments = ref([])
 const selectedAppointment = ref(null)
 const showDetailDialog = ref(false)
+const showRejectDialog = ref(false)
+
+const rejectForm = reactive({
+  reason: ''
+})
 
 const getStatusType = (status) => {
   const types = {
@@ -143,41 +161,87 @@ const getStatusText = (status) => {
   return texts[status] || status
 }
 
+const loadAppointments = async () => {
+  try {
+    const { data } = await getLandlordAppointments()
+    appointments.value = data || []
+  } catch (error) {
+    console.error('加载预约列表失败:', error)
+    ElMessage.error('加载预约列表失败')
+  }
+}
+
 const viewDetail = (appointment) => {
   selectedAppointment.value = appointment
   showDetailDialog.value = true
 }
 
-const confirmAppointment = (appointment) => {
-  appointment.status = 'CONFIRMED'
-  ElMessage.success('预约已确认')
-}
-
-const rejectAppointment = async (appointment) => {
+const confirmAppointment = async (appointment) => {
   try {
-    await ElMessageBox.confirm('确定要拒绝这个预约吗？', '提示', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
-    appointment.status = 'REJECTED'
-    ElMessage.success('预约已拒绝')
+    await confirmAppointment(appointment.id)
+    appointment.status = 'CONFIRMED'
+    ElMessage.success('预约已确认')
+    await loadAppointments()
   } catch (error) {
-    if (error !== 'cancel') {
-      console.error(error)
-    }
+    console.error('确认预约失败:', error)
+    ElMessage.error('确认预约失败')
   }
 }
 
-const completeAppointment = (appointment) => {
-  appointment.status = 'COMPLETED'
-  ElMessage.success('看房已完成')
+const rejectAppointment = (appointment) => {
+  selectedAppointment.value = appointment
+  rejectForm.reason = ''
+  showRejectDialog.value = true
 }
 
-const createContract = () => {
-  ElMessage.success('合同已发起')
-  showDetailDialog.value = false
+const submitReject = async () => {
+  if (!rejectForm.reason) {
+    ElMessage.error('请输入拒绝原因')
+    return
+  }
+  
+  try {
+    await rejectAppointment(selectedAppointment.value.id, { reason: rejectForm.reason })
+    selectedAppointment.value.status = 'REJECTED'
+    ElMessage.success('预约已拒绝')
+    showRejectDialog.value = false
+    await loadAppointments()
+  } catch (error) {
+    console.error('拒绝预约失败:', error)
+    ElMessage.error('拒绝预约失败')
+  }
 }
+
+const completeAppointment = async (appointment) => {
+  try {
+    await completeAppointment(appointment.id)
+    appointment.status = 'COMPLETED'
+    ElMessage.success('看房已完成')
+    await loadAppointments()
+  } catch (error) {
+    console.error('完成看房失败:', error)
+    ElMessage.error('完成看房失败')
+  }
+}
+
+const createContract = async () => {
+  try {
+    await createContract({
+      houseId: selectedAppointment.value.houseId,
+      tenantId: selectedAppointment.value.tenantId
+    })
+    ElMessage.success('合同已发起')
+    showDetailDialog.value = false
+    await loadAppointments()
+  } catch (error) {
+    console.error('发起合同失败:', error)
+    ElMessage.error('发起合同失败')
+  }
+}
+
+onMounted(() => {
+  loadAppointments()
+})
 </script>
 
 <style lang="scss" scoped>

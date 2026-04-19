@@ -1,5 +1,5 @@
 <template>
-  <div class="house-detail-page" v-loading="loading">
+  <div class="detail-page" v-loading="loading">
     <div v-if="house" class="container">
       <div class="detail-header">
         <el-breadcrumb separator="/">
@@ -23,7 +23,7 @@
               :alt="house.title"
             />
             <div v-else class="image-placeholder">
-              <el-icon><Picture /></el-icon>
+              <el-icon name="picture" />
             </div>
           </div>
           
@@ -43,8 +43,8 @@
           <div class="house-title">
             <h1>{{ house.title }}</h1>
             <div class="title-tags">
-              <el-tag v-if="house.status === 2" type="success">在租</el-tag>
-              <el-tag v-else-if="house.status === 1" type="warning">审核中</el-tag>
+              <el-tag v-if="house.status === 0" type="success">展示中</el-tag>
+              <el-tag v-else-if="house.status === 2" type="warning">已下架</el-tag>
               <el-tag v-if="house.rentWay === 1">整租</el-tag>
               <el-tag v-else type="info">合租</el-tag>
             </div>
@@ -86,7 +86,7 @@
           </div>
           
           <div class="location">
-            <el-icon><Location /></el-icon>
+            <el-icon name="location" />
             <span>{{ house.province }} {{ house.city }} {{ house.district }} {{ house.street }} {{ house.address }}</span>
           </div>
           
@@ -157,16 +157,40 @@
           </el-tab-pane>
         </el-tabs>
       </div>
+      
+      <el-dialog title="预约看房" v-model="showAppointmentDialog" width="450px">
+        <el-form :model="appointmentForm" label-width="100px">
+          <el-form-item label="预约日期">
+            <el-date-picker v-model="appointmentForm.date" type="date" placeholder="选择日期" />
+          </el-form-item>
+          <el-form-item label="预约时间">
+            <el-select v-model="appointmentForm.time" placeholder="选择时间段">
+              <el-option label="09:00-11:00" value="09:00-11:00" />
+              <el-option label="14:00-16:00" value="14:00-16:00" />
+              <el-option label="16:00-18:00" value="16:00-18:00" />
+              <el-option label="19:00-21:00" value="19:00-21:00" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="备注">
+            <el-input type="textarea" v-model="appointmentForm.remark" :rows="3" placeholder="请输入备注信息" />
+          </el-form-item>
+        </el-form>
+        <template #footer>
+          <el-button @click="showAppointmentDialog = false">取消</el-button>
+          <el-button type="primary" @click="submitAppointment">提交预约</el-button>
+        </template>
+      </el-dialog>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, reactive } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/store/user'
 import { getHouseDetail, addFavorite, removeFavorite } from '@/api/house'
+import { createAppointment } from '@/api/appointment'
 import dayjs from 'dayjs'
 
 const route = useRoute()
@@ -178,6 +202,13 @@ const house = ref(null)
 const currentImageIndex = ref(0)
 const activeTab = ref('description')
 const isFavorited = ref(false)
+
+const showAppointmentDialog = ref(false)
+const appointmentForm = reactive({
+  date: '',
+  time: '',
+  remark: ''
+})
 
 const houseImages = computed(() => {
   if (!house.value || !house.value.images) return []
@@ -246,7 +277,32 @@ const handleAppointment = () => {
     return
   }
   
-  ElMessage.info('预约功能开发中')
+  showAppointmentDialog.value = true
+}
+
+const submitAppointment = async () => {
+  if (!appointmentForm.date || !appointmentForm.time) {
+    ElMessage.error('请选择预约日期和时间')
+    return
+  }
+  
+  try {
+    await createAppointment({
+      houseId: house.value.id,
+      date: appointmentForm.date,
+      time: appointmentForm.time,
+      remark: appointmentForm.remark
+    })
+    
+    ElMessage.success('预约提交成功，等待房东确认')
+    showAppointmentDialog.value = false
+    appointmentForm.date = ''
+    appointmentForm.time = ''
+    appointmentForm.remark = ''
+  } catch (error) {
+    console.error(error)
+    ElMessage.error('预约提交失败')
+  }
 }
 
 const getPaymentText = (way) => {

@@ -286,7 +286,10 @@ router.beforeEach((to, from, next) => {
   
   if (to.meta.roles && userStore.isLoggedIn && userStore.userInfo) {
     console.log('Route guard: Checking roles. Required:', to.meta.roles, 'UserType:', userStore.userType)
-    if (!to.meta.roles.includes(userStore.userType)) {
+    
+    const hasRole = (userStore.userInfo?.roles && userStore.userInfo.roles.some(r => to.meta.roles.includes(r))) || to.meta.roles.includes(userStore.userType);
+    
+    if (!hasRole) {
       console.log('Route guard: Role mismatch! Redirecting to appropriate dashboard')
       let redirectPath = '/'
       if (userStore.userType === 'ADMIN') {

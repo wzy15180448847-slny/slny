@@ -112,20 +112,16 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { getPaymentRecords, payRent, getWallet } from '@/api/wallet'
 
 const router = useRouter()
 const activeTab = ref('all')
-const walletBalance = ref(5000)
+const walletBalance = ref(0)
 
-const bills = ref([
-  { id: 1, billNo: 'ZD202401001', houseName: '阳光小区3室2厅', type: 'RENT', amount: 3500, dueDate: '2024-02-01', status: 'UNPAID', payDate: null },
-  { id: 2, billNo: 'ZD202401002', houseName: '阳光小区3室2厅', type: 'WATER', amount: 150, dueDate: '2024-02-15', status: 'UNPAID', payDate: null },
-  { id: 3, billNo: 'ZD202401003', houseName: '阳光小区3室2厅', type: 'ELECTRIC', amount: 200, dueDate: '2024-02-15', status: 'UNPAID', payDate: null },
-  { id: 4, billNo: 'ZD202401004', houseName: '阳光小区3室2厅', type: 'RENT', amount: 3500, dueDate: '2024-01-01', status: 'PAID', payDate: '2024-01-01' }
-])
+const bills = ref([])
 
 const selectedBill = ref(null)
 const showPayDialog = ref(false)
@@ -182,6 +178,25 @@ const viewBill = (bill) => {
   showPayDialog.value = true
 }
 
+const loadBills = async () => {
+  try {
+    const res = await getPaymentRecords()
+    bills.value = res.data || []
+  } catch (error) {
+    console.error('加载账单失败:', error)
+    ElMessage.error('加载账单失败')
+  }
+}
+
+const loadWalletBalance = async () => {
+  try {
+    const res = await getWallet()
+    walletBalance.value = res.data.balance || 0
+  } catch (error) {
+    console.error('加载余额失败:', error)
+  }
+}
+
 const confirmPay = async () => {
   if (walletBalance.value < selectedBill.value.amount) {
     ElMessage.error('余额不足，请先充值')
@@ -195,18 +210,25 @@ const confirmPay = async () => {
       type: 'warning'
     })
     
-    walletBalance.value -= selectedBill.value.amount
-    selectedBill.value.status = 'PAID'
-    selectedBill.value.payDate = new Date().toISOString().split('T')[0]
+    await payRent({ orderNo: selectedBill.value.paymentNo || selectedBill.value.billNo })
     
     ElMessage.success('支付成功')
     showPayDialog.value = false
+    
+    await loadBills()
+    await loadWalletBalance()
   } catch (error) {
     if (error !== 'cancel') {
-      console.error(error)
+      console.error('支付失败:', error)
+      ElMessage.error('支付失败: ' + (error.response?.data?.message || error.message))
     }
   }
 }
+
+onMounted(() => {
+  loadBills()
+  loadWalletBalance()
+})
 </script>
 
 <style lang="scss" scoped>

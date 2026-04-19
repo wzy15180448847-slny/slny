@@ -20,7 +20,7 @@
       <el-button type="primary" @click="search">搜索</el-button>
     </div>
     
-    <el-table :data="filteredUsers" border>
+    <el-table :data="users" border>
       <el-table-column prop="username" label="用户名" />
       <el-table-column prop="nickname" label="昵称" />
       <el-table-column prop="phone" label="手机号" />
@@ -105,8 +105,9 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { getUsers, updateUserStatus, deleteUser } from '@/api/admin'
 
 const searchForm = reactive({
   keyword: '',
@@ -114,27 +115,9 @@ const searchForm = reactive({
   status: ''
 })
 
-const users = ref([
-  { id: 1, username: 'admin', nickname: '管理员', phone: '138****0001', email: 'admin@test.com', userType: 'ADMIN', creditScore: 100, status: 'ACTIVE', createTime: '2024-01-01 10:00' },
-  { id: 2, username: 'user0', nickname: '张房东', phone: '138****0002', email: 'user0@test.com', userType: 'LANDLORD', creditScore: 92, status: 'ACTIVE', createTime: '2024-01-02 10:00' },
-  { id: 3, username: 'user1', nickname: '租客A', phone: '138****0003', email: 'user1@test.com', userType: 'TENANT', creditScore: 95, status: 'ACTIVE', createTime: '2024-01-03 10:00' },
-  { id: 4, username: 'user2', nickname: '李房东', phone: '138****0004', email: 'user2@test.com', userType: 'LANDLORD', creditScore: 88, status: 'INACTIVE', createTime: '2024-01-04 10:00' },
-  { id: 5, username: 'user3', nickname: '租客B', phone: '138****0005', email: 'user3@test.com', userType: 'TENANT', creditScore: 75, status: 'ACTIVE', createTime: '2024-01-05 10:00' }
-])
-
+const users = ref([])
 const selectedUser = ref(null)
 const showDetailDialog = ref(false)
-
-const filteredUsers = computed(() => {
-  return users.value.filter(user => {
-    const matchKeyword = !searchForm.keyword || 
-      user.username.includes(searchForm.keyword) || 
-      user.phone.includes(searchForm.keyword)
-    const matchType = !searchForm.userType || user.userType === searchForm.userType
-    const matchStatus = !searchForm.status || user.status === searchForm.status
-    return matchKeyword && matchType && matchStatus
-  })
-})
 
 const getTypeTag = (type) => {
   const types = {
@@ -154,16 +137,41 @@ const getTypeText = (type) => {
   return texts[type] || type
 }
 
-const search = () => {}
+const search = () => {
+  loadUsers()
+}
+
+const loadUsers = async () => {
+  try {
+    const params = {
+      keyword: searchForm.keyword,
+      userType: searchForm.userType,
+      status: searchForm.status
+    }
+    const { data } = await getUsers(params)
+    users.value = data || []
+  } catch (error) {
+    console.error('加载用户列表失败:', error)
+    ElMessage.error('加载用户列表失败')
+  }
+}
 
 const viewDetail = (user) => {
   selectedUser.value = user
   showDetailDialog.value = true
 }
 
-const toggleStatus = (user) => {
-  user.status = user.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE'
-  ElMessage.success(user.status === 'ACTIVE' ? '用户已启用' : '用户已禁用')
+const toggleStatus = async (user) => {
+  try {
+    const newStatus = user.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE'
+    await updateUserStatus(user.id, newStatus)
+    
+    user.status = newStatus
+    ElMessage.success(user.status === 'ACTIVE' ? '用户已启用' : '用户已禁用')
+  } catch (error) {
+    console.error('修改用户状态失败:', error)
+    ElMessage.error('修改用户状态失败')
+  }
 }
 
 const deleteUser = async (user) => {
@@ -173,17 +181,21 @@ const deleteUser = async (user) => {
       cancelButtonText: '取消',
       type: 'warning'
     })
-    const index = users.value.findIndex(u => u.id === user.id)
-    if (index > -1) {
-      users.value.splice(index, 1)
-    }
+    
+    await deleteUser(user.id)
+    users.value = users.value.filter(u => u.id !== user.id)
     ElMessage.success('用户已删除')
   } catch (error) {
     if (error !== 'cancel') {
-      console.error(error)
+      console.error('删除用户失败:', error)
+      ElMessage.error('删除用户失败')
     }
   }
 }
+
+onMounted(() => {
+  loadUsers()
+})
 </script>
 
 <style lang="scss" scoped>

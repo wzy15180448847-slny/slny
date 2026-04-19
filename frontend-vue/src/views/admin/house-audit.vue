@@ -167,16 +167,16 @@ const viewDetail = (house) => {
  showDetailDialog.value = true;
 };
 const approveHouse = async (house) => {
- try {
- await auditHouse(house.id, { auditStatus: 1 });
- ElMessage.success('审核通过');
- loadPendingAuditList();
- showDetailDialog.value = false;
- }
- catch (error) {
- console.error('审核通过失败:', error);
- ElMessage.error('审核通过失败');
- }
+  try {
+    await auditHouse(house.id, { auditStatus: 1, auditRemark: "审核通过" });
+    ElMessage.success('审核通过');
+    loadPendingAuditList();
+    showDetailDialog.value = false;
+  }
+  catch (error) {
+    console.error('审核通过失败:', error);
+    ElMessage.error('审核通过失败');
+  }
 };
 const openRejectDialog = () => {
  showRejectDialog.value = true;

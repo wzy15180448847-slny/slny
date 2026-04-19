@@ -127,18 +127,15 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useUserStore } from '@/store/user'
 import { ElMessage } from 'element-plus'
+import { getLandlordContracts, sendContract, exportContract as apiExportContract, generateBill as apiGenerateBill } from '@/api/landlord'
 
 const userStore = useUserStore()
 const activeTab = ref('all')
 
-const contracts = ref([
-  { id: 1, houseName: '阳光小区3室2厅', address: '朝阳区阳光路88号', contractNo: 'HT202401001', tenantName: '用户A', startDate: '2024-01-01', endDate: '2024-12-31', rent: 3500, deposit: 7000, status: 'ACTIVE', daysRemaining: 340 },
-  { id: 2, houseName: '幸福花园2室1厅', address: '海淀区幸福街12号', contractNo: 'HT202401002', tenantName: '用户B', startDate: '2024-02-01', endDate: '2025-01-31', rent: 2800, deposit: 5600, status: 'PENDING', daysRemaining: null },
-  { id: 3, houseName: '锦绣家园1室1厅', address: '西城区锦绣路36号', contractNo: 'HT202306001', tenantName: '用户C', startDate: '2023-06-01', endDate: '2024-05-31', rent: 2000, deposit: 4000, status: 'EXPIRED', daysRemaining: null }
-])
+const contracts = ref([])
 
 const selectedContract = ref(null)
 const showPreviewDialog = ref(false)
@@ -168,19 +165,64 @@ const previewContract = (contract) => {
   showPreviewDialog.value = true
 }
 
-const sendContract = (contract) => {
-  ElMessage.success('合同已发送给租客')
-  contract.status = 'PENDING'
-  showPreviewDialog.value = false
+const loadContracts = async () => {
+  try {
+    const { data } = await getLandlordContracts()
+    contracts.value = data || []
+  } catch (error) {
+    console.error('加载合同列表失败:', error)
+    ElMessage.error('加载合同列表失败')
+  }
 }
 
-const generateBill = (contract) => {
-  ElMessage.success('账单已生成')
+const sendContract = async (contract) => {
+  try {
+    await sendContract(contract.id)
+    contract.status = 'PENDING'
+    ElMessage.success('合同已发送给租客')
+    showPreviewDialog.value = false
+    await loadContracts()
+  } catch (error) {
+    console.error('发送合同失败:', error)
+    ElMessage.error('发送合同失败')
+  }
 }
 
-const exportContract = (contract) => {
-  ElMessage.success('合同正在导出...')
+const generateBill = async (contract) => {
+  try {
+    await apiGenerateBill(contract.id)
+    ElMessage.success('账单已生成')
+    await loadContracts()
+  } catch (error) {
+    console.error('生成账单失败:', error)
+    ElMessage.error('生成账单失败')
+  }
 }
+
+const exportContract = async (contract) => {
+  try {
+    const response = await apiExportContract(contract.id)
+    
+    const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' })
+    const downloadUrl = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = downloadUrl
+    a.download = `${contract.contractNo}.docx`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(downloadUrl)
+    
+    ElMessage.success('合同导出成功')
+  } catch (error) {
+    console.error('导出合同失败:', error)
+    ElMessage.error('导出合同失败')
+  }
+}
+
+onMounted(() => {
+  loadContracts()
+})
 </script>
 
 <style lang="scss" scoped>

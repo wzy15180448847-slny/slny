@@ -141,6 +141,38 @@ const loginRules = {
   ]
 }
 
+const getUserType = (user) => {
+  if (!user) return 'TENANT'
+  
+  if (user.role) {
+    return user.role
+  }
+  
+  if (user.userType) {
+    return user.userType
+  }
+  
+  if (user.roles && Array.isArray(user.roles)) {
+    for (const role of user.roles) {
+      const roleName = typeof role === 'object' ? role.name : role
+      if (roleName) {
+        const normalizedRole = roleName.toUpperCase().replace('ROLE_', '')
+        if (['ADMIN', 'LANDLORD', 'TENANT'].includes(normalizedRole)) {
+          return normalizedRole
+        }
+      }
+    }
+  }
+  
+  return 'TENANT'
+}
+
+const isAdmin = (userType) => {
+  if (!userType) return false
+  const normalized = userType.toUpperCase().replace('ROLE_', '')
+  return normalized === 'ADMIN'
+}
+
 const handleLogin = async () => {
   if (!loginFormRef.value) return
   
@@ -178,14 +210,14 @@ const handleLogin = async () => {
       
       ElMessage.success('登录成功')
       
-      const userType = loginData.user?.userType
+      const userType = getUserType(loginData.user)
       console.log('User type:', userType)
       
       const redirect = route.query.redirect
       let targetPath = redirect
       
       if (!targetPath) {
-        if (userType === 'ADMIN') {
+        if (isAdmin(userType)) {
           targetPath = '/admin'
         } else if (userType === 'LANDLORD') {
           targetPath = '/landlord'

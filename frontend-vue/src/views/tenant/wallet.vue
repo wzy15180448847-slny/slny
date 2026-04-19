@@ -112,22 +112,17 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { getWallet, getTransactions, recharge } from '@/api/wallet'
 
 const activeTab = ref('transactions')
 
 const wallet = reactive({
-  balance: 5000
+  balance: 0
 })
 
-const transactions = ref([
-  { id: 1, type: 'PAYMENT', amount: 3500, description: '支付租金 - 阳光小区3室2厅', createTime: '2024-01-15 10:30' },
-  { id: 2, type: 'RECHARGE', amount: 5000, description: '微信充值', createTime: '2024-01-10 14:00' },
-  { id: 3, type: 'PAYMENT', amount: 150, description: '支付水费', createTime: '2024-01-05 09:30' },
-  { id: 4, type: 'PAYMENT', amount: 200, description: '支付电费', createTime: '2024-01-05 09:30' },
-  { id: 5, type: 'RECHARGE', amount: 2000, description: '支付宝充值', createTime: '2023-12-20 16:00' }
-])
+const transactions = ref([])
 
 const showRechargeDialog = ref(false)
 const showWithdrawDialog = ref(false)
@@ -143,32 +138,49 @@ const withdrawForm = reactive({
 })
 
 const getTypeTag = (type) => {
-  return type === 'RECHARGE' ? 'success' : 'danger'
+  return type === 'RECHARGE' || type === '1' ? 'success' : 'danger'
 }
 
 const getTypeText = (type) => {
-  return type === 'RECHARGE' ? '充值' : '消费'
+  if (type === 'RECHARGE' || type === '1') return '充值'
+  if (type === 'PAYMENT' || type === '2') return '消费'
+  if (type === 'TRANSFER' || type === '4') return '转账'
+  return type
 }
 
-const submitRecharge = () => {
+const loadWalletData = async () => {
+  try {
+    const walletRes = await getWallet()
+    wallet.balance = walletRes.data.balance || 0
+    
+    const transactionsRes = await getTransactions()
+    transactions.value = transactionsRes.data || []
+  } catch (error) {
+    console.error('加载钱包数据失败:', error)
+    ElMessage.error('加载钱包数据失败')
+  }
+}
+
+const submitRecharge = async () => {
   if (!rechargeForm.amount || rechargeForm.amount <= 0) {
     ElMessage.error('请输入有效的充值金额')
     return
   }
   
-  wallet.balance += rechargeForm.amount
-  transactions.value.unshift({
-    id: Date.now(),
-    type: 'RECHARGE',
-    amount: rechargeForm.amount,
-    description: rechargeForm.paymentMethod === 'WECHAT' ? '微信充值' : '支付宝充值',
-    createTime: new Date().toLocaleString()
-  })
-  
-  ElMessage.success('充值成功')
-  showRechargeDialog.value = false
-  rechargeForm.amount = 500
+  try {
+    await recharge({ amount: rechargeForm.amount })
+    ElMessage.success('充值成功')
+    await loadWalletData()
+    showRechargeDialog.value = false
+    rechargeForm.amount = 500
+  } catch (error) {
+    ElMessage.error('充值失败: ' + (error.response?.data?.message || error.message))
+  }
 }
+
+onMounted(() => {
+  loadWalletData()
+})
 
 const submitWithdraw = async () => {
   if (!withdrawForm.amount || withdrawForm.amount <= 0) {

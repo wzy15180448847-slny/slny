@@ -10,7 +10,7 @@
     
     <el-tabs v-model="activeTab" type="card">
       <el-tab-pane label="全部" name="all">
-        <el-table :data="filteredAppointments" border>
+        <el-table :data="appointments" border>
           <el-table-column prop="houseName" label="房源名称" />
           <el-table-column prop="address" label="地址" />
           <el-table-column prop="date" label="预约时间" />
@@ -141,25 +141,14 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { getMyAppointments, createAppointment, cancelAppointment } from '@/api/appointment'
 
 const activeTab = ref('all')
 
-const appointments = ref([
-  { id: 1, houseName: '阳光小区3室2厅', address: '朝阳区阳光路88号', date: '2024-01-16 14:00-16:00', landlordName: '张房东', landlordPhone: '138****8888', status: 'PENDING' },
-  { id: 2, houseName: '幸福花园2室1厅', address: '海淀区幸福街12号', date: '2024-01-17 10:00-11:00', landlordName: '李房东', landlordPhone: '139****9999', status: 'CONFIRMED' },
-  { id: 3, houseName: '锦绣家园1室1厅', address: '西城区锦绣路36号', date: '2024-01-15 09:00-11:00', landlordName: '王房东', landlordPhone: '137****7777', status: 'COMPLETED' },
-  { id: 4, houseName: '星河湾4室2厅', address: '东城区星河大道1号', date: '2024-01-18 14:00-16:00', landlordName: '赵房东', landlordPhone: '136****6666', status: 'PENDING' }
-])
-
-const availableHouses = ref([
-  { id: 1, name: '阳光小区3室2厅' },
-  { id: 2, name: '幸福花园2室1厅' },
-  { id: 3, name: '锦绣家园1室1厅' },
-  { id: 4, name: '星河湾4室2厅' },
-  { id: 5, name: '绿城花园3室1厅' }
-])
+const appointments = ref([])
+const availableHouses = ref([])
 
 const selectedAppointment = ref(null)
 const showDetailDialog = ref(false)
@@ -171,8 +160,6 @@ const createForm = reactive({
   time: '',
   remark: ''
 })
-
-const filteredAppointments = ref(appointments.value)
 
 const getStatusType = (status) => {
   const types = {
@@ -194,6 +181,16 @@ const getStatusText = (status) => {
   return texts[status] || status
 }
 
+const loadAppointments = async () => {
+  try {
+    const { data } = await getMyAppointments()
+    appointments.value = data || []
+  } catch (error) {
+    console.error('加载预约列表失败:', error)
+    ElMessage.error('加载预约列表失败')
+  }
+}
+
 const viewDetail = (appointment) => {
   selectedAppointment.value = appointment
   showDetailDialog.value = true
@@ -206,11 +203,14 @@ const cancelAppointment = async (appointment) => {
       cancelButtonText: '取消',
       type: 'warning'
     })
+    
+    await cancelAppointment(appointment.id)
     appointment.status = 'CANCELLED'
     ElMessage.success('预约已取消')
   } catch (error) {
     if (error !== 'cancel') {
-      console.error(error)
+      console.error('取消预约失败:', error)
+      ElMessage.error('取消预约失败')
     }
   }
 }
@@ -219,28 +219,37 @@ const createAppointment = () => {
   showCreateDialog.value = true
 }
 
-const submitAppointment = () => {
+const submitAppointment = async () => {
   if (!createForm.houseId || !createForm.date || !createForm.time) {
     ElMessage.error('请填写完整信息')
     return
   }
-  const house = availableHouses.value.find(h => h.id === createForm.houseId)
-  appointments.value.unshift({
-    id: Date.now(),
-    houseName: house.name,
-    address: '待完善',
-    date: `${createForm.date} ${createForm.time}`,
-    landlordName: '待完善',
-    landlordPhone: '待完善',
-    status: 'PENDING'
-  })
-  ElMessage.success('预约提交成功')
-  showCreateDialog.value = false
-  createForm.houseId = ''
-  createForm.date = ''
-  createForm.time = ''
-  createForm.remark = ''
+  
+  try {
+    await createAppointment({
+      houseId: createForm.houseId,
+      date: createForm.date,
+      time: createForm.time,
+      remark: createForm.remark
+    })
+    
+    ElMessage.success('预约提交成功')
+    showCreateDialog.value = false
+    createForm.houseId = ''
+    createForm.date = ''
+    createForm.time = ''
+    createForm.remark = ''
+    
+    await loadAppointments()
+  } catch (error) {
+    console.error('提交预约失败:', error)
+    ElMessage.error('提交预约失败')
+  }
 }
+
+onMounted(() => {
+  loadAppointments()
+})
 </script>
 
 <style lang="scss" scoped>

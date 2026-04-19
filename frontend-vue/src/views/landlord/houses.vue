@@ -139,20 +139,15 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { getMyHouses, updateHouseStatus } from '@/api/landlord'
 
 const router = useRouter()
 const activeTab = ref('all')
 
-const houses = ref([
-  { id: 1, houseName: '阳光小区3室2厅', address: '朝阳区阳光路88号', rent: 3500, area: 120, rooms: '3室2厅', direction: '南北通透', status: 'ACTIVE', viewCount: 120, appointmentCount: 5, createTime: '2024-01-10', images: ['https://picsum.photos/seed/landlord1/800/600', 'https://picsum.photos/seed/landlord1a/800/600', 'https://picsum.photos/seed/landlord1b/800/600'], tags: ['精装修', '近地铁'], description: '小区环境优美，交通便利，周边配套齐全。' },
-  { id: 2, houseName: '幸福花园2室1厅', address: '海淀区幸福街12号', rent: 2800, area: 85, rooms: '2室1厅', direction: '朝南', status: 'ACTIVE', viewCount: 85, appointmentCount: 3, createTime: '2024-01-08', images: ['https://picsum.photos/seed/landlord2/800/600', 'https://picsum.photos/seed/landlord2a/800/600'], tags: ['拎包入住'], description: '温馨两居，采光良好。' },
-  { id: 3, houseName: '锦绣家园1室1厅', address: '西城区锦绣路36号', rent: 2000, area: 55, rooms: '1室1厅', direction: '朝北', status: 'PENDING', viewCount: 0, appointmentCount: 0, createTime: '2024-01-15', images: ['https://picsum.photos/seed/landlord3/800/600'], tags: ['单身公寓'], description: '单身公寓，适合年轻人居住。' },
-  { id: 4, houseName: '星河湾4室2厅', address: '东城区星河大道1号', rent: 5500, area: 180, rooms: '4室2厅', direction: '南北通透', status: 'INACTIVE', viewCount: 200, appointmentCount: 8, createTime: '2024-01-05', images: ['https://picsum.photos/seed/landlord4/800/600', 'https://picsum.photos/seed/landlord4a/800/600', 'https://picsum.photos/seed/landlord4b/800/600', 'https://picsum.photos/seed/landlord4c/800/600'], tags: ['豪华装修', '带车位'], description: '豪华大四居，带地下车位。' }
-])
-
+const houses = ref([])
 const selectedHouse = ref(null)
 const showDetailDialog = ref(false)
 
@@ -176,6 +171,16 @@ const getStatusText = (status) => {
   return texts[status] || status
 }
 
+const loadHouses = async () => {
+  try {
+    const { data } = await getMyHouses()
+    houses.value = data || []
+  } catch (error) {
+    console.error('加载房源列表失败:', error)
+    ElMessage.error('加载房源列表失败')
+  }
+}
+
 const goToAdd = () => {
   router.push('/landlord/houses/add')
 }
@@ -189,15 +194,29 @@ const editHouse = (house) => {
   router.push(`/landlord/houses/edit/${house.id}`)
 }
 
-const toggleHouse = (house) => {
-  if (house.status === 'ACTIVE') {
-    house.status = 'INACTIVE'
-    ElMessage.success('房源已下架')
-  } else if (house.status === 'INACTIVE') {
-    house.status = 'ACTIVE'
-    ElMessage.success('房源已上架')
+const toggleHouse = async (house) => {
+  try {
+    const newStatus = house.status === 'ACTIVE' ? 2 : 0
+    await updateHouseStatus(house.id, newStatus)
+    
+    if (house.status === 'ACTIVE') {
+      house.status = 'INACTIVE'
+      ElMessage.success('房源已下架')
+    } else if (house.status === 'INACTIVE') {
+      house.status = 'ACTIVE'
+      ElMessage.success('房源已上架')
+    }
+    
+    await loadHouses()
+  } catch (error) {
+    console.error('修改房源状态失败:', error)
+    ElMessage.error('修改房源状态失败')
   }
 }
+
+onMounted(() => {
+  loadHouses()
+})
 </script>
 
 <style lang="scss" scoped>

@@ -23,24 +23,24 @@
               />
             </el-form-item>
             
-            <el-form-item prop="price">
+            <el-form-item prop="rentPrice">
               <el-input 
-                v-model="publishForm.price"
+                v-model="publishForm.rentPrice"
                 type="number"
                 placeholder="租金 (元/月)"
                 size="large"
               />
             </el-form-item>
             
-            <el-form-item prop="rentType">
+            <el-form-item prop="rentWay">
               <el-select 
-                v-model="publishForm.rentType"
+                v-model="publishForm.rentWay"
                 placeholder="租赁类型"
                 size="large"
               >
-                <el-option label="整租" value="ENTIRE" />
-                <el-option label="合租" value="SHARED" />
-                <el-option label="单间" value="SINGLE_ROOM" />
+                <el-option label="整租" :value="1" />
+                <el-option label="合租" :value="2" />
+                <el-option label="单间" :value="3" />
               </el-select>
             </el-form-item>
             
@@ -145,10 +145,10 @@
         
         <el-form-item label="房屋配置">
           <div class="amenities-grid">
-            <div v-for="amenity in amenities" :key="amenity.value" class="amenity-item">
-              <el-checkbox v-model="publishForm.amenities" :label="amenity.value">
-                <el-icon :size="20">{{ amenity.icon }}</el-icon>
-                <span>{{ amenity.label }}</span>
+            <div v-for="facility in facilities" :key="facility.value" class="amenity-item">
+              <el-checkbox v-model="publishForm.facilities" :label="facility.value">
+                <el-icon :size="20">{{ facility.icon }}</el-icon>
+                <span>{{ facility.label }}</span>
               </el-checkbox>
             </div>
           </div>
@@ -231,8 +231,8 @@ const publishFormRef = ref(null)
 
 const publishForm = reactive({
   title: '',
-  price: '',
-  rentType: '',
+  rentPrice: '',
+  rentWay: '',
   houseType: '',
   area: '',
   floor: '',
@@ -242,7 +242,7 @@ const publishForm = reactive({
   district: '',
   community: '',
   address: '',
-  amenities: [],
+  facilities: [],
   description: '',
   images: [],
   contactName: '',
@@ -254,11 +254,11 @@ const publishRules = {
     { required: true, message: '请输入房源标题', trigger: 'blur' },
     { min: 5, max: 50, message: '标题长度在 5 到 50 个字符', trigger: 'blur' }
   ],
-  price: [
+  rentPrice: [
     { required: true, message: '请输入租金', trigger: 'blur' },
     { type: 'number', min: 100, message: '租金不能低于 100 元', trigger: 'blur' }
   ],
-  rentType: [
+  rentWay: [
     { required: true, message: '请选择租赁类型', trigger: 'change' }
   ],
   houseType: [
@@ -307,7 +307,7 @@ const publishRules = {
   ]
 }
 
-const amenities = [
+const facilities = [
   { label: '空调', value: 'AIR_CONDITIONER', icon: 'Snowflake' },
   { label: '洗衣机', value: 'WASHING_MACHINE', icon: 'Grid' },
   { label: '冰箱', value: 'REFRIGERATOR', icon: 'IceCream' },
@@ -326,7 +326,6 @@ const fileList = ref([])
 
 const handleImageChange = (file, files) => {
   fileList.value = files
-  publishForm.images = files.map(f => URL.createObjectURL(f.raw))
 }
 
 const resetForm = () => {

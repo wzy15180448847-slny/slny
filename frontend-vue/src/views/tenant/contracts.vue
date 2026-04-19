@@ -146,18 +146,15 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted, nextTick } from 'vue'
 import { useUserStore } from '@/store/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { getMyContracts, signContract, terminateContract as apiTerminateContract } from '@/api/contracts'
 
 const userStore = useUserStore()
 const activeTab = ref('all')
 
-const contracts = ref([
-  { id: 1, houseName: '阳光小区3室2厅', address: '朝阳区阳光路88号', contractNo: 'HT202401001', startDate: '2024-01-01', endDate: '2024-12-31', rent: 3500, deposit: 7000, status: 'ACTIVE', daysRemaining: 340, landlordName: '张房东' },
-  { id: 2, houseName: '幸福花园2室1厅', address: '海淀区幸福街12号', contractNo: 'HT202401002', startDate: '2024-02-01', endDate: '2025-01-31', rent: 2800, deposit: 5600, status: 'PENDING', daysRemaining: null, landlordName: '李房东' },
-  { id: 3, houseName: '锦绣家园1室1厅', address: '西城区锦绣路36号', contractNo: 'HT202306001', startDate: '2023-06-01', endDate: '2024-05-31', rent: 2000, deposit: 4000, status: 'EXPIRED', daysRemaining: null, landlordName: '王房东' }
-])
+const contracts = ref([])
 
 const selectedContract = ref(null)
 const showPreviewDialog = ref(false)
@@ -216,10 +213,39 @@ const endSign = () => {
   isDrawing.value = false
 }
 
-const confirmSign = () => {
-  selectedContract.value.status = 'ACTIVE'
-  ElMessage.success('合同签署成功')
-  showSignDialog.value = false
+const loadContracts = async () => {
+  try {
+    const res = await getMyContracts()
+    contracts.value = res.data || []
+  } catch (error) {
+    console.error('加载合同失败:', error)
+    ElMessage.error('加载合同失败')
+  }
+}
+
+const confirmSign = async () => {
+  const canvas = signCanvas.value
+  if (!canvas) {
+    ElMessage.error('请先签名')
+    return
+  }
+  
+  const signatureBase64 = canvas.toDataURL('image/png')
+  
+  try {
+    await signContract(selectedContract.value.id, {
+      signature: signatureBase64
+    })
+    
+    selectedContract.value.status = 'ACTIVE'
+    ElMessage.success('合同签署成功')
+    showSignDialog.value = false
+    
+    canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height)
+  } catch (error) {
+    console.error('签署失败:', error)
+    ElMessage.error('签署失败: ' + (error.response?.data?.message || error.message))
+  }
 }
 
 const terminateContract = async (contract) => {
@@ -229,13 +255,24 @@ const terminateContract = async (contract) => {
       cancelButtonText: '取消',
       type: 'warning'
     })
+    
+    await apiTerminateContract(contract.id, {
+      reason: '租客申请解约'
+    })
+    
     ElMessage.success('解约申请已提交')
+    await loadContracts()
   } catch (error) {
     if (error !== 'cancel') {
-      console.error(error)
+      console.error('解约失败:', error)
+      ElMessage.error('解约失败: ' + (error.response?.data?.message || error.message))
     }
   }
 }
+
+onMounted(() => {
+  loadContracts()
+})
 </script>
 
 <style lang="scss" scoped>
