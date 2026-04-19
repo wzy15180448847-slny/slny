@@ -70,7 +70,7 @@
 
     <!-- 统计今日新增用户数量 -->
     <select id="countTodayNew" resultType="java.lang.Long">
-        SELECT COUNT(*) FROM sys_user WHERE DATE(created_time) = CURDATE() AND is_deleted = 0
+        SELECT COUNT(*) FROM sys_user WHERE DATE(create_time) = CURDATE() AND is_deleted = 0
     </select>
 
 </mapper>

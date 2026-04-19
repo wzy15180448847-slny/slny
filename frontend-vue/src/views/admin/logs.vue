@@ -52,7 +52,9 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
+import { ElMessage } from 'element-plus'
+import { getRecentLogs, searchLogs } from '@/api/admin'
 
 const searchForm = reactive({
   keyword: '',
@@ -61,22 +63,13 @@ const searchForm = reactive({
 })
 
 const todayStats = reactive({
-  total: 120,
-  success: 115,
-  failure: 3,
-  abnormal: 2
+  total: 0,
+  success: 0,
+  failure: 0,
+  abnormal: 0
 })
 
-const logs = ref([
-  { id: 1, username: 'admin', ip: '192.168.1.100', location: '北京', device: 'Windows Chrome', time: '2024-01-15 14:30:25', type: 'SUCCESS', reason: '' },
-  { id: 2, username: 'user0', ip: '192.168.1.101', location: '北京', device: 'Mac Safari', time: '2024-01-15 14:25:10', type: 'SUCCESS', reason: '' },
-  { id: 3, username: 'test', ip: '10.0.0.1', location: '未知', device: 'Linux Firefox', time: '2024-01-15 14:20:33', type: 'FAILURE', reason: '密码错误' },
-  { id: 4, username: 'admin', ip: '192.168.1.200', location: '上海', device: 'Windows Edge', time: '2024-01-15 14:15:00', type: 'ABNORMAL', reason: '异地登录' },
-  { id: 5, username: 'user1', ip: '192.168.1.102', location: '北京', device: 'Android Chrome', time: '2024-01-15 14:10:45', type: 'SUCCESS', reason: '' },
-  { id: 6, username: 'hacker', ip: '123.123.123.123', location: '海外', device: 'Unknown', time: '2024-01-15 14:05:20', type: 'FAILURE', reason: '账号不存在' },
-  { id: 7, username: 'user2', ip: '192.168.1.103', location: '北京', device: 'iOS Safari', time: '2024-01-15 14:00:15', type: 'SUCCESS', reason: '' },
-  { id: 8, username: 'admin', ip: '192.168.1.100', location: '北京', device: 'Windows Chrome', time: '2024-01-15 13:55:30', type: 'SUCCESS', reason: '' }
-])
+const logs = ref([])
 
 const filteredLogs = computed(() => {
   return logs.value.filter(log => {
@@ -104,7 +97,80 @@ const getTypeText = (type) => {
   return texts[type] || type
 }
 
-const search = () => {}
+const loadLogs = async () => {
+  try {
+    const { data } = await getRecentLogs()
+    logs.value = data.map(log => ({
+      id: log.id,
+      username: log.username,
+      ip: log.loginIp || '未知',
+      location: log.loginLocation || '未知',
+      device: log.loginDevice || '未知',
+      time: formatDateTime(log.createTime),
+      type: log.loginResult === 1 ? 'SUCCESS' : 'FAILURE',
+      reason: log.failReason || ''
+    }))
+    
+    updateStats()
+  } catch (error) {
+    console.error('加载日志失败:', error)
+    ElMessage.error('加载日志失败')
+  }
+}
+
+const formatDateTime = (dateTime) => {
+  if (!dateTime) return ''
+  return dateTime.replace('T', ' ').substring(0, 19)
+}
+
+const formatDate = (date) => {
+  if (!date) return ''
+  if (typeof date === 'string') return date
+  const d = new Date(date)
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+const search = async () => {
+  try {
+    const params = {
+      keyword: searchForm.keyword,
+      type: searchForm.type,
+      date: searchForm.date ? formatDate(searchForm.date) : ''
+    }
+    const { data } = await searchLogs(params)
+    logs.value = data.map(log => ({
+      id: log.id,
+      username: log.username,
+      ip: log.loginIp || '未知',
+      location: log.loginLocation || '未知',
+      device: log.loginDevice || '未知',
+      time: formatDateTime(log.createTime),
+      type: log.loginResult === 1 ? 'SUCCESS' : (log.loginResult === 2 ? 'ABNORMAL' : 'FAILURE'),
+      reason: log.failReason || ''
+    }))
+    
+    updateStats(searchForm.date ? formatDate(searchForm.date) : null)
+  } catch (error) {
+    console.error('搜索日志失败:', error)
+    ElMessage.error('搜索日志失败')
+  }
+}
+
+const updateStats = (targetDate = null) => {
+  const dateToFilter = targetDate || new Date().toISOString().split('T')[0]
+  const filteredLogs = logs.value.filter(log => log.time.startsWith(dateToFilter))
+  todayStats.total = filteredLogs.length
+  todayStats.success = filteredLogs.filter(l => l.type === 'SUCCESS').length
+  todayStats.failure = filteredLogs.filter(l => l.type === 'FAILURE').length
+  todayStats.abnormal = filteredLogs.filter(l => l.type === 'ABNORMAL').length
+}
+
+onMounted(() => {
+  loadLogs()
+})
 </script>
 
 <style lang="scss" scoped>

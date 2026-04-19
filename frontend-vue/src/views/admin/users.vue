@@ -5,7 +5,7 @@
     </div>
     
     <div class="search-bar">
-      <el-input v-model="searchForm.keyword" placeholder="搜索用户名或手机号" class="search-input" />
+      <el-input v-model="searchForm.username" placeholder="搜索用户名或手机号" class="search-input" />
       <el-select v-model="searchForm.userType" placeholder="选择用户类型">
         <el-option label="全部" value="" />
         <el-option label="管理员" value="ADMIN" />
@@ -20,7 +20,7 @@
       <el-button type="primary" @click="search">搜索</el-button>
     </div>
     
-    <el-table :data="users" border>
+    <el-table :data="filteredUsers" border>
       <el-table-column prop="username" label="用户名" />
       <el-table-column prop="nickname" label="昵称" />
       <el-table-column prop="phone" label="手机号" />
@@ -105,12 +105,12 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getUsers, updateUserStatus, deleteUser } from '@/api/admin'
+import { getUsers, updateUserStatus, deleteUser as deleteUserApi } from '@/api/admin'
 
 const searchForm = reactive({
-  keyword: '',
+  username: '',
   userType: '',
   status: ''
 })
@@ -118,6 +118,15 @@ const searchForm = reactive({
 const users = ref([])
 const selectedUser = ref(null)
 const showDetailDialog = ref(false)
+
+const filteredUsers = computed(() => {
+  return users.value.filter(user => {
+    if (searchForm.status && user.status !== searchForm.status) {
+      return false
+    }
+    return true
+  })
+})
 
 const getTypeTag = (type) => {
   const types = {
@@ -144,12 +153,11 @@ const search = () => {
 const loadUsers = async () => {
   try {
     const params = {
-      keyword: searchForm.keyword,
-      userType: searchForm.userType,
-      status: searchForm.status
+      username: searchForm.username,
+      userType: searchForm.userType
     }
     const { data } = await getUsers(params)
-    users.value = data || []
+    users.value = data?.records || []
   } catch (error) {
     console.error('加载用户列表失败:', error)
     ElMessage.error('加载用户列表失败')
@@ -182,7 +190,7 @@ const deleteUser = async (user) => {
       type: 'warning'
     })
     
-    await deleteUser(user.id)
+    await deleteUserApi(user.id)
     users.value = users.value.filter(u => u.id !== user.id)
     ElMessage.success('用户已删除')
   } catch (error) {

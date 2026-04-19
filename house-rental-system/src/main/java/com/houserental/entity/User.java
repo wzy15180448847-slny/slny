@@ -102,6 +102,12 @@ public class User extends BaseEntity {
     @TableField(value = "password_update_time", exist = true)
     private LocalDateTime passwordUpdateTime;
 
+    /**
+     * 信用分
+     */
+    @TableField(value = "credit_score", exist = true)
+    private Integer creditScore;
+
     // Getters and Setters
     public String getUsername() {
         return username;
@@ -221,5 +227,13 @@ public class User extends BaseEntity {
 
     public void setPasswordUpdateTime(LocalDateTime passwordUpdateTime) {
         this.passwordUpdateTime = passwordUpdateTime;
+    }
+
+    public Integer getCreditScore() {
+        return creditScore;
+    }
+
+    public void setCreditScore(Integer creditScore) {
+        this.creditScore = creditScore;
     }
 }

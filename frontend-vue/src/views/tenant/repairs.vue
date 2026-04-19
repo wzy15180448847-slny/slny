@@ -165,21 +165,51 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { getMyRepairs, getMyContracts } from '@/api/contract'
 
 const activeTab = ref('all')
 
-const repairs = ref([
-  { id: 1, houseName: '阳光小区3室2厅', type: 'WATER_LEAK', description: '卫生间水管漏水严重，需要维修', createTime: '2024-01-15 10:30', status: 'PENDING', handler: null, completeTime: null, images: [] },
-  { id: 2, houseName: '阳光小区3室2厅', type: 'ELECTRIC', description: '客厅空调无法启动', createTime: '2024-01-14 15:00', status: 'REPAIRING', handler: '维修师傅张', completeTime: null, images: [] },
-  { id: 3, houseName: '阳光小区3室2厅', type: 'WALL', description: '卧室墙面有裂缝', createTime: '2024-01-10 09:00', status: 'COMPLETED', handler: '维修师傅李', completeTime: '2024-01-12 16:00', images: [] }
-])
+const repairs = ref([])
+const houses = ref([])
 
-const houses = ref([
-  { id: 1, name: '阳光小区3室2厅' },
-  { id: 2, name: '幸福花园2室1厅' }
-])
+const loadRepairs = async () => {
+  try {
+    const { data } = await getMyRepairs()
+    repairs.value = (data?.records || []).map(repair => ({
+      id: repair.id,
+      houseName: repair.houseName || '未知房源',
+      type: repair.repairType || 'OTHER',
+      description: repair.description,
+      createTime: formatDateTime(repair.createTime),
+      status: repair.status === 0 ? 'PENDING' : repair.status === 1 ? 'REPAIRING' : 'COMPLETED',
+      handler: repair.handlerName || '',
+      completeTime: repair.completeTime ? formatDateTime(repair.completeTime) : null,
+      images: repair.images ? JSON.parse(repair.images) : []
+    }))
+  } catch (error) {
+    console.error('加载报修列表失败:', error)
+    ElMessage.error('加载报修列表失败')
+  }
+}
+
+const loadHouses = async () => {
+  try {
+    const { data } = await getMyContracts()
+    houses.value = (data?.records || []).filter(c => c.status === 1).map(contract => ({
+      id: contract.houseId,
+      name: contract.houseName || '未知房源'
+    }))
+  } catch (error) {
+    console.error('加载房屋列表失败:', error)
+  }
+}
+
+const formatDateTime = (dateTime) => {
+  if (!dateTime) return ''
+  return dateTime.replace('T', ' ').substring(0, 19)
+}
 
 const selectedRepair = ref(null)
 const showDetailDialog = ref(false)
@@ -301,6 +331,11 @@ const submitEvaluate = () => {
   evaluateForm.score = 5
   evaluateForm.comment = ''
 }
+
+onMounted(() => {
+  loadRepairs()
+  loadHouses()
+})
 </script>
 
 <style lang="scss" scoped>

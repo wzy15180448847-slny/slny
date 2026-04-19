@@ -45,11 +45,10 @@ spring:
       login-username: admin
       login-password: admin
 
-  # SQL初始化配置 - 启动时自动执行初始化脚本
+  # SQL初始化配置 - 启动时自动执行初始化脚本（已禁用，使用外部脚本初始化）
   sql:
     init:
-      mode: always
-      schema-locations: classpath:init_project_v2.sql
+      mode: never
 
   # MyBatis Plus配置
   mybatis-plus:

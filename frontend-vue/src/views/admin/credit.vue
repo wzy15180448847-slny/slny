@@ -9,20 +9,20 @@
         <div class="overview-title">用户信用分布</div>
         <div class="credit-distribution">
           <div class="distribution-item">
-            <div class="distribution-bar high" style="width: 35%"></div>
-            <span>优秀 (80-100): 35%</span>
+            <div class="distribution-bar high" :style="{ width: creditDistribution.highPercent + '%' }"></div>
+            <span>优秀 (80-100): {{ creditDistribution.highPercent }}%</span>
           </div>
           <div class="distribution-item">
-            <div class="distribution-bar medium" style="width: 45%"></div>
-            <span>良好 (60-79): 45%</span>
+            <div class="distribution-bar medium" :style="{ width: creditDistribution.mediumPercent + '%' }"></div>
+            <span>良好 (60-79): {{ creditDistribution.mediumPercent }}%</span>
           </div>
           <div class="distribution-item">
-            <div class="distribution-bar low" style="width: 15%"></div>
-            <span>一般 (40-59): 15%</span>
+            <div class="distribution-bar low" :style="{ width: creditDistribution.lowPercent + '%' }"></div>
+            <span>一般 (40-59): {{ creditDistribution.lowPercent }}%</span>
           </div>
           <div class="distribution-item">
-            <div class="distribution-bar bad" style="width: 5%"></div>
-            <span>较差 (&lt;40): 5%</span>
+            <div class="distribution-bar bad" :style="{ width: creditDistribution.badPercent + '%' }"></div>
+            <span>较差 (&lt;40): {{ creditDistribution.badPercent }}%</span>
           </div>
         </div>
       </div>
@@ -134,31 +134,63 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { getUsers, updateCreditScore } from '@/api/admin'
 
 const searchForm = reactive({
   keyword: '',
   creditLevel: ''
 })
 
-const users = ref([
-  { id: 1, username: 'user1', nickname: '租客A', userType: 'TENANT', creditScore: 95, recentBehavior: '按时支付租金', creditHistory: [
-    { time: '2024-01-10', change: 5, reason: '按时支付租金' },
-    { time: '2024-01-05', change: 3, reason: '完成房屋评价' }
-  ]},
-  { id: 2, username: 'user0', nickname: '张房东', userType: 'LANDLORD', creditScore: 92, recentBehavior: '及时处理报修', creditHistory: [
-    { time: '2024-01-12', change: 2, reason: '及时处理报修' },
-    { time: '2024-01-08', change: 5, reason: '房源信息真实' }
-  ]},
-  { id: 3, username: 'user3', nickname: '租客B', userType: 'TENANT', creditScore: 75, recentBehavior: '正常', creditHistory: [
-    { time: '2024-01-05', change: -5, reason: '逾期支付租金' }
-  ]},
-  { id: 4, username: 'user4', nickname: '租客C', userType: 'TENANT', creditScore: 35, recentBehavior: '多次逾期', creditHistory: [
-    { time: '2024-01-14', change: -10, reason: '严重逾期' },
-    { time: '2024-01-10', change: -5, reason: '逾期支付租金' }
-  ]}
-])
+const users = ref([])
+
+const creditDistribution = reactive({
+  highPercent: 0,
+  mediumPercent: 0,
+  lowPercent: 0,
+  badPercent: 0
+})
+
+const calculateDistribution = () => {
+  const total = users.value.length
+  if (total === 0) {
+    creditDistribution.highPercent = 0
+    creditDistribution.mediumPercent = 0
+    creditDistribution.lowPercent = 0
+    creditDistribution.badPercent = 0
+    return
+  }
+  
+  const high = users.value.filter(u => u.creditScore >= 80).length
+  const medium = users.value.filter(u => u.creditScore >= 60 && u.creditScore < 80).length
+  const low = users.value.filter(u => u.creditScore >= 40 && u.creditScore < 60).length
+  const bad = users.value.filter(u => u.creditScore < 40).length
+  
+  creditDistribution.highPercent = Math.round((high / total) * 100)
+  creditDistribution.mediumPercent = Math.round((medium / total) * 100)
+  creditDistribution.lowPercent = Math.round((low / total) * 100)
+  creditDistribution.badPercent = Math.round((bad / total) * 100)
+}
+
+const loadUsers = async () => {
+  try {
+    const { data } = await getUsers({})
+    users.value = (data?.records || []).map(user => ({
+      id: user.id,
+      username: user.username,
+      nickname: user.nickname || user.username,
+      userType: user.userType === 1 ? 'LANDLORD' : 'TENANT',
+      creditScore: user.creditScore || 0,
+      recentBehavior: '',
+      creditHistory: []
+    }))
+    calculateDistribution()
+  } catch (error) {
+    console.error('加载用户信用数据失败:', error)
+    ElMessage.error('加载用户信用数据失败')
+  }
+}
 
 const selectedUser = ref(null)
 const showDetailDialog = ref(false)
@@ -238,25 +270,43 @@ const adjustCredit = (user) => {
   showAdjustDialog.value = true
 }
 
-const confirmAdjust = () => {
+const confirmAdjust = async () => {
   if (!adjustForm.score || !adjustForm.reason) {
     ElMessage.error('请填写完整信息')
     return
   }
   
-  const scoreChange = parseInt(adjustForm.score)
-  selectedUser.value.creditScore += scoreChange
-  selectedUser.value.creditHistory.unshift({
-    time: new Date().toLocaleString(),
-    change: scoreChange,
-    reason: adjustForm.reason
-  })
-  
-  ElMessage.success('信用分调整成功')
-  showAdjustDialog.value = false
-  adjustForm.score = ''
-  adjustForm.reason = ''
+  try {
+    const scoreChange = parseInt(adjustForm.score)
+    await updateCreditScore(selectedUser.value.id, { score: scoreChange })
+    
+    selectedUser.value.creditScore += scoreChange
+    selectedUser.value.creditHistory.unshift({
+      time: new Date().toLocaleString(),
+      change: scoreChange,
+      reason: adjustForm.reason
+    })
+    
+    const userIndex = users.value.findIndex(u => u.id === selectedUser.value.id)
+    if (userIndex !== -1) {
+      users.value[userIndex].creditScore = selectedUser.value.creditScore
+    }
+    
+    calculateDistribution()
+    
+    ElMessage.success('信用分调整成功')
+    showAdjustDialog.value = false
+    adjustForm.score = ''
+    adjustForm.reason = ''
+  } catch (error) {
+    console.error('调整信用分失败:', error)
+    ElMessage.error('调整信用分失败')
+  }
 }
+
+onMounted(() => {
+  loadUsers()
+})
 </script>
 
 <style lang="scss" scoped>

@@ -121,10 +121,10 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { 
   getLandlordAppointments, 
-  confirmAppointment, 
-  rejectAppointment, 
-  completeAppointment,
-  createContract 
+  confirmAppointment as confirmAppointmentApi, 
+  rejectAppointment as rejectAppointmentApi, 
+  completeAppointment as completeAppointmentApi,
+  createContract as createContractApi 
 } from '@/api/landlord'
 
 const router = useRouter()
@@ -164,7 +164,7 @@ const getStatusText = (status) => {
 const loadAppointments = async () => {
   try {
     const { data } = await getLandlordAppointments()
-    appointments.value = data || []
+    appointments.value = data?.records || []
   } catch (error) {
     console.error('加载预约列表失败:', error)
     ElMessage.error('加载预约列表失败')
@@ -178,7 +178,7 @@ const viewDetail = (appointment) => {
 
 const confirmAppointment = async (appointment) => {
   try {
-    await confirmAppointment(appointment.id)
+    await confirmAppointmentApi(appointment.id)
     appointment.status = 'CONFIRMED'
     ElMessage.success('预约已确认')
     await loadAppointments()
@@ -201,7 +201,7 @@ const submitReject = async () => {
   }
   
   try {
-    await rejectAppointment(selectedAppointment.value.id, { reason: rejectForm.reason })
+    await rejectAppointmentApi(selectedAppointment.value.id, { reason: rejectForm.reason })
     selectedAppointment.value.status = 'REJECTED'
     ElMessage.success('预约已拒绝')
     showRejectDialog.value = false
@@ -214,7 +214,7 @@ const submitReject = async () => {
 
 const completeAppointment = async (appointment) => {
   try {
-    await completeAppointment(appointment.id)
+    await completeAppointmentApi(appointment.id)
     appointment.status = 'COMPLETED'
     ElMessage.success('看房已完成')
     await loadAppointments()
@@ -226,7 +226,7 @@ const completeAppointment = async (appointment) => {
 
 const createContract = async () => {
   try {
-    await createContract({
+    await createContractApi({
       houseId: selectedAppointment.value.houseId,
       tenantId: selectedAppointment.value.tenantId
     })

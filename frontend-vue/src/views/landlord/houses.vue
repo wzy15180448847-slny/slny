@@ -142,7 +142,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { getMyHouses, updateHouseStatus } from '@/api/landlord'
+import { getMyHouses, onlineHouse, offlineHouse } from '@/api/landlord'
 
 const router = useRouter()
 const activeTab = ref('all')
@@ -196,13 +196,12 @@ const editHouse = (house) => {
 
 const toggleHouse = async (house) => {
   try {
-    const newStatus = house.status === 'ACTIVE' ? 2 : 0
-    await updateHouseStatus(house.id, newStatus)
-    
     if (house.status === 'ACTIVE') {
+      await offlineHouse(house.id)
       house.status = 'INACTIVE'
       ElMessage.success('房源已下架')
     } else if (house.status === 'INACTIVE') {
+      await onlineHouse(house.id)
       house.status = 'ACTIVE'
       ElMessage.success('房源已上架')
     }

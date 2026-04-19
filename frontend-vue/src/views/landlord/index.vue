@@ -111,28 +111,57 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
+import { getLandlordAppointments } from '@/api/appointment'
+import { getMyHouses } from '@/api/house'
 
 const router = useRouter()
 const userStore = useUserStore()
 
 const stats = reactive({
-  houses: 8,
-  revenue: 28500,
-  appointments: 3,
-  repairs: 1,
-  activeHouses: 5,
-  pendingHouses: 1,
-  rentedHouses: 2
+  houses: 0,
+  revenue: 0,
+  appointments: 0,
+  repairs: 0,
+  activeHouses: 0,
+  pendingHouses: 0,
+  rentedHouses: 0
 })
 
-const recentAppointments = ref([
-  { id: 1, houseName: '阳光小区3室2厅', tenantName: '用户A', date: '2024-01-16 14:00', status: 'PENDING' },
-  { id: 2, houseName: '幸福花园2室1厅', tenantName: '用户B', date: '2024-01-17 10:00', status: 'PENDING' },
-  { id: 3, houseName: '锦绣家园1室1厅', tenantName: '用户C', date: '2024-01-15 09:00', status: 'CONFIRMED' }
-])
+const recentAppointments = ref([])
+
+const loadData = async () => {
+  try {
+    const [appointmentsRes, housesRes] = await Promise.all([
+      getLandlordAppointments(),
+      getMyHouses()
+    ])
+    
+    recentAppointments.value = (appointmentsRes.data || []).map(app => ({
+      id: app.id,
+      houseName: app.houseName || '未知房源',
+      tenantName: app.tenantName || '未知用户',
+      date: formatDateTime(app.appointmentTime),
+      status: app.status === 0 ? 'PENDING' : app.status === 1 ? 'CONFIRMED' : app.status === 2 ? 'COMPLETED' : 'CANCELLED'
+    }))
+    
+    const houses = housesRes.data || []
+    stats.houses = houses.length
+    stats.activeHouses = houses.filter(h => h.houseStatus === 0).length
+    stats.pendingHouses = houses.filter(h => h.houseStatus === 3).length
+    stats.rentedHouses = houses.filter(h => h.houseStatus === 1).length
+    stats.appointments = recentAppointments.value.filter(a => a.status === 'PENDING').length
+  } catch (error) {
+    console.error('加载数据失败:', error)
+  }
+}
+
+const formatDateTime = (dateTime) => {
+  if (!dateTime) return ''
+  return dateTime.replace('T', ' ').substring(0, 16)
+}
 
 const goTo = (path) => {
   router.push(path)
@@ -157,6 +186,10 @@ const getStatusText = (status) => {
   }
   return texts[status] || status
 }
+
+onMounted(() => {
+  loadData()
+})
 </script>
 
 <style lang="scss" scoped>

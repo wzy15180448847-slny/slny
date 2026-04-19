@@ -66,4 +66,17 @@ public class AdminUserController {
         userMapper.deleteById(id);
         return Result.success();
     }
+
+    @PutMapping("/{id}/credit")
+    public Result<Void> updateCreditScore(@PathVariable Long id, @RequestBody Map<String, Object> request) {
+        Integer scoreChange = (Integer) request.get("score");
+        User user = userMapper.selectById(id);
+        if (user != null) {
+            int currentScore = user.getCreditScore() != null ? user.getCreditScore() : 0;
+            user.setCreditScore(currentScore + scoreChange);
+            userMapper.updateById(user);
+            return Result.success();
+        }
+        return Result.error("用户不存在");
+    }
 }

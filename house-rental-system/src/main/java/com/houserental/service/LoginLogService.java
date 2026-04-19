@@ -35,4 +35,9 @@ public interface LoginLogService {
      */
     List<LoginLogDTO> getRecentLogs(int limit);
 
+    /**
+     * 根据条件查询登录日志
+     */
+    List<LoginLogDTO> getLogsByCondition(String keyword, String type, String date);
+
 }

@@ -153,18 +153,50 @@ public class LoginLogServiceImpl implements LoginLogService {
         
         List<LoginLog> logs = loginLogMapper.selectList(wrapper);
         
-        return logs.stream().map(log -> {
-            LoginLogDTO dto = new LoginLogDTO();
-            dto.setId(log.getId());
-            dto.setUsername(log.getUsername());
-            dto.setLoginIp(log.getIpAddress());
-            dto.setLoginLocation(log.getLoginLocation());
-            dto.setLoginDevice(log.getLoginDevice());
-            dto.setLoginResult(log.getStatus());
-            dto.setFailReason(log.getFailReason());
-            dto.setCreateTime(log.getCreateTime());
-            return dto;
-        }).collect(Collectors.toList());
+        return logs.stream().map(this::convertToDTO).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<LoginLogDTO> getLogsByCondition(String keyword, String type, String date) {
+        QueryWrapper<LoginLog> wrapper = new QueryWrapper<>();
+        wrapper.eq("is_deleted", 0);
+        
+        if (StringUtils.hasText(keyword)) {
+            wrapper.like("username", keyword);
+        }
+        
+        if (StringUtils.hasText(type)) {
+            if ("SUCCESS".equals(type)) {
+                wrapper.eq("status", 1);
+            } else if ("FAILURE".equals(type)) {
+                wrapper.eq("status", 0);
+            } else if ("ABNORMAL".equals(type)) {
+                wrapper.eq("status", 2);
+            }
+        }
+        
+        if (StringUtils.hasText(date)) {
+            wrapper.apply("DATE(create_time) = {0}", date);
+        }
+        
+        wrapper.orderByDesc("create_time");
+        
+        List<LoginLog> logs = loginLogMapper.selectList(wrapper);
+        
+        return logs.stream().map(this::convertToDTO).collect(Collectors.toList());
+    }
+
+    private LoginLogDTO convertToDTO(LoginLog log) {
+        LoginLogDTO dto = new LoginLogDTO();
+        dto.setId(log.getId());
+        dto.setUsername(log.getUsername());
+        dto.setLoginIp(log.getIpAddress());
+        dto.setLoginLocation(log.getLoginLocation());
+        dto.setLoginDevice(log.getLoginDevice());
+        dto.setLoginResult(log.getStatus());
+        dto.setFailReason(log.getFailReason());
+        dto.setCreateTime(log.getCreateTime());
+        return dto;
     }
 
 }

@@ -105,30 +105,62 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
+import { getMyAppointments } from '@/api/appointment'
+import { getMyContracts } from '@/api/contract'
 
 const router = useRouter()
 const userStore = useUserStore()
 
 const stats = reactive({
-  contracts: 2,
-  pendingBills: 1,
+  contracts: 0,
+  pendingBills: 0,
   repairs: 0,
-  favorites: 5
+  favorites: 0
 })
 
-const recentAppointments = ref([
-  { id: 1, houseName: '阳光小区3室2厅', date: '2024-01-16 14:00', status: 'PENDING' },
-  { id: 2, houseName: '幸福花园2室1厅', date: '2024-01-17 10:00', status: 'CONFIRMED' },
-  { id: 3, houseName: '锦绣家园1室1厅', date: '2024-01-15 09:00', status: 'COMPLETED' }
-])
+const recentAppointments = ref([])
+const recentContracts = ref([])
 
-const recentContracts = ref([
-  { id: 1, houseName: '阳光小区3室2厅', startDate: '2024-01-01', endDate: '2024-12-31', status: 'ACTIVE' },
-  { id: 2, houseName: '幸福花园2室1厅', startDate: '2023-06-01', endDate: '2024-05-31', status: 'EXPIRED' }
-])
+const loadData = async () => {
+  try {
+    const [appointmentsRes, contractsRes] = await Promise.all([
+      getMyAppointments(),
+      getMyContracts()
+    ])
+    
+    recentAppointments.value = (appointmentsRes.data || []).map(app => ({
+      id: app.id,
+      houseName: app.houseName || '未知房源',
+      date: formatDateTime(app.appointmentTime),
+      status: app.status === 0 ? 'PENDING' : app.status === 1 ? 'CONFIRMED' : app.status === 2 ? 'COMPLETED' : 'CANCELLED'
+    }))
+    
+    recentContracts.value = (contractsRes.data || []).map(contract => ({
+      id: contract.id,
+      houseName: contract.houseName || '未知房源',
+      startDate: formatDate(contract.startDate),
+      endDate: formatDate(contract.endDate),
+      status: contract.status === 0 ? 'PENDING' : contract.status === 1 ? 'ACTIVE' : contract.status === 2 ? 'EXPIRED' : 'TERMINATED'
+    }))
+    
+    stats.contracts = recentContracts.value.length
+  } catch (error) {
+    console.error('加载数据失败:', error)
+  }
+}
+
+const formatDateTime = (dateTime) => {
+  if (!dateTime) return ''
+  return dateTime.replace('T', ' ').substring(0, 16)
+}
+
+const formatDate = (dateTime) => {
+  if (!dateTime) return ''
+  return dateTime.substring(0, 10)
+}
 
 const goTo = (path) => {
   router.push(path)
@@ -173,6 +205,10 @@ const getContractStatusText = (status) => {
   }
   return texts[status] || status
 }
+
+onMounted(() => {
+  loadData()
+})
 </script>
 
 <style lang="scss" scoped>

@@ -170,9 +170,9 @@ const loadComplaints = async (status = 'PENDING') => {
   try {
     const { data } = await getComplaints({ status })
     if (status === 'PENDING') {
-      pendingComplaints.value = data || []
+      pendingComplaints.value = data?.records || []
     } else {
-      handledComplaints.value = data || []
+      handledComplaints.value = data?.records || []
     }
   } catch (error) {
     console.error('加载投诉列表失败:', error)

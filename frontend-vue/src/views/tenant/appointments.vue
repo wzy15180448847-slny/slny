@@ -143,7 +143,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getMyAppointments, createAppointment, cancelAppointment } from '@/api/appointment'
+import { getMyAppointments, createAppointment as createAppointmentApi, cancelAppointment as cancelAppointmentApi } from '@/api/appointment'
 
 const activeTab = ref('all')
 
@@ -184,7 +184,7 @@ const getStatusText = (status) => {
 const loadAppointments = async () => {
   try {
     const { data } = await getMyAppointments()
-    appointments.value = data || []
+    appointments.value = data?.records || []
   } catch (error) {
     console.error('加载预约列表失败:', error)
     ElMessage.error('加载预约列表失败')
@@ -204,7 +204,7 @@ const cancelAppointment = async (appointment) => {
       type: 'warning'
     })
     
-    await cancelAppointment(appointment.id)
+    await cancelAppointmentApi(appointment.id)
     appointment.status = 'CANCELLED'
     ElMessage.success('预约已取消')
   } catch (error) {
@@ -226,7 +226,7 @@ const submitAppointment = async () => {
   }
   
   try {
-    await createAppointment({
+    await createAppointmentApi({
       houseId: createForm.houseId,
       date: createForm.date,
       time: createForm.time,

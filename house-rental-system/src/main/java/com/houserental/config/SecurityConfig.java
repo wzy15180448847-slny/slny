@@ -78,9 +78,9 @@ public class SecurityConfig {
                 .requestMatchers(new AntPathRequestMatcher("/**/*.ico")).permitAll()
                 .requestMatchers(new AntPathRequestMatcher("/druid/**")).permitAll()
                 // 角色隔离配置
-                .requestMatchers(new AntPathRequestMatcher("/admin/**")).hasRole("ADMIN")
-                .requestMatchers(new AntPathRequestMatcher("/landlord/**")).hasRole("LANDLORD")
-                .requestMatchers(new AntPathRequestMatcher("/tenant/**")).hasRole("TENANT")
+                .requestMatchers(new AntPathRequestMatcher("/admin/**")).hasAuthority("ROLE_ADMIN")
+                .requestMatchers(new AntPathRequestMatcher("/landlord/**")).hasAuthority("ROLE_LANDLORD")
+                .requestMatchers(new AntPathRequestMatcher("/tenant/**")).hasAuthority("ROLE_TENANT")
                 // 其他请求需要认证
                 .anyRequest().authenticated();
 
@@ -114,7 +114,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(Arrays.asList("http://localhost:5173", "http://localhost:8080", "http://localhost:3000", "http://127.0.0.1:3000"));
+        configuration.setAllowedOriginPatterns(Arrays.asList("http://localhost:5173", "http://localhost:8080", "http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:3001"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With"));
         configuration.setAllowCredentials(true);

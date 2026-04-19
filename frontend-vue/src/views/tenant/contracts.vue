@@ -149,7 +149,7 @@
 import { ref, reactive, onMounted, nextTick } from 'vue'
 import { useUserStore } from '@/store/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getMyContracts, signContract, terminateContract as apiTerminateContract } from '@/api/contracts'
+import { getMyContracts, signContract as signContractApi, terminateContract as apiTerminateContract } from '@/api/contracts'
 
 const userStore = useUserStore()
 const activeTab = ref('all')
@@ -233,7 +233,7 @@ const confirmSign = async () => {
   const signatureBase64 = canvas.toDataURL('image/png')
   
   try {
-    await signContract(selectedContract.value.id, {
+    await signContractApi(selectedContract.value.id, {
       signature: signatureBase64
     })
     

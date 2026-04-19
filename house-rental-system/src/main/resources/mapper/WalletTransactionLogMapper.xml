@@ -4,18 +4,18 @@
 
     <select id="selectByUserId" parameterType="java.lang.Long" resultType="com.houserental.entity.WalletTransactionLog">
         SELECT id, user_id, transaction_type, amount, balance_before, balance_after,
-               order_no, related_user_id, remark, created_time
+               order_no, related_user_id, remark, create_time
         FROM biz_wallet_transaction
         WHERE user_id = #{userId}
-        ORDER BY created_time DESC
+        ORDER BY create_time DESC
     </select>
 
     <select id="selectByOrderNo" parameterType="java.lang.String" resultType="com.houserental.entity.WalletTransactionLog">
         SELECT id, user_id, transaction_type, amount, balance_before, balance_after,
-               order_no, related_user_id, remark, created_time
+               order_no, related_user_id, remark, create_time
         FROM biz_wallet_transaction
         WHERE order_no = #{orderNo}
-        ORDER BY created_time DESC
+        ORDER BY create_time DESC
     </select>
 
 </mapper>

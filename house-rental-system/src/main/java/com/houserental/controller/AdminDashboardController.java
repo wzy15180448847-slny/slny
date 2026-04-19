@@ -10,6 +10,7 @@ import com.houserental.service.LoginLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.HashMap;
@@ -41,6 +42,15 @@ public class AdminDashboardController {
     @GetMapping("/logs")
     public Result<List<LoginLogDTO>> getLogs() {
         List<LoginLogDTO> logs = loginLogService.getRecentLogs(10);
+        return Result.success(logs);
+    }
+
+    @GetMapping("/logs/search")
+    public Result<List<LoginLogDTO>> searchLogs(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) String date) {
+        List<LoginLogDTO> logs = loginLogService.getLogsByCondition(keyword, type, date);
         return Result.success(logs);
     }
 }

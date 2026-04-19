@@ -8,6 +8,13 @@ export function getHouseList(params) {
   })
 }
 
+export function getAllHouses() {
+  return request({
+    url: '/houses',
+    method: 'get'
+  })
+}
+
 export function getHouseDetail(id) {
   return request({
     url: `/houses/${id}`,

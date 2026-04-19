@@ -8,9 +8,9 @@
               <el-icon :size="28"><TrendCharts /></el-icon>
             </div>
             <div class="stat-info">
-              <div class="stat-value">¥{{ stats.totalRevenue }}</div>
+              <div class="stat-value">¥{{ stats.totalRevenue || 0 }}</div>
               <div class="stat-label">平台总营收</div>
-              <div class="stat-change positive">+12.5%</div>
+              <div class="stat-change neutral">暂无数据</div>
             </div>
           </div>
         </el-card>
@@ -23,9 +23,9 @@
               <el-icon :size="28"><OfficeBuilding /></el-icon>
             </div>
             <div class="stat-info">
-              <div class="stat-value">{{ stats.totalHouses }}</div>
+              <div class="stat-value">{{ stats.totalHouses || 0 }}</div>
               <div class="stat-label">房源总数</div>
-              <div class="stat-change positive">+8.3%</div>
+              <div class="stat-change positive">今日新增 {{ stats.todayNewHouseCount || 0 }}</div>
             </div>
           </div>
         </el-card>
@@ -38,9 +38,9 @@
               <el-icon :size="28"><User /></el-icon>
             </div>
             <div class="stat-info">
-              <div class="stat-value">{{ stats.totalUsers }}</div>
+              <div class="stat-value">{{ stats.totalUsers || 0 }}</div>
               <div class="stat-label">用户总数</div>
-              <div class="stat-change positive">+15.2%</div>
+              <div class="stat-change positive">今日新增 {{ stats.todayNewUserCount || 0 }}</div>
             </div>
           </div>
         </el-card>
@@ -53,9 +53,9 @@
               <el-icon :size="28"><Document /></el-icon>
             </div>
             <div class="stat-info">
-              <div class="stat-value">{{ stats.totalOrders }}</div>
+              <div class="stat-value">{{ stats.totalOrders || 0 }}</div>
               <div class="stat-label">订单总数</div>
-              <div class="stat-change negative">-2.1%</div>
+              <div class="stat-change neutral">暂无数据</div>
             </div>
           </div>
         </el-card>
@@ -401,6 +401,11 @@ const loadCharts = () => {
         &.negative {
           color: #f56c6c;
           background: rgba(245, 108, 108, 0.1);
+        }
+        
+        &.neutral {
+          color: #909399;
+          background: rgba(144, 147, 153, 0.1);
         }
       }
     }

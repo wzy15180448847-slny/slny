@@ -192,7 +192,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { houseApi } from '@/api'
+import { getHouseDetail, updateHouse } from '@/api/house'
 
 const route = useRoute()
 const router = useRouter()
@@ -237,7 +237,7 @@ const initForm = async () => {
   const houseId = route.params.id
   if (houseId) {
     try {
-      const res = await houseApi.getHouseById(houseId)
+      const res = await getHouseDetail(houseId)
       const data = res.data
       Object.assign(houseForm, data)
       
@@ -296,7 +296,7 @@ const submitForm = async () => {
       houseForm.facilities = JSON.stringify(facilityObj)
       houseForm.images = JSON.stringify(imageList.value.map(item => item.url))
       
-      await houseApi.updateHouse(houseForm)
+      await updateHouse(houseForm.id, houseForm)
       ElMessage.success('修改成功')
       router.push('/landlord/houses')
     } catch (error) {

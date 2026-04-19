@@ -78,21 +78,17 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { getAllHouses, deleteHouse as deleteHouseApi } from '@/api/house'
 
 const searchForm = reactive({
   keyword: '',
   status: ''
 })
 
-const houses = ref([
-  { id: 1, houseName: '阳光小区3室2厅', address: '朝阳区阳光路88号', landlordName: '张房东', rent: 3500, area: 120, rooms: '3室2厅', status: 'ACTIVE', viewCount: 120, createTime: '2024-01-10', images: ['https://picsum.photos/seed/house1/800/600', 'https://picsum.photos/seed/house1a/800/600'], tags: ['精装修', '近地铁'] },
-  { id: 2, houseName: '幸福花园2室1厅', address: '海淀区幸福街12号', landlordName: '李房东', rent: 2800, area: 85, rooms: '2室1厅', status: 'ACTIVE', viewCount: 85, createTime: '2024-01-08', images: ['https://picsum.photos/seed/house2/800/600'], tags: ['拎包入住'] },
-  { id: 3, houseName: '锦绣家园1室1厅', address: '西城区锦绣路36号', landlordName: '王房东', rent: 2000, area: 55, rooms: '1室1厅', status: 'PENDING', viewCount: 0, createTime: '2024-01-15', images: ['https://picsum.photos/seed/house3/800/600'], tags: ['单身公寓'] },
-  { id: 4, houseName: '星河湾4室2厅', address: '东城区星河大道1号', landlordName: '赵房东', rent: 5500, area: 180, rooms: '4室2厅', status: 'RENTED', viewCount: 200, createTime: '2024-01-05', images: ['https://picsum.photos/seed/house4/800/600', 'https://picsum.photos/seed/house4a/800/600'], tags: ['豪华装修', '带车位'] }
-])
+const houses = ref([])
 
 const router = useRouter()
 const selectedHouse = ref(null)
@@ -128,6 +124,34 @@ const getStatusText = (status) => {
   return texts[status] || status
 }
 
+const loadHouses = async () => {
+  try {
+    const { data } = await getAllHouses()
+    houses.value = data.map(house => ({
+      id: house.id,
+      houseName: house.houseName,
+      address: house.address,
+      landlordName: house.landlordName || '未知',
+      rent: house.rent,
+      area: house.area,
+      rooms: house.houseType,
+      status: house.houseStatus === 0 ? 'ACTIVE' : house.houseStatus === 1 ? 'RENTED' : house.houseStatus === 2 ? 'INACTIVE' : 'PENDING',
+      viewCount: house.viewCount || 0,
+      createTime: formatDate(house.createTime),
+      images: house.images ? JSON.parse(house.images) : [],
+      tags: house.tags ? JSON.parse(house.tags) : []
+    }))
+  } catch (error) {
+    console.error('加载房源列表失败:', error)
+    ElMessage.error('加载房源列表失败')
+  }
+}
+
+const formatDate = (dateTime) => {
+  if (!dateTime) return ''
+  return dateTime.substring(0, 10)
+}
+
 const search = () => {}
 
 const viewDetail = (house) => {
@@ -146,6 +170,7 @@ const deleteHouse = async (house) => {
       cancelButtonText: '取消',
       type: 'warning'
     })
+    await deleteHouseApi(house.id)
     const index = houses.value.findIndex(h => h.id === house.id)
     if (index > -1) {
       houses.value.splice(index, 1)
@@ -154,9 +179,14 @@ const deleteHouse = async (house) => {
   } catch (error) {
     if (error !== 'cancel') {
       console.error(error)
+      ElMessage.error('删除房源失败')
     }
   }
 }
+
+onMounted(() => {
+  loadHouses()
+})
 </script>
 
 <style lang="scss" scoped>

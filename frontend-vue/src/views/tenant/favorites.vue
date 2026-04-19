@@ -37,18 +37,33 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { getFavoriteHouses, removeFavorite as removeFavoriteApi } from '@/api/house'
 
 const router = useRouter()
 
-const favorites = ref([
-  { id: 1, houseName: '阳光小区3室2厅', address: '朝阳区阳光路88号', rent: 3500, area: 120, rooms: '3室2厅', image: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=modern%20apartment%20interior%20with%20sunlight&image_size=landscape_4_3', tags: ['精装修', '南北通透', '近地铁'] },
-  { id: 2, houseName: '幸福花园2室1厅', address: '海淀区幸福街12号', rent: 2800, area: 85, rooms: '2室1厅', image: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=cozy%20two%20bedroom%20apartment&image_size=landscape_4_3', tags: ['拎包入住', '采光好'] },
-  { id: 3, houseName: '锦绣家园1室1厅', address: '西城区锦绣路36号', rent: 2000, area: 55, rooms: '1室1厅', image: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=studio%20apartment%20modern%20style&image_size=landscape_4_3', tags: ['单身公寓', '交通便利'] },
-  { id: 4, houseName: '星河湾4室2厅', address: '东城区星河大道1号', rent: 5500, area: 180, rooms: '4室2厅', image: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=luxury%20four%20bedroom%20house&image_size=landscape_4_3', tags: ['豪华装修', '带车位', '学区房'] }
-])
+const favorites = ref([])
+
+const loadFavorites = async () => {
+  try {
+    const { data } = await getFavoriteHouses()
+    favorites.value = (data?.records || []).map(house => ({
+      id: house.id,
+      houseName: house.houseName,
+      address: house.address,
+      rent: house.rent,
+      area: house.area,
+      rooms: house.houseType,
+      image: house.images ? (JSON.parse(house.images)[0] || '') : '',
+      tags: house.tags ? JSON.parse(house.tags) : []
+    }))
+  } catch (error) {
+    console.error('加载收藏列表失败:', error)
+    ElMessage.error('加载收藏列表失败')
+  }
+}
 
 const viewHouse = (favorite) => {
   router.push(`/house/${favorite.id}`)
@@ -61,6 +76,7 @@ const removeFavorite = async (favorite) => {
       cancelButtonText: '取消',
       type: 'warning'
     })
+    await removeFavoriteApi(favorite.id)
     const index = favorites.value.findIndex(f => f.id === favorite.id)
     if (index > -1) {
       favorites.value.splice(index, 1)
@@ -69,6 +85,7 @@ const removeFavorite = async (favorite) => {
   } catch (error) {
     if (error !== 'cancel') {
       console.error(error)
+      ElMessage.error('取消收藏失败')
     }
   }
 }
@@ -76,6 +93,10 @@ const removeFavorite = async (favorite) => {
 const goToSearch = () => {
   router.push('/search')
 }
+
+onMounted(() => {
+  loadFavorites()
+})
 </script>
 
 <style lang="scss" scoped>

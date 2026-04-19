@@ -130,7 +130,7 @@
 import { ref, onMounted } from 'vue'
 import { useUserStore } from '@/store/user'
 import { ElMessage } from 'element-plus'
-import { getLandlordContracts, sendContract, exportContract as apiExportContract, generateBill as apiGenerateBill } from '@/api/landlord'
+import { getLandlordContracts, sendContract as sendContractApi, exportContract as apiExportContract, generateBill as apiGenerateBill } from '@/api/landlord'
 
 const userStore = useUserStore()
 const activeTab = ref('all')
@@ -168,7 +168,7 @@ const previewContract = (contract) => {
 const loadContracts = async () => {
   try {
     const { data } = await getLandlordContracts()
-    contracts.value = data || []
+    contracts.value = data?.records || []
   } catch (error) {
     console.error('加载合同列表失败:', error)
     ElMessage.error('加载合同列表失败')
@@ -177,7 +177,7 @@ const loadContracts = async () => {
 
 const sendContract = async (contract) => {
   try {
-    await sendContract(contract.id)
+    await sendContractApi(contract.id)
     contract.status = 'PENDING'
     ElMessage.success('合同已发送给租客')
     showPreviewDialog.value = false

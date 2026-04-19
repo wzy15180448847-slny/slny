@@ -35,6 +35,14 @@ export function getRecentLogs() {
   })
 }
 
+export function searchLogs(params) {
+  return request({
+    url: '/admin/dashboard/logs/search',
+    method: 'get',
+    params
+  })
+}
+
 export function getUsers(params) {
   return request({
     url: '/admin/users',
@@ -55,6 +63,14 @@ export function deleteUser(id) {
   return request({
     url: `/admin/users/${id}`,
     method: 'delete'
+  })
+}
+
+export function updateCreditScore(id, data) {
+  return request({
+    url: `/admin/users/${id}/credit`,
+    method: 'put',
+    data
   })
 }
 

@@ -24,17 +24,31 @@ public class AdminComplaintController {
     public Result<PageResult<Complaint>> getComplaints(
             @RequestParam(defaultValue = "1") Integer current,
             @RequestParam(defaultValue = "10") Integer size,
-            @RequestParam(required = false) Integer status) {
+            @RequestParam(required = false) String status) {
         
-        PageResult<Complaint> result;
-        
+        Integer statusCode = null;
         if (status != null) {
-            result = complaintService.getPendingList(current, size);
-        } else {
-            result = complaintService.getPendingList(current, size);
+            statusCode = convertStatus(status);
         }
         
+        PageResult<Complaint> result = complaintService.getPendingList(current, size);
+        
         return Result.success(result);
+    }
+    
+    private Integer convertStatus(String status) {
+        switch (status.toUpperCase()) {
+            case "PENDING":
+                return 0;
+            case "PROCESSING":
+                return 1;
+            case "HANDLED":
+                return 2;
+            case "REJECTED":
+                return 3;
+            default:
+                return null;
+        }
     }
 
     @PutMapping("/{id}/arbitrate")
