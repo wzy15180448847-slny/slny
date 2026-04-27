@@ -13,7 +13,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 
@@ -197,6 +199,38 @@ public class LoginLogServiceImpl implements LoginLogService {
         dto.setFailReason(log.getFailReason());
         dto.setCreateTime(log.getCreateTime());
         return dto;
+    }
+
+    @Override
+    public Map<String, Long> getTodayLoginStats() {
+        Map<String, Long> stats = new HashMap<>();
+        
+        QueryWrapper<LoginLog> wrapper = new QueryWrapper<>();
+        wrapper.eq("is_deleted", 0);
+        wrapper.apply("DATE(create_time) = CURDATE()");
+        
+        Long total = loginLogMapper.selectCount(wrapper);
+        stats.put("total", total);
+        
+        wrapper.eq("status", 1);
+        Long success = loginLogMapper.selectCount(wrapper);
+        stats.put("success", success);
+        
+        wrapper.clear();
+        wrapper.eq("is_deleted", 0);
+        wrapper.apply("DATE(create_time) = CURDATE()");
+        wrapper.eq("status", 0);
+        Long failure = loginLogMapper.selectCount(wrapper);
+        stats.put("failure", failure);
+        
+        wrapper.clear();
+        wrapper.eq("is_deleted", 0);
+        wrapper.apply("DATE(create_time) = CURDATE()");
+        wrapper.eq("status", 2);
+        Long abnormal = loginLogMapper.selectCount(wrapper);
+        stats.put("abnormal", abnormal);
+        
+        return stats;
     }
 
 }

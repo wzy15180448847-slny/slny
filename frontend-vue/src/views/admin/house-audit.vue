@@ -155,7 +155,7 @@ const formatHouse = (house) => {
 const loadPendingAuditList = async () => {
  try {
  const response = await getPendingAuditList({ page: 1, size: 20 });
- pendingHouses.value = response.data.records.map(formatHouse);
+ pendingHouses.value = response.records.map(formatHouse);
  }
  catch (error) {
  console.error('加载待审核列表失败:', error);

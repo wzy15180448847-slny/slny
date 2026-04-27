@@ -44,6 +44,18 @@ public class UserContext {
     @JsonProperty("status")
     private Integer status;
     
+    @JsonProperty("gender")
+    private Integer gender;
+    
+    @JsonProperty("creditScore")
+    private Integer creditScore;
+    
+    @JsonProperty("lastLoginTime")
+    private String lastLoginTime;
+    
+    @JsonProperty("lastLoginIp")
+    private String lastLoginIp;
+    
     @JsonProperty("roles")
     private Set<String> roles;
     

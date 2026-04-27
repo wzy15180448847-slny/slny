@@ -5,6 +5,7 @@ import com.houserental.entity.User;
 import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -77,5 +78,10 @@ public interface UserMapper extends BaseMapper<User> {
      * 统计今日新增用户数量
      */
     Long countTodayNew();
+
+    /**
+     * 根据创建日期统计用户数量
+     */
+    Integer countByCreateDate(@Param("createDate") LocalDate createDate);
 
 }

@@ -15,25 +15,25 @@ public class Complaint extends BaseEntity {
     /**
      * 投诉人ID
      */
-    @TableField(value = "complainant_id", exist = true)
+    @TableField(value = "from_user_id", exist = true)
     private Long complainantId;
 
     /**
      * 被投诉人ID
      */
-    @TableField(value = "respondent_id", exist = true)
+    @TableField(value = "target_id", exist = true)
     private Long respondentId;
 
     /**
      * 投诉类型（1-房源问题，2-服务问题，3-合同问题，4-其他）
      */
-    @TableField(value = "complaint_type", exist = true)
+    @TableField(value = "type", exist = true)
     private Integer complaintType;
 
     /**
      * 投诉标题
      */
-    @TableField(value = "title", exist = true)
+    @TableField(value = "title", exist = false)
     private String title;
 
     /**
@@ -45,7 +45,7 @@ public class Complaint extends BaseEntity {
     /**
      * 投诉证据（JSON格式存储，多张图片URL）
      */
-    @TableField(value = "evidence", exist = true)
+    @TableField(value = "images", exist = true)
     private String evidence;
 
     /**
@@ -57,19 +57,19 @@ public class Complaint extends BaseEntity {
     /**
      * 处理结果
      */
-    @TableField(value = "process_result", exist = true)
+    @TableField(value = "handle_result", exist = true)
     private String processResult;
 
     /**
      * 处理人ID
      */
-    @TableField(value = "processor_id", exist = true)
+    @TableField(value = "processor_id", exist = false)
     private Long processorId;
 
     /**
      * 处理时间
      */
-    @TableField(value = "process_time", exist = true)
+    @TableField(value = "process_time", exist = false)
     private LocalDateTime processTime;
 
     // Getters and Setters

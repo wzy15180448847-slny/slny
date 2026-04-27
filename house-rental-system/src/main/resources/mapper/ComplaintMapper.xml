@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.houserental.mapper.ComplaintMapper">
+
+    <resultMap id="BaseResultMap" type="com.houserental.entity.Complaint">
+        <id column="id" property="id" />
+        <result column="from_user_id" property="complainantId" />
+        <result column="target_id" property="respondentId" />
+        <result column="type" property="complaintType" />
+        <result column="content" property="content" />
+        <result column="images" property="evidence" />
+        <result column="status" property="status" />
+        <result column="handle_result" property="processResult" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+        <result column="is_deleted" property="isDeleted" />
+    </resultMap>
+
+    <select id="selectByComplainantId" resultMap="BaseResultMap">
+        SELECT 
+            id, 
+            from_user_id, 
+            target_id, 
+            type, 
+            content, 
+            images, 
+            status, 
+            handle_result, 
+            create_time, 
+            update_time, 
+            is_deleted 
+        FROM biz_complaint 
+        WHERE is_deleted = 0 AND from_user_id = #{complainantId} 
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="selectByRespondentId" resultMap="BaseResultMap">
+        SELECT 
+            id, 
+            from_user_id, 
+            target_id, 
+            type, 
+            content, 
+            images, 
+            status, 
+            handle_result, 
+            create_time, 
+            update_time, 
+            is_deleted 
+        FROM biz_complaint 
+        WHERE is_deleted = 0 AND target_id = #{respondentId} 
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="selectByStatus" resultMap="BaseResultMap">
+        SELECT 
+            id, 
+            from_user_id, 
+            target_id, 
+            type, 
+            content, 
+            images, 
+            status, 
+            handle_result, 
+            create_time, 
+            update_time, 
+            is_deleted 
+        FROM biz_complaint 
+        WHERE is_deleted = 0 AND status = #{status} 
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="selectPendingList" resultMap="BaseResultMap">
+        SELECT 
+            id, 
+            from_user_id, 
+            target_id, 
+            type, 
+            content, 
+            images, 
+            status, 
+            handle_result, 
+            create_time, 
+            update_time, 
+            is_deleted 
+        FROM biz_complaint 
+        WHERE is_deleted = 0 AND status = 0 
+        ORDER BY create_time DESC 
+        LIMIT #{offset}, #{size}
+    </select>
+
+    <select id="selectHandledList" resultMap="BaseResultMap">
+        SELECT 
+            id, 
+            from_user_id, 
+            target_id, 
+            type, 
+            content, 
+            images, 
+            status, 
+            handle_result, 
+            create_time, 
+            update_time, 
+            is_deleted 
+        FROM biz_complaint 
+        WHERE is_deleted = 0 AND status IN (2, 3) 
+        ORDER BY update_time DESC 
+        LIMIT #{offset}, #{size}
+    </select>
+
+    <select id="selectPendingCount" resultType="java.lang.Long">
+        SELECT COUNT(*) 
+        FROM biz_complaint 
+        WHERE is_deleted = 0 AND status = 0
+    </select>
+
+    <select id="selectHandledCount" resultType="java.lang.Long">
+        SELECT COUNT(*) 
+        FROM biz_complaint 
+        WHERE is_deleted = 0 AND status IN (2, 3)
+    </select>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT 
+            id, 
+            from_user_id, 
+            target_id, 
+            type, 
+            content, 
+            images, 
+            status, 
+            handle_result, 
+            create_time, 
+            update_time, 
+            is_deleted 
+        FROM biz_complaint 
+        WHERE is_deleted = 0 AND id = #{id}
+    </select>
+
+</mapper>

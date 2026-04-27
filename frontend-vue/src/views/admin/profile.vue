@@ -36,6 +36,9 @@
           <el-form-item label="用户名">
             <el-input v-model="formData.username" disabled />
           </el-form-item>
+          <el-form-item label="昵称">
+            <el-input v-model="formData.nickname" />
+          </el-form-item>
           <el-form-item label="真实姓名">
             <el-input v-model="formData.realName" />
           </el-form-item>
@@ -44,6 +47,24 @@
           </el-form-item>
           <el-form-item label="邮箱">
             <el-input v-model="formData.email" />
+          </el-form-item>
+          <el-form-item label="用户类型">
+            <el-input :value="getUserTypeText(formData.userType)" disabled />
+          </el-form-item>
+          <el-form-item label="性别">
+            <el-input :value="getGenderText(formData.gender)" disabled />
+          </el-form-item>
+          <el-form-item label="信用分">
+            <el-input v-model="formData.creditScore" disabled />
+          </el-form-item>
+          <el-form-item label="状态">
+            <el-input :value="getStatusText(formData.status)" disabled />
+          </el-form-item>
+          <el-form-item label="最后登录时间">
+            <el-input v-model="formData.lastLoginTime" disabled />
+          </el-form-item>
+          <el-form-item label="最后登录IP">
+            <el-input v-model="formData.lastLoginIp" disabled />
           </el-form-item>
           <el-form-item label="创建时间">
             <el-input v-model="formData.createTime" disabled />
@@ -88,12 +109,47 @@ const avatarInput = ref(null)
 
 const formData = reactive({
   username: '',
+  nickname: '',
   realName: '',
   phone: '',
   email: '',
+  userType: '',
+  gender: '',
+  creditScore: '',
+  status: '',
+  lastLoginTime: '',
+  lastLoginIp: '',
   createTime: '',
   avatar: ''
 })
+
+const getUserTypeText = (type) => {
+  const types = {
+    'ADMIN': '管理员',
+    'LANDLORD': '房东',
+    'TENANT': '租客',
+    'AGENT': '中介'
+  }
+  return types[type] || type || '-'
+}
+
+const getGenderText = (gender) => {
+  const genders = {
+    0: '未知',
+    1: '男',
+    2: '女'
+  }
+  return genders[gender] || '未知'
+}
+
+const getStatusText = (status) => {
+  const statusMap = {
+    0: '禁用',
+    1: '正常',
+    2: '锁定'
+  }
+  return statusMap[status] || '未知'
+}
 
 const passwordForm = reactive({
   oldPassword: '',
@@ -108,9 +164,16 @@ onMounted(() => {
 const loadUserInfo = () => {
   if (userStore.userInfo) {
     formData.username = userStore.userInfo.username || ''
+    formData.nickname = userStore.userInfo.nickname || ''
     formData.realName = userStore.userInfo.realName || ''
     formData.phone = userStore.userInfo.phone || ''
     formData.email = userStore.userInfo.email || ''
+    formData.userType = userStore.userInfo.userType || ''
+    formData.gender = userStore.userInfo.gender || 0
+    formData.creditScore = userStore.userInfo.creditScore || ''
+    formData.status = userStore.userInfo.status || 0
+    formData.lastLoginTime = userStore.userInfo.lastLoginTime || ''
+    formData.lastLoginIp = userStore.userInfo.lastLoginIp || ''
     formData.createTime = userStore.userInfo.createTime || ''
     formData.avatar = userStore.userInfo.avatar || ''
   }

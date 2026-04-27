@@ -24,7 +24,7 @@ export function offlineHouse(id) {
 
 export function getLandlordAppointments(params) {
   return request({
-    url: '/api/appointment/page',
+    url: '/appointment/page',
     method: 'get',
     params
   })
@@ -32,14 +32,14 @@ export function getLandlordAppointments(params) {
 
 export function confirmAppointment(id) {
   return request({
-    url: `/api/appointment/confirm/${id}`,
+    url: `/appointment/confirm/${id}`,
     method: 'put'
   })
 }
 
 export function rejectAppointment(id, reason) {
   return request({
-    url: `/api/appointment/reject/${id}`,
+    url: `/appointment/reject/${id}`,
     method: 'put',
     params: { reason }
   })
@@ -47,14 +47,14 @@ export function rejectAppointment(id, reason) {
 
 export function completeAppointment(id) {
   return request({
-    url: `/api/appointment/complete/${id}`,
+    url: `/appointment/complete/${id}`,
     method: 'put'
   })
 }
 
 export function createContract(data) {
   return request({
-    url: '/api/lease',
+    url: '/lease',
     method: 'post',
     data
   })
@@ -62,7 +62,7 @@ export function createContract(data) {
 
 export function getLandlordContracts(params) {
   return request({
-    url: '/api/lease/page',
+    url: '/lease/page',
     method: 'get',
     params
   })
@@ -70,14 +70,14 @@ export function getLandlordContracts(params) {
 
 export function sendContract(id) {
   return request({
-    url: `/api/lease/send/${id}`,
+    url: `/lease/send/${id}`,
     method: 'post'
   })
 }
 
 export function exportContract(id) {
   return request({
-    url: `/api/lease/export/${id}`,
+    url: `/lease/export/${id}`,
     method: 'get',
     responseType: 'blob'
   })
@@ -85,7 +85,7 @@ export function exportContract(id) {
 
 export function generateBill(id) {
   return request({
-    url: `/api/lease/bill/${id}`,
+    url: `/lease/bill/${id}`,
     method: 'post'
   })
 }

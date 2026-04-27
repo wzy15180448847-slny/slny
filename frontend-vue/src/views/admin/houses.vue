@@ -126,7 +126,7 @@ const getStatusText = (status) => {
 
 const loadHouses = async () => {
   try {
-    const { data } = await getAllHouses()
+    const data = await getAllHouses()
     houses.value = data.map(house => ({
       id: house.id,
       houseName: house.houseName,

@@ -30,7 +30,7 @@ service.interceptors.response.use(
     const res = response.data
 
     if (res.code === 200) {
-      return res
+      return res.data
     }
 
     if (res.code === 401) {

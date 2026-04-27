@@ -9,11 +9,11 @@ import com.houserental.entity.AgentQualification;
 public interface AgentQualificationMapper extends BaseMapper<AgentQualification> {
 
     /**
-     * 根据中介ID查询资质信息
-     * @param agentId 中介用户ID
-     * @return 中介资质信息
+     * 根据用户ID查询资质信息
+     * @param userId 用户ID
+     * @return 资质信息
      */
-    AgentQualification selectByAgentId(Long agentId);
+    AgentQualification selectByUserId(Long userId);
 
     /**
      * 根据审核状态查询资质列表
@@ -21,4 +21,11 @@ public interface AgentQualificationMapper extends BaseMapper<AgentQualification>
      * @return 资质列表
      */
     java.util.List<AgentQualification> selectByAuditStatus(Integer auditStatus);
+
+    /**
+     * 根据状态统计数量
+     * @param status 状态
+     * @return 数量
+     */
+    Long countByStatus(Integer status);
 }

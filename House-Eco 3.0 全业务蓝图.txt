@@ -1,0 +1,69 @@
+House-Eco 3.0 全业务重构蓝图与技术规格书
+1. 项目最终呈现形式 (UI/UX 愿景)
+系统将以响应式 Web 平台的形式呈现，通过一套代码完美适配 PC 端（大屏管理）与移动端浏览器（找房看房）。
+
+租客端 (Tenant Portal)：主打“温馨与高效”。类似“贝壳”或“自如”的体验。首页有大幅搜索框，房源列表卡片式展示，详情页包含多图流、设施图标、房东信用评级及实时预约组件。
+
+房东端 (Landlord Console)：主打“资产管理”。侧重于数据展示，房源状态一目了然。支持拖拽上传图片，提供电子合同在线管理面板，以及待收租金的红点提醒。
+
+管理员端 (Admin Control Center)：主打“生态治理”。深色调的数据大屏，实时流转的审核队列，以及全平台用户的信用分雷达图。
+
+2. 全量数据库逻辑设计 (18 张表)
+我们将执行 DROP TABLE IF EXISTS 策略，彻底清除旧结构，建立全新的数据基座。所有金额使用 DECIMAL(15, 2) 以保证财务精度。
+
+2.1 基础权限体系 (RBAC & Audit)
+sys_user (用户表)：id(BIGINT, 20), username(VARCHAR, 50, UNIQUE), password(VARCHAR, 100), real_name(VARCHAR, 50), id_card(VARCHAR, 18), phone(VARCHAR, 20), email(VARCHAR, 100), avatar(VARCHAR, 255), role(VARCHAR, 20), credit_score(INT, 3, Default 100), status(TINYINT, 1), create_time(DATETIME)。
+
+sys_role (角色表)：id, role_code(VARCHAR, 50), role_name(VARCHAR, 50), description(VARCHAR, 200)。
+
+sys_permission (权限表)：id, perm_code, perm_name, path, method。
+
+sys_user_role & sys_role_permission：关联表。
+
+sys_login_log (审计日志)：id, user_id, ip_address, login_location(VARCHAR, 100), login_device(VARCHAR, 255), status, fail_reason(VARCHAR, 255)。
+
+2.2 房源资产体系 (House Asset)
+biz_house (房源主表)：id, landlord_id, house_no(VARCHAR, 32), title(VARCHAR, 200), description(TEXT), address(VARCHAR, 255), house_type(VARCHAR, 50), area(DECIMAL, 10,2), rent_price(DECIMAL, 15,2), facilities(VARCHAR, 500, JSON), images(TEXT, JSON), audit_status(0-待审, 1-通过, 2-驳回), house_status(0-展示中, 1-已租, 2-下架), create_time。
+
+biz_favorite (收藏表)：id, user_id, house_id, create_time。
+
+2.3 业务流转体系 (Business Flow)
+biz_appointment (预约表)：id, house_id, tenant_id, landlord_id, appoint_time(DATETIME), status(0-申请, 1-确认, 2-看房, 3-取消), remark(VARCHAR, 255)。
+
+biz_lease_agreement (合同表)：id, agreement_no(VARCHAR, 50), house_id, tenant_id, landlord_id, start_date, end_date, monthly_rent(DECIMAL, 15,2), deposit, status(0-待签, 1-生效, 2-到期, 3-终止), contract_url(VARCHAR, 255)。
+
+biz_electronic_signature (签章表)：记录电子签署过程的哈希值与时间戳。
+
+biz_termination_application (解约申请)：处理合同提前终结的赔付逻辑。
+
+2.4 财务体系 (Finance)
+biz_user_wallet (钱包表)：user_id(PK), balance(DECIMAL, 18,2), freeze_balance, version(INT, 乐观锁)。
+
+biz_wallet_transaction (流水表)：id, user_id, amount, type(1-充值, 2-租金支付, 3-退款), target_id(关联单号)。
+
+biz_payment_record (支付记录)：对接第三方支付时的中间状态记录。
+
+2.5 反馈与通知体系 (Feedback & Notice)
+biz_evaluation (双向评价)：id, lease_id, from_user_id, to_user_id, score(1-5), content, create_time。
+
+biz_complaint (投诉/报修)：id, from_user_id, target_id, type(1-投诉, 2-报修), content, status(0-待办, 1-处理中, 2-完成)。
+
+sys_notification (站内通知)：id, user_id, title, content, read_status(0-未读)。
+
+biz_agent_qualification (资质审核)：用于中介/房东入驻时的身份背书审核。
+
+3. 全角色详细功能需求
+👤 租客 (TENANT)
+核心逻辑：通过多条件筛选房源 -> 预约看房 -> 余额充值 -> 签署电子合同并支付首月租金押金 -> 合同生效。
+
+亮点：可在详情页看到其他租客对房源和房东的真实评价，基于信用分体系获得租房建议。
+
+🏡 房东 (LANDLORD)
+核心逻辑：发布房源（经管端审核） -> 管理预约 -> 确认意向 -> 发起电子合同 -> 导出 poi-tl 生成的 Word 合同归档 -> 接收租金流水。
+
+亮点：系统在合同到期前 7 天自动发起续租提醒，若租客逾期未付，可一键发送“催缴通知”。
+
+🛡️ 管理员 (ADMIN)
+核心逻辑：审核房源（保障房源真实性） -> 审核中介资质 -> 处理租客投诉 -> 监控全平台交易。
+
+亮点：通过后台大屏掌握全城各区域的出租率和价格波动，具备对违规用户封禁或扣除信用分的最高权限。

@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 房源数据访问层
@@ -104,5 +105,15 @@ public interface HouseMapper extends BaseMapper<House> {
      * 统计所有未删除房源数量
      */
     Long countAllByDeleted(@Param("deleted") Integer deleted);
+
+    /**
+     * 查询房源区域分布
+     */
+    List<Map<String, Object>> getRegionDistribution();
+
+    /**
+     * 按月计算房源出租率
+     */
+    Integer calculateRentRateByMonth(@Param("month") String month);
 
 }

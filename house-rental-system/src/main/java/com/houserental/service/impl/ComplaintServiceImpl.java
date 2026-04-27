@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 用户投诉服务实现
@@ -53,19 +54,16 @@ public class ComplaintServiceImpl extends ServiceImpl<ComplaintMapper, Complaint
     @Override
     @Transactional
     public boolean processComplaint(Long id, Integer status, String processResult, Long processorId) {
-        Complaint complaint = getById(id);
+        Complaint complaint = complaintMapper.selectById(id);
         if (complaint == null || complaint.getStatus() == 2 || complaint.getStatus() == 3) {
             return false;
         }
 
-        // 更新处理状态
         complaint.setStatus(status);
         complaint.setProcessResult(processResult);
-        complaint.setProcessorId(processorId);
-        complaint.setProcessTime(LocalDateTime.now());
         complaint.setUpdateTime(LocalDateTime.now());
 
-        return updateById(complaint);
+        return complaintMapper.updateById(complaint) > 0;
     }
 
     @Override
@@ -75,41 +73,29 @@ public class ComplaintServiceImpl extends ServiceImpl<ComplaintMapper, Complaint
 
     @Override
     public PageResult<Complaint> getByComplainantId(Long complainantId, int page, int size) {
-        Page<Complaint> pageInfo = new Page<>(page, size);
-        QueryWrapper<Complaint> wrapper = new QueryWrapper<>();
-        wrapper.eq("complainant_id", complainantId).orderByDesc("created_time");
-        page(pageInfo, wrapper);
-
-        return PageResult.build((long) page, (long) size, pageInfo.getTotal(), pageInfo.getRecords());
+        List<Complaint> records = complaintMapper.selectByComplainantId(complainantId);
+        return PageResult.build((long) page, (long) size, (long) records.size(), records);
     }
 
     @Override
     public PageResult<Complaint> getByRespondentId(Long respondentId, int page, int size) {
-        Page<Complaint> pageInfo = new Page<>(page, size);
-        QueryWrapper<Complaint> wrapper = new QueryWrapper<>();
-        wrapper.eq("respondent_id", respondentId).orderByDesc("created_time");
-        page(pageInfo, wrapper);
-
-        return PageResult.build((long) page, (long) size, pageInfo.getTotal(), pageInfo.getRecords());
+        List<Complaint> records = complaintMapper.selectByRespondentId(respondentId);
+        return PageResult.build((long) page, (long) size, (long) records.size(), records);
     }
 
     @Override
     public PageResult<Complaint> getPendingList(int page, int size) {
-        Page<Complaint> pageInfo = new Page<>(page, size);
-        QueryWrapper<Complaint> wrapper = new QueryWrapper<>();
-        wrapper.eq("status", 0).orderByDesc("created_time");
-        page(pageInfo, wrapper);
-
-        return PageResult.build((long) page, (long) size, pageInfo.getTotal(), pageInfo.getRecords());
+        Long offset = (long) (page - 1) * size;
+        List<Complaint> records = complaintMapper.selectPendingList(offset, (long) size);
+        Long total = complaintMapper.selectPendingCount();
+        return PageResult.build((long) page, (long) size, total, records);
     }
 
     @Override
     public PageResult<Complaint> getProcessingList(int page, int size) {
-        Page<Complaint> pageInfo = new Page<>(page, size);
-        QueryWrapper<Complaint> wrapper = new QueryWrapper<>();
-        wrapper.in("status", 2, 3).orderByDesc("process_time");
-        page(pageInfo, wrapper);
-
-        return PageResult.build((long) page, (long) size, pageInfo.getTotal(), pageInfo.getRecords());
+        Long offset = (long) (page - 1) * size;
+        List<Complaint> records = complaintMapper.selectHandledList(offset, (long) size);
+        Long total = complaintMapper.selectHandledCount();
+        return PageResult.build((long) page, (long) size, total, records);
     }
 }

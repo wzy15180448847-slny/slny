@@ -14,7 +14,7 @@ import java.security.Principal;
  * 中介资质审核控制器
  */
 @RestController
-@RequestMapping("/api/agent-qualification")
+@RequestMapping("/agent-qualification")
 public class AgentQualificationController {
 
     @Autowired
@@ -94,6 +94,32 @@ public class AgentQualificationController {
     public Result<PageResult<AgentQualification>> getHistoryList(@PathVariable Long agentId, 
                                                                @RequestParam int page, @RequestParam int size) {
         PageResult<AgentQualification> result = agentQualificationService.getHistoryList(agentId, page, size);
+        return Result.success(result);
+    }
+
+    /**
+     * 查询已通过的资质列表
+     * @param page 页码
+     * @param size 每页大小
+     * @return 分页结果
+     */
+    @GetMapping("/approved")
+    @PreAuthorize("hasRole('ADMIN')")
+    public Result<PageResult<AgentQualification>> getApprovedList(@RequestParam int page, @RequestParam int size) {
+        PageResult<AgentQualification> result = agentQualificationService.getApprovedList(page, size);
+        return Result.success(result);
+    }
+
+    /**
+     * 查询已拒绝的资质列表
+     * @param page 页码
+     * @param size 每页大小
+     * @return 分页结果
+     */
+    @GetMapping("/rejected")
+    @PreAuthorize("hasRole('ADMIN')")
+    public Result<PageResult<AgentQualification>> getRejectedList(@RequestParam int page, @RequestParam int size) {
+        PageResult<AgentQualification> result = agentQualificationService.getRejectedList(page, size);
         return Result.success(result);
     }
 }

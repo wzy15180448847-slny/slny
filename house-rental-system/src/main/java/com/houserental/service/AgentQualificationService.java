@@ -49,4 +49,20 @@ public interface AgentQualificationService extends IService<AgentQualification> 
      * @return 分页结果
      */
     PageResult<AgentQualification> getHistoryList(Long agentId, int page, int size);
+
+    /**
+     * 查询已通过的资质列表
+     * @param page 页码
+     * @param size 每页大小
+     * @return 分页结果
+     */
+    PageResult<AgentQualification> getApprovedList(int page, int size);
+
+    /**
+     * 查询已拒绝的资质列表
+     * @param page 页码
+     * @param size 每页大小
+     * @return 分页结果
+     */
+    PageResult<AgentQualification> getRejectedList(int page, int size);
 }

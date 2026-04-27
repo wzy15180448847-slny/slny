@@ -153,6 +153,10 @@ public class UserServiceImpl implements UserService {
                 .avatar(user.getAvatar())
                 .userType(user.getUserType())
                 .status(user.getStatus())
+                .gender(user.getGender())
+                .creditScore(user.getCreditScore())
+                .lastLoginTime(user.getLastLoginTime() != null ? user.getLastLoginTime().toString() : null)
+                .lastLoginIp(user.getLastLoginIp())
                 .roles(new HashSet<>(roles))
                 .permissions(new HashSet<>(permissions))
                 .build();

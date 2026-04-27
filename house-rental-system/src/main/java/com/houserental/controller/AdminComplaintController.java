@@ -2,13 +2,18 @@ package com.houserental.controller;
 
 import com.houserental.common.result.PageResult;
 import com.houserental.common.result.Result;
+import com.houserental.dto.ComplaintDTO;
 import com.houserental.entity.Complaint;
+import com.houserental.entity.User;
+import com.houserental.mapper.UserMapper;
 import com.houserental.service.ComplaintService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 管理员投诉仲裁控制器
@@ -19,21 +24,45 @@ import java.util.Map;
 public class AdminComplaintController {
 
     private final ComplaintService complaintService;
+    private final UserMapper userMapper;
 
     @GetMapping
-    public Result<PageResult<Complaint>> getComplaints(
+    public Result<PageResult<ComplaintDTO>> getComplaints(
             @RequestParam(defaultValue = "1") Integer current,
             @RequestParam(defaultValue = "10") Integer size,
             @RequestParam(required = false) String status) {
         
-        Integer statusCode = null;
-        if (status != null) {
-            statusCode = convertStatus(status);
+        PageResult<Complaint> result;
+        
+        if ("HANDLED".equals(status)) {
+            result = complaintService.getProcessingList(current, size);
+        } else {
+            result = complaintService.getPendingList(current, size);
         }
         
-        PageResult<Complaint> result = complaintService.getPendingList(current, size);
+        List<ComplaintDTO> dtoList = result.getRecords().stream()
+                .map(complaint -> {
+                    User complainant = userMapper.selectById(complaint.getComplainantId());
+                    User defendant = userMapper.selectById(complaint.getRespondentId());
+                    String complainantName = complainant != null ? (complainant.getNickname() != null && !complainant.getNickname().isEmpty() ? complainant.getNickname() : complainant.getRealName()) : "未知";
+                    String defendantName = defendant != null ? (defendant.getNickname() != null && !defendant.getNickname().isEmpty() ? defendant.getNickname() : defendant.getRealName()) : "未知";
+                    
+                    ComplaintDTO dto = ComplaintDTO.fromEntity(complaint, complainantName, defendantName);
+                    if (dto.getTitle() == null || dto.getTitle().isEmpty()) {
+                        String content = complaint.getContent();
+                        dto.setTitle(content != null && content.length() > 20 ? content.substring(0, 20) + "..." : (content != null ? content : "无标题"));
+                    }
+                    return dto;
+                })
+                .collect(Collectors.toList());
         
-        return Result.success(result);
+        PageResult<ComplaintDTO> dtoResult = new PageResult<>();
+        dtoResult.setCurrent(result.getCurrent());
+        dtoResult.setSize(result.getSize());
+        dtoResult.setTotal(result.getTotal());
+        dtoResult.setRecords(dtoList);
+        
+        return Result.success(dtoResult);
     }
     
     private Integer convertStatus(String status) {

@@ -34,6 +34,10 @@ public class AdminDashboardController {
     @GetMapping("/charts")
     public Result<Map<String, Object>> getCharts() {
         Map<String, Object> result = new HashMap<>();
+        result.put("userGrowth", adminDashboardService.getUserGrowthTrend());
+        result.put("regionDistribution", adminDashboardService.getRegionDistribution());
+        result.put("rentRate", adminDashboardService.getRentRate());
+        result.put("userType", adminDashboardService.getUserTypeDistribution());
         result.put("houseStatus", adminDashboardService.getHouseStatusDistribution());
         result.put("revenueTrend", adminDashboardService.getMonthlyRevenueTrend());
         return Result.success(result);
@@ -52,5 +56,11 @@ public class AdminDashboardController {
             @RequestParam(required = false) String date) {
         List<LoginLogDTO> logs = loginLogService.getLogsByCondition(keyword, type, date);
         return Result.success(logs);
+    }
+
+    @GetMapping("/logs/today-stats")
+    public Result<Map<String, Long>> getTodayLoginStats() {
+        Map<String, Long> stats = loginLogService.getTodayLoginStats();
+        return Result.success(stats);
     }
 }

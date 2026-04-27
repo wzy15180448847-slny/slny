@@ -25,9 +25,7 @@ export const useUserStore = defineStore('user', {
   actions: {
     async login(loginForm) {
       try {
-        const response = await login(loginForm)
-        const data = response.data
-        console.log('Login response:', response)
+        const data = await login(loginForm)
         console.log('Login data:', data)
         
         this.token = data.token
@@ -54,7 +52,7 @@ export const useUserStore = defineStore('user', {
 
     async getUserInfo() {
       try {
-        const { data } = await getUserInfo()
+        const data = await getUserInfo()
         this.userInfo = data
         this.roles = data.roles || []
         this.permissions = data.permissions || []
@@ -90,7 +88,7 @@ export const useUserStore = defineStore('user', {
 
     async updateProfile(profileData) {
       try {
-        const { data } = await updateProfile(profileData)
+        const data = await updateProfile(profileData)
         this.userInfo = data
         return Promise.resolve(data)
       } catch (error) {
@@ -100,7 +98,7 @@ export const useUserStore = defineStore('user', {
 
     async changePassword(passwordData) {
       try {
-        const { data } = await updatePassword(passwordData)
+        const data = await updatePassword(passwordData)
         return Promise.resolve(data)
       } catch (error) {
         return Promise.reject(error)

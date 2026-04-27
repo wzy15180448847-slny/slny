@@ -4,6 +4,7 @@ import com.houserental.dto.LoginLogDTO;
 import com.houserental.entity.LoginLog;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 登录日志服务
@@ -39,5 +40,10 @@ public interface LoginLogService {
      * 根据条件查询登录日志
      */
     List<LoginLogDTO> getLogsByCondition(String keyword, String type, String date);
+
+    /**
+     * 获取今日登录统计
+     */
+    Map<String, Long> getTodayLoginStats();
 
 }

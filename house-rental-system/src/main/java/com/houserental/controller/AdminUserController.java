@@ -27,16 +27,21 @@ public class AdminUserController {
             @RequestParam(defaultValue = "1") Integer current,
             @RequestParam(defaultValue = "10") Integer size,
             @RequestParam(required = false) String username,
-            @RequestParam(required = false) String userType) {
+            @RequestParam(required = false) String userType,
+            @RequestParam(required = false) String status) {
         
         IPage<User> page = new Page<>(current, size);
         QueryWrapper<User> wrapper = new QueryWrapper<>();
         
         if (username != null && !username.trim().isEmpty()) {
-            wrapper.like("username", username);
+            wrapper.like("username", username).or().like("phone", username);
         }
         if (userType != null && !userType.trim().isEmpty()) {
             wrapper.eq("user_type", userType);
+        }
+        if (status != null && !status.trim().isEmpty()) {
+            Integer statusInt = "ACTIVE".equals(status) || "1".equals(status) ? 1 : 0;
+            wrapper.eq("status", statusInt);
         }
         
         IPage<User> result = userMapper.selectPage(page, wrapper);

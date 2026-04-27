@@ -30,20 +30,20 @@ public class AgentQualificationServiceImpl extends ServiceImpl<AgentQualificatio
     @Override
     @Transactional
     public boolean submitQualification(AgentQualification qualification) {
-        // 检查中介是否存在
-        User agent = userMapper.selectById(qualification.getAgentId());
-        if (agent == null || !"AGENT".equals(agent.getUserType())) {
+        // 检查用户是否存在
+        User user = userMapper.selectById(qualification.getUserId());
+        if (user == null) {
             return false;
         }
 
         // 检查是否已存在待审核的资质
-        AgentQualification existing = agentQualificationMapper.selectByAgentId(qualification.getAgentId());
-        if (existing != null && existing.getAuditStatus() == 0) {
+        AgentQualification existing = agentQualificationMapper.selectByUserId(qualification.getUserId());
+        if (existing != null && existing.getStatus() == 0) {
             return false;
         }
 
         // 设置默认值
-        qualification.setAuditStatus(0);
+        qualification.setStatus(0);
         qualification.setCreateTime(LocalDateTime.now());
         qualification.setUpdateTime(LocalDateTime.now());
 
@@ -54,25 +54,25 @@ public class AgentQualificationServiceImpl extends ServiceImpl<AgentQualificatio
     @Transactional
     public boolean auditQualification(Long id, Integer auditStatus, String auditRemark, Long auditorId) {
         AgentQualification qualification = getById(id);
-        if (qualification == null || qualification.getAuditStatus() != 0) {
+        if (qualification == null || qualification.getStatus() != 0) {
             return false;
         }
 
         // 更新审核状态
-        qualification.setAuditStatus(auditStatus);
-        qualification.setAuditRemark(auditRemark);
+        qualification.setStatus(auditStatus);
+        qualification.setRejectReason(auditRemark);
         qualification.setAuditorId(auditorId);
         qualification.setAuditTime(LocalDateTime.now());
         qualification.setUpdateTime(LocalDateTime.now());
 
         boolean result = updateById(qualification);
 
-        // 如果审核通过，更新中介用户状态
+        // 如果审核通过，更新用户状态
         if (result && auditStatus == 1) {
-            User agent = userMapper.selectById(qualification.getAgentId());
-            if (agent != null) {
-                agent.setStatus(1); // 启用状态
-                userMapper.updateById(agent);
+            User user = userMapper.selectById(qualification.getUserId());
+            if (user != null) {
+                user.setStatus(1); // 启用状态
+                userMapper.updateById(user);
             }
         }
 
@@ -81,14 +81,14 @@ public class AgentQualificationServiceImpl extends ServiceImpl<AgentQualificatio
 
     @Override
     public AgentQualification getByAgentId(Long agentId) {
-        return agentQualificationMapper.selectByAgentId(agentId);
+        return agentQualificationMapper.selectByUserId(agentId);
     }
 
     @Override
     public PageResult<AgentQualification> getPendingList(int page, int size) {
         Page<AgentQualification> pageInfo = new Page<>(page, size);
         QueryWrapper<AgentQualification> wrapper = new QueryWrapper<>();
-        wrapper.eq("audit_status", 0).orderByDesc("created_time");
+        wrapper.eq("status", 0).orderByDesc("create_time");
         page(pageInfo, wrapper);
 
         return PageResult.build((long) page, (long) size, pageInfo.getTotal(), pageInfo.getRecords());
@@ -98,7 +98,27 @@ public class AgentQualificationServiceImpl extends ServiceImpl<AgentQualificatio
     public PageResult<AgentQualification> getHistoryList(Long agentId, int page, int size) {
         Page<AgentQualification> pageInfo = new Page<>(page, size);
         QueryWrapper<AgentQualification> wrapper = new QueryWrapper<>();
-        wrapper.eq("agent_id", agentId).orderByDesc("created_time");
+        wrapper.eq("user_id", agentId).orderByDesc("create_time");
+        page(pageInfo, wrapper);
+
+        return PageResult.build((long) page, (long) size, pageInfo.getTotal(), pageInfo.getRecords());
+    }
+
+    @Override
+    public PageResult<AgentQualification> getApprovedList(int page, int size) {
+        Page<AgentQualification> pageInfo = new Page<>(page, size);
+        QueryWrapper<AgentQualification> wrapper = new QueryWrapper<>();
+        wrapper.eq("status", 1).orderByDesc("audit_time");
+        page(pageInfo, wrapper);
+
+        return PageResult.build((long) page, (long) size, pageInfo.getTotal(), pageInfo.getRecords());
+    }
+
+    @Override
+    public PageResult<AgentQualification> getRejectedList(int page, int size) {
+        Page<AgentQualification> pageInfo = new Page<>(page, size);
+        QueryWrapper<AgentQualification> wrapper = new QueryWrapper<>();
+        wrapper.eq("status", 2).orderByDesc("audit_time");
         page(pageInfo, wrapper);
 
         return PageResult.build((long) page, (long) size, pageInfo.getTotal(), pageInfo.getRecords());

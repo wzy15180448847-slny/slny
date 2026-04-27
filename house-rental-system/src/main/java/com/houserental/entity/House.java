@@ -214,7 +214,7 @@ public class House extends BaseEntity {
     /**
      * 房源状态（0-展示中，1-已租，2-已下架）
      */
-    @TableField(value = "house_status", exist = true)
+    @TableField(value = "status", exist = true)
     private Integer houseStatus = 2;
 
     /**

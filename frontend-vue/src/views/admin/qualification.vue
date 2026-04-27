@@ -69,12 +69,6 @@
           <span class="detail-label">房源数量</span>
           <span class="detail-value">{{ selectedQualification.houseCount }} 套</span>
         </div>
-        <div class="detail-images">
-          <span class="detail-label">证件照片</span>
-          <div class="images-grid">
-            <img v-for="(img, index) in selectedQualification.images" :key="index" :src="img" class="id-image" />
-          </div>
-        </div>
       </div>
       <template #footer>
         <el-button @click="showDetailDialog = false">关闭</el-button>
@@ -98,64 +92,15 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import request from '@/utils/request'
 
 const activeTab = ref('pending')
 
-const STORAGE_KEY = 'qualification_data'
-
-const defaultPending = [
-  { id: 1, landlordName: '王房东', username: 'user5', phone: '138****0006', idCard: '110101********1234', houseCount: 3, createTime: '2024-01-15 10:30', images: [], status: 'PENDING' },
-  { id: 2, landlordName: '刘房东', username: 'user6', phone: '138****0007', idCard: '110102********5678', houseCount: 2, createTime: '2024-01-15 09:00', images: [], status: 'PENDING' }
-]
-
-const defaultApproved = [
-  { id: 3, landlordName: '张房东', username: 'user0', phone: '138****0002', houseCount: 4, auditTime: '2024-01-10 14:00' },
-  { id: 4, landlordName: '李房东', username: 'user2', phone: '138****0004', houseCount: 2, auditTime: '2024-01-08 10:00' }
-]
-
-const defaultRejected = [
-  { id: 5, landlordName: '陈房东', username: 'user7', phone: '138****0008', rejectReason: '身份证照片模糊，无法识别', auditTime: '2024-01-14 16:00' }
-]
-
-const loadData = () => {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    if (stored) {
-      const data = JSON.parse(stored)
-      return {
-        pending: data.pending || defaultPending,
-        approved: data.approved || defaultApproved,
-        rejected: data.rejected || defaultRejected
-      }
-    }
-  } catch (e) {
-    console.error('Failed to load data from localStorage:', e)
-  }
-  return {
-    pending: [...defaultPending],
-    approved: [...defaultApproved],
-    rejected: [...defaultRejected]
-  }
-}
-
-const saveData = () => {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({
-      pending: pendingQualifications.value,
-      approved: approvedQualifications.value,
-      rejected: rejectedQualifications.value
-    }))
-  } catch (e) {
-    console.error('Failed to save data to localStorage:', e)
-  }
-}
-
-const loadedData = loadData()
-const pendingQualifications = ref(loadedData.pending)
-const approvedQualifications = ref(loadedData.approved)
-const rejectedQualifications = ref(loadedData.rejected)
+const pendingQualifications = ref([])
+const approvedQualifications = ref([])
+const rejectedQualifications = ref([])
 
 const selectedQualification = ref(null)
 const showDetailDialog = ref(false)
@@ -165,50 +110,131 @@ const rejectForm = reactive({
   reason: ''
 })
 
+const loadPendingList = async () => {
+  try {
+    const response = await request.get('/agent-qualification/pending', {
+      params: { page: 1, size: 100 }
+    })
+    if (response && response.records) {
+      pendingQualifications.value = response.records.map(item => ({
+        id: item.id,
+        landlordName: item.realName || '未知',
+        username: '',
+        phone: item.phone ? item.phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2') : '未知',
+        idCard: item.idCard ? item.idCard.replace(/(\d{4})\d{8}(\d{4})/, '$1********$2') : '未知',
+        houseCount: item.houseCount || 0,
+        createTime: item.createTime,
+        status: 'PENDING'
+      }))
+    }
+  } catch (error) {
+    console.error('加载待审核列表失败:', error)
+    ElMessage.error('加载待审核列表失败')
+  }
+}
+
+const loadApprovedList = async () => {
+  try {
+    const response = await request.get('/agent-qualification/approved', {
+      params: { page: 1, size: 100 }
+    })
+    if (response && response.records) {
+      approvedQualifications.value = response.records.map(item => ({
+        id: item.id,
+        landlordName: item.realName || '未知',
+        username: '',
+        phone: item.phone ? item.phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2') : '未知',
+        houseCount: item.houseCount || 0,
+        auditTime: item.auditTime || item.updateTime
+      }))
+    }
+  } catch (error) {
+    console.error('加载已通过列表失败:', error)
+    ElMessage.error('加载已通过列表失败')
+  }
+}
+
+const loadRejectedList = async () => {
+  try {
+    const response = await request.get('/agent-qualification/rejected', {
+      params: { page: 1, size: 100 }
+    })
+    if (response && response.records) {
+      rejectedQualifications.value = response.records.map(item => ({
+        id: item.id,
+        landlordName: item.realName || '未知',
+        username: '',
+        phone: item.phone ? item.phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2') : '未知',
+        rejectReason: item.rejectReason || '未说明原因',
+        auditTime: item.auditTime || item.updateTime
+      }))
+    }
+  } catch (error) {
+    console.error('加载已拒绝列表失败:', error)
+    ElMessage.error('加载已拒绝列表失败')
+  }
+}
+
 const viewDetail = (qualification) => {
   selectedQualification.value = qualification
   showDetailDialog.value = true
 }
 
-const approveQualification = (qualification) => {
-  const index = pendingQualifications.value.findIndex(q => q.id === qualification.id)
-  if (index > -1) {
-    pendingQualifications.value.splice(index, 1)
-    approvedQualifications.value.unshift({
-      ...qualification,
-      auditTime: new Date().toLocaleString()
+const approveQualification = async (qualification) => {
+  try {
+    await request.post(`/agent-qualification/audit/${qualification.id}`, null, {
+      params: { auditStatus: 1, auditRemark: '审核通过' }
     })
-    saveData()
+    
+    const index = pendingQualifications.value.findIndex(q => q.id === qualification.id)
+    if (index > -1) {
+      pendingQualifications.value.splice(index, 1)
+      approvedQualifications.value.unshift({
+        ...qualification,
+        auditTime: new Date().toLocaleString()
+      })
+    }
+    ElMessage.success('审核通过')
+    showDetailDialog.value = false
+  } catch (error) {
+    console.error('审核失败:', error)
+    ElMessage.error('审核失败')
   }
-  ElMessage.success('审核通过')
-  showDetailDialog.value = false
 }
 
 const openRejectDialog = () => {
   showRejectDialog.value = true
 }
 
-const confirmReject = () => {
+const confirmReject = async () => {
   if (!rejectForm.reason) {
     ElMessage.error('请输入拒绝原因')
     return
   }
   
-  const index = pendingQualifications.value.findIndex(q => q.id === selectedQualification.value.id)
-  if (index > -1) {
-    pendingQualifications.value.splice(index, 1)
-    rejectedQualifications.value.unshift({
-      ...selectedQualification.value,
-      rejectReason: rejectForm.reason,
-      auditTime: new Date().toLocaleString()
+  try {
+    await request.post(`/api/agent-qualification/audit/${selectedQualification.value.id}`, null, {
+      params: { auditStatus: 2, auditRemark: rejectForm.reason }
     })
-    saveData()
+    
+    const index = pendingQualifications.value.findIndex(q => q.id === selectedQualification.value.id)
+    if (index > -1) {
+      pendingQualifications.value.splice(index, 1)
+      rejectedQualifications.value.unshift({
+        ...selectedQualification.value,
+        rejectReason: rejectForm.reason,
+        auditTime: new Date().toLocaleString()
+      })
+    }
+    
+    ElMessage.success('已拒绝')
+    showRejectDialog.value = false
+    showDetailDialog.value = false
+    rejectForm.reason = ''
+  } catch (error) {
+    console.error('拒绝失败:', error)
+    ElMessage.error('拒绝失败')
   }
-  
-  ElMessage.success('已拒绝')
-  showRejectDialog.value = false
-  showDetailDialog.value = false
-  rejectForm.reason = ''
 }
 
 const rejectQualification = (qualification) => {
@@ -216,18 +242,32 @@ const rejectQualification = (qualification) => {
   showRejectDialog.value = true
 }
 
-const reApprove = (qualification) => {
-  const index = rejectedQualifications.value.findIndex(q => q.id === qualification.id)
-  if (index > -1) {
-    rejectedQualifications.value.splice(index, 1)
-    pendingQualifications.value.unshift({
-      ...qualification,
-      status: 'PENDING'
+const reApprove = async (qualification) => {
+  try {
+    await request.post(`/agent-qualification/audit/${qualification.id}`, null, {
+      params: { auditStatus: 0, auditRemark: '重新审核' }
     })
-    saveData()
+    
+    const index = rejectedQualifications.value.findIndex(q => q.id === qualification.id)
+    if (index > -1) {
+      rejectedQualifications.value.splice(index, 1)
+      pendingQualifications.value.unshift({
+        ...qualification,
+        status: 'PENDING'
+      })
+    }
+    ElMessage.success('已重新提交审核')
+  } catch (error) {
+    console.error('重新审核失败:', error)
+    ElMessage.error('重新审核失败')
   }
-  ElMessage.success('已重新提交审核')
 }
+
+onMounted(() => {
+  loadPendingList()
+  loadApprovedList()
+  loadRejectedList()
+})
 </script>
 
 <style lang="scss" scoped>
@@ -263,23 +303,6 @@ const reApprove = (qualification) => {
       color: $text-primary;
       font-size: 14px;
       font-weight: 500;
-    }
-  }
-  
-  .detail-images {
-    padding: 12px 0;
-    
-    .images-grid {
-      display: flex;
-      gap: 10px;
-      margin-top: 10px;
-      
-      .id-image {
-        width: 150px;
-        height: 90px;
-        object-fit: cover;
-        border-radius: 8px;
-      }
     }
   }
 }

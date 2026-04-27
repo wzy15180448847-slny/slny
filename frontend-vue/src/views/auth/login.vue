@@ -181,32 +181,16 @@ const handleLogin = async () => {
     
     loading.value = true
     try {
-      const response = await login({
+      const loginData = await userStore.login({
         username: loginForm.username,
         password: loginForm.password
       })
       
-      console.log('Full response:', response)
-      
-      if (!response) {
-        throw new Error('登录响应为空')
-      }
-      
-      let loginData = null
-      
-      if (response.data && response.data.token) {
-        loginData = response.data
-      } else if (response.data && response.data.data && response.data.data.token) {
-        loginData = response.data.data
-      } else {
-        throw new Error('登录数据格式错误')
-      }
-      
       console.log('Login data:', loginData)
       
-      userStore.token = loginData.token
-      userStore.userInfo = loginData.user || {}
-      setToken(loginData.token)
+      if (!loginData || !loginData.token) {
+        throw new Error('登录数据格式错误')
+      }
       
       ElMessage.success('登录成功')
       

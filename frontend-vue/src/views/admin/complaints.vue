@@ -168,11 +168,11 @@ const getTypeText = (type) => {
 
 const loadComplaints = async (status = 'PENDING') => {
   try {
-    const { data } = await getComplaints({ status })
+    const result = await getComplaints({ status })
     if (status === 'PENDING') {
-      pendingComplaints.value = data?.records || []
+      pendingComplaints.value = result?.records || []
     } else {
-      handledComplaints.value = data?.records || []
+      handledComplaints.value = result?.records || []
     }
   } catch (error) {
     console.error('加载投诉列表失败:', error)

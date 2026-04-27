@@ -75,6 +75,10 @@ public class AuthController {
                 .avatar(user.getAvatar())
                 .userType(user.getUserType())
                 .status(user.getStatus())
+                .gender(user.getGender())
+                .creditScore(user.getCreditScore())
+                .lastLoginTime(user.getLastLoginTime() != null ? user.getLastLoginTime().toString() : null)
+                .lastLoginIp(user.getLastLoginIp())
                 .roles(new HashSet<>(roles))
                 .permissions(new HashSet<>(permissions))
                 .build();
@@ -104,6 +108,10 @@ public class AuthController {
                 .avatar(updatedUser.getAvatar())
                 .userType(updatedUser.getUserType())
                 .status(updatedUser.getStatus())
+                .gender(updatedUser.getGender())
+                .creditScore(updatedUser.getCreditScore())
+                .lastLoginTime(updatedUser.getLastLoginTime() != null ? updatedUser.getLastLoginTime().toString() : null)
+                .lastLoginIp(updatedUser.getLastLoginIp())
                 .roles(new java.util.HashSet<>(roles))
                 .permissions(new java.util.HashSet<>(permissions))
                 .build();

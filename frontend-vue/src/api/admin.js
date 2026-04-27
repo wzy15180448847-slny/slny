@@ -43,6 +43,13 @@ export function searchLogs(params) {
   })
 }
 
+export function getTodayLoginStats() {
+  return request({
+    url: '/admin/dashboard/logs/today-stats',
+    method: 'get'
+  })
+}
+
 export function getUsers(params) {
   return request({
     url: '/admin/users',

@@ -2,21 +2,21 @@ import request from '@/utils/request'
 
 export function getWallet(userId) {
   return request({
-    url: `/api/wallet/${userId}`,
+    url: `/wallet/${userId}`,
     method: 'get'
   })
 }
 
 export function getTransactions(userId) {
   return request({
-    url: `/api/wallet/${userId}/transactions`,
+    url: `/wallet/${userId}/transactions`,
     method: 'get'
   })
 }
 
 export function recharge(data) {
   return request({
-    url: '/api/wallet/recharge',
+    url: '/wallet/recharge',
     method: 'post',
     data
   })
@@ -24,7 +24,7 @@ export function recharge(data) {
 
 export function payRent(data) {
   return request({
-    url: '/api/wallet/pay-rent',
+    url: '/wallet/pay-rent',
     method: 'post',
     data
   })
@@ -32,7 +32,7 @@ export function payRent(data) {
 
 export function getPaymentRecords(userId) {
   return request({
-    url: `/api/payments`,
+    url: `/payments`,
     method: 'get',
     params: { userId }
   })

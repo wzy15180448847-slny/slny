@@ -115,4 +115,21 @@
         SELECT COUNT(*) FROM biz_house WHERE is_deleted = #{deleted}
     </select>
 
+    <!-- 查询房源区域分布 -->
+    <select id="getRegionDistribution" resultType="java.util.Map">
+        SELECT district as region, COUNT(*) as count FROM biz_house WHERE is_deleted = 0 GROUP BY district
+    </select>
+
+    <!-- 按月计算房源出租率 -->
+    <select id="calculateRentRateByMonth" resultType="java.lang.Integer">
+        SELECT IF(total > 0, ROUND(rented * 100.0 / total), 0) as rent_rate
+        FROM (
+            SELECT 
+                SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as rented,
+                SUM(CASE WHEN status IN (0, 1) THEN 1 ELSE 0 END) as total
+            FROM biz_house 
+            WHERE is_deleted = 0 AND DATE_FORMAT(create_time, '%Y-%m') = #{month}
+        ) as t
+    </select>
+
 </mapper>

@@ -61,8 +61,10 @@
       <el-table-column prop="recentBehavior" label="近期行为" />
       <el-table-column label="操作">
         <template #default="scope">
-          <el-button size="small" @click="viewDetail(scope.row)">查看详情</el-button>
-          <el-button size="small" type="warning" @click="adjustCredit(scope.row)">调整信用分</el-button>
+          <div class="action-buttons">
+            <el-button size="small" @click="viewDetail(scope.row)">查看详情</el-button>
+            <el-button size="small" type="warning" @click="adjustCredit(scope.row)">调整信用分</el-button>
+          </div>
         </template>
       </el-table-column>
     </el-table>
@@ -175,12 +177,12 @@ const calculateDistribution = () => {
 
 const loadUsers = async () => {
   try {
-    const { data } = await getUsers({})
-    users.value = (data?.records || []).map(user => ({
+    const result = await getUsers({})
+    users.value = (result?.records || []).map(user => ({
       id: user.id,
       username: user.username,
-      nickname: user.nickname || user.username,
-      userType: user.userType === 1 ? 'LANDLORD' : 'TENANT',
+      nickname: user.nickname || user.realName || user.username,
+      userType: user.userType,
       creditScore: user.creditScore || 0,
       recentBehavior: '',
       creditHistory: []
@@ -463,5 +465,22 @@ onMounted(() => {
 
 .negative {
   color: #f56c6c;
+}
+
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+  padding: 0;
+  margin: 0;
+  
+  :deep(.el-button) {
+    margin: 2px 0 !important;
+    padding: 4px 12px !important;
+    line-height: 1.4 !important;
+    min-width: 80px;
+    text-align: center;
+  }
 }
 </style>

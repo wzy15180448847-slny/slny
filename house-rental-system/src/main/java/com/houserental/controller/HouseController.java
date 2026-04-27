@@ -144,7 +144,7 @@ public class HouseController {
 
     @GetMapping
     public Result<List<House>> getAll() {
-        List<House> houses = houseService.getRecommendHouses(10);
+        List<House> houses = houseService.list();
         return Result.success(houses);
     }
 

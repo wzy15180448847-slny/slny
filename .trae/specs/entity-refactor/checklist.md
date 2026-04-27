@@ -1,0 +1,9 @@
+- [x] 核心Entity类(User, House, UserWallet)字段与SQL表完全对应
+- [x] 所有Entity类的isDeleted字段带有@TableLogic注解
+- [x] 所有Entity类的version字段带有@Version注解
+- [x] MyBatis-Plus配置中map-underscore-to-camel-case: true
+- [x] 前端request.js响应拦截器自动解包Result<T>的data字段
+- [x] 前端request.js保留401跳转登录逻辑
+- [x] 前端所有API请求参数使用驼峰命名
+- [x] 后端项目编译成功
+- [x] 后端服务启动成功

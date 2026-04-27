@@ -1,0 +1,10 @@
+INSERT INTO sys_user (id, username, password, real_name, phone, email, user_type, status, credit_score, avatar, create_time, update_time, is_deleted, version) VALUES
+(1001, 'tenant1', '$2a$10$N9qo8uLOickgx2ZMRZoMye.IjzqAKL9xL5jvMFVdNJHvGCgTq/VEq', '张三', '13800138001', 'tenant1@test.com', 'TENANT', 1, 85, '', '2026-04-19 10:00:00', '2026-04-19 10:00:00', 0, 1),
+(1002, 'tenant2', '$2a$10$N9qo8uLOickgx2ZMRZoMye.IjzqAKL9xL5jvMFVdNJHvGCgTq/VEq', '李四', '13800138002', 'tenant2@test.com', 'TENANT', 1, 90, '', '2026-04-20 11:00:00', '2026-04-20 11:00:00', 0, 1),
+(1003, 'tenant3', '$2a$10$N9qo8uLOickgx2ZMRZoMye.IjzqAKL9xL5jvMFVdNJHvGCgTq/VEq', '王五', '13800138003', 'tenant3@test.com', 'TENANT', 1, 75, '', '2026-04-21 14:00:00', '2026-04-21 14:00:00', 0, 1),
+(1004, 'tenant4', '$2a$10$N9qo8uLOickgx2ZMRZoMye.IjzqAKL9xL5jvMFVdNJHvGCgTq/VEq', '赵六', '13800138004', 'tenant4@test.com', 'TENANT', 1, 88, '', '2026-04-22 09:00:00', '2026-04-22 09:00:00', 0, 1),
+(1005, 'tenant5', '$2a$10$N9qo8uLOickgx2ZMRZoMye.IjzqAKL9xL5jvMFVdNJHvGCgTq/VEq', '钱七', '13800138005', 'tenant5@test.com', 'TENANT', 1, 92, '', '2026-04-23 16:00:00', '2026-04-23 16:00:00', 0, 1),
+(1006, 'tenant6', '$2a$10$N9qo8uLOickgx2ZMRZoMye.IjzqAKL9xL5jvMFVdNJHvGCgTq/VEq', '孙八', '13800138006', 'tenant6@test.com', 'TENANT', 1, 80, '', '2026-04-24 10:00:00', '2026-04-24 10:00:00', 0, 1),
+(1007, 'tenant7', '$2a$10$N9qo8uLOickgx2ZMRZoMye.IjzqAKL9xL5jvMFVdNJHvGCgTq/VEq', '周九', '13800138007', 'tenant7@test.com', 'TENANT', 1, 95, '', '2026-04-25 08:00:00', '2026-04-25 08:00:00', 0, 1),
+(1008, 'landlord2', '$2a$10$N9qo8uLOickgx2ZMRZoMye.IjzqAKL9xL5jvMFVdNJHvGCgTq/VEq', '房东陈', '13900139001', 'landlord2@test.com', 'LANDLORD', 1, 90, '', '2026-04-20 15:00:00', '2026-04-20 15:00:00', 0, 1),
+(1009, 'landlord3', '$2a$10$N9qo8uLOickgx2ZMRZoMye.IjzqAKL9xL5jvMFVdNJHvGCgTq/VEq', '房东刘', '13900139002', 'landlord3@test.com', 'LANDLORD', 1, 85, '', '2026-04-22 12:00:00', '2026-04-22 12:00:00', 0, 1);

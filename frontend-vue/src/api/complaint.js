@@ -2,7 +2,7 @@ import request from '@/utils/request'
 
 export function getPendingComplaints(params) {
   return request({
-    url: '/api/complaints/pending',
+    url: '/complaints/pending',
     method: 'get',
     params
   })
@@ -10,7 +10,7 @@ export function getPendingComplaints(params) {
 
 export function getProcessingComplaints(params) {
   return request({
-    url: '/api/complaints/processing',
+    url: '/complaints/processing',
     method: 'get',
     params
   })
@@ -18,14 +18,14 @@ export function getProcessingComplaints(params) {
 
 export function getComplaintDetail(id) {
   return request({
-    url: `/api/complaints/${id}`,
+    url: `/complaints/${id}`,
     method: 'get'
   })
 }
 
 export function processComplaint(id, status, processResult) {
   return request({
-    url: `/api/complaints/process/${id}`,
+    url: `/complaints/process/${id}`,
     method: 'post',
     params: { status, processResult }
   })
@@ -33,7 +33,7 @@ export function processComplaint(id, status, processResult) {
 
 export function getAdminComplaints(params) {
   return request({
-    url: '/api/admin/complaints',
+    url: '/admin/complaints',
     method: 'get',
     params
   })
@@ -41,7 +41,7 @@ export function getAdminComplaints(params) {
 
 export function arbitrateComplaint(id, data) {
   return request({
-    url: `/api/admin/complaints/${id}/arbitrate`,
+    url: `/admin/complaints/${id}/arbitrate`,
     method: 'put',
     data
   })

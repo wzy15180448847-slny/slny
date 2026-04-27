@@ -3,7 +3,7 @@ import request from '@/utils/request'
 export const qualificationApi = {
   getPendingList: (params) => {
     return request({
-      url: '/api/agent-qualification/pending',
+      url: '/agent-qualification/pending',
       method: 'get',
       params
     })
@@ -11,7 +11,7 @@ export const qualificationApi = {
   
   auditQualification: (id, auditStatus, auditRemark) => {
     return request({
-      url: `/api/agent-qualification/audit/${id}`,
+      url: `/agent-qualification/audit/${id}`,
       method: 'post',
       params: {
         auditStatus,

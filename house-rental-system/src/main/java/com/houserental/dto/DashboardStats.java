@@ -22,4 +22,10 @@ public class DashboardStats {
     private Long todayNewHouseCount;
 
     private Long todayNewUserCount;
+
+    private Long pendingHouseAuditCount;
+
+    private Long pendingQualificationAuditCount;
+
+    private Long pendingComplaintCount;
 }

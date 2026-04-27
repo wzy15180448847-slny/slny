@@ -13,64 +13,52 @@ public class AgentQualification extends BaseEntity {
     private static final long serialVersionUID = 1L;
 
     /**
-     * 中介用户ID
+     * 用户ID
      */
-    @TableField(value = "agent_id", exist = true)
-    private Long agentId;
+    @TableField(value = "user_id", exist = true)
+    private Long userId;
 
     /**
-     * 中介公司名称
+     * 真实姓名
      */
-    @TableField(value = "company_name", exist = true)
-    private String companyName;
+    @TableField(value = "real_name", exist = true)
+    private String realName;
 
     /**
-     * 营业执照号
+     * 身份证号
+     */
+    @TableField(value = "id_card", exist = true)
+    private String idCard;
+
+    /**
+     * 身份证正面图片URL
+     */
+    @TableField(value = "id_card_front", exist = true)
+    private String idCardFront;
+
+    /**
+     * 身份证背面图片URL
+     */
+    @TableField(value = "id_card_back", exist = true)
+    private String idCardBack;
+
+    /**
+     * 营业执照图片URL
      */
     @TableField(value = "business_license", exist = true)
     private String businessLicense;
 
     /**
-     * 营业执照图片URL
-     */
-    @TableField(value = "license_image", exist = true)
-    private String licenseImage;
-
-    /**
-     * 中介资质证书号
-     */
-    @TableField(value = "qualification_cert", exist = true)
-    private String qualificationCert;
-
-    /**
-     * 资质证书图片URL
-     */
-    @TableField(value = "cert_image", exist = true)
-    private String certImage;
-
-    /**
-     * 联系人姓名
-     */
-    @TableField(value = "contact_name", exist = true)
-    private String contactName;
-
-    /**
-     * 联系人电话
-     */
-    @TableField(value = "contact_phone", exist = true)
-    private String contactPhone;
-
-    /**
      * 审核状态（0-待审核，1-审核通过，2-审核拒绝）
      */
-    @TableField(value = "audit_status", exist = true)
-    private Integer auditStatus = 0;
+    @TableField(value = "status", exist = true)
+    private Integer status = 0;
 
     /**
-     * 审核意见
+     * 拒绝原因
      */
-    @TableField(value = "audit_remark", exist = true)
-    private String auditRemark;
+    @TableField(value = "reject_reason", exist = true)
+    private String rejectReason;
 
     /**
      * 审核人ID
@@ -84,21 +72,57 @@ public class AgentQualification extends BaseEntity {
     @TableField(value = "audit_time", exist = true)
     private LocalDateTime auditTime;
 
+    /**
+     * 手机号
+     */
+    @TableField(value = "phone", exist = true)
+    private String phone;
+
+    /**
+     * 房源数量
+     */
+    @TableField(value = "house_count", exist = true)
+    private Integer houseCount;
+
     // Getters and Setters
-    public Long getAgentId() {
-        return agentId;
+    public Long getUserId() {
+        return userId;
     }
 
-    public void setAgentId(Long agentId) {
-        this.agentId = agentId;
+    public void setUserId(Long userId) {
+        this.userId = userId;
     }
 
-    public String getCompanyName() {
-        return companyName;
+    public String getRealName() {
+        return realName;
     }
 
-    public void setCompanyName(String companyName) {
-        this.companyName = companyName;
+    public void setRealName(String realName) {
+        this.realName = realName;
+    }
+
+    public String getIdCard() {
+        return idCard;
+    }
+
+    public void setIdCard(String idCard) {
+        this.idCard = idCard;
+    }
+
+    public String getIdCardFront() {
+        return idCardFront;
+    }
+
+    public void setIdCardFront(String idCardFront) {
+        this.idCardFront = idCardFront;
+    }
+
+    public String getIdCardBack() {
+        return idCardBack;
+    }
+
+    public void setIdCardBack(String idCardBack) {
+        this.idCardBack = idCardBack;
     }
 
     public String getBusinessLicense() {
@@ -109,60 +133,20 @@ public class AgentQualification extends BaseEntity {
         this.businessLicense = businessLicense;
     }
 
-    public String getLicenseImage() {
-        return licenseImage;
+    public Integer getStatus() {
+        return status;
     }
 
-    public void setLicenseImage(String licenseImage) {
-        this.licenseImage = licenseImage;
+    public void setStatus(Integer status) {
+        this.status = status;
     }
 
-    public String getQualificationCert() {
-        return qualificationCert;
+    public String getRejectReason() {
+        return rejectReason;
     }
 
-    public void setQualificationCert(String qualificationCert) {
-        this.qualificationCert = qualificationCert;
-    }
-
-    public String getCertImage() {
-        return certImage;
-    }
-
-    public void setCertImage(String certImage) {
-        this.certImage = certImage;
-    }
-
-    public String getContactName() {
-        return contactName;
-    }
-
-    public void setContactName(String contactName) {
-        this.contactName = contactName;
-    }
-
-    public String getContactPhone() {
-        return contactPhone;
-    }
-
-    public void setContactPhone(String contactPhone) {
-        this.contactPhone = contactPhone;
-    }
-
-    public Integer getAuditStatus() {
-        return auditStatus;
-    }
-
-    public void setAuditStatus(Integer auditStatus) {
-        this.auditStatus = auditStatus;
-    }
-
-    public String getAuditRemark() {
-        return auditRemark;
-    }
-
-    public void setAuditRemark(String auditRemark) {
-        this.auditRemark = auditRemark;
+    public void setRejectReason(String rejectReason) {
+        this.rejectReason = rejectReason;
     }
 
     public Long getAuditorId() {
@@ -179,5 +163,21 @@ public class AgentQualification extends BaseEntity {
 
     public void setAuditTime(LocalDateTime auditTime) {
         this.auditTime = auditTime;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public Integer getHouseCount() {
+        return houseCount;
+    }
+
+    public void setHouseCount(Integer houseCount) {
+        this.houseCount = houseCount;
     }
 }

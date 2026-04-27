@@ -54,7 +54,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { getRecentLogs, searchLogs } from '@/api/admin'
+import { getRecentLogs, searchLogs, getTodayLoginStats } from '@/api/admin'
 
 const searchForm = reactive({
   keyword: '',
@@ -99,8 +99,8 @@ const getTypeText = (type) => {
 
 const loadLogs = async () => {
   try {
-    const { data } = await getRecentLogs()
-    logs.value = data.map(log => ({
+    const result = await getRecentLogs()
+    logs.value = result.map(log => ({
       id: log.id,
       username: log.username,
       ip: log.loginIp || '未知',
@@ -110,11 +110,21 @@ const loadLogs = async () => {
       type: log.loginResult === 1 ? 'SUCCESS' : 'FAILURE',
       reason: log.failReason || ''
     }))
-    
-    updateStats()
   } catch (error) {
     console.error('加载日志失败:', error)
     ElMessage.error('加载日志失败')
+  }
+}
+
+const loadTodayStats = async () => {
+  try {
+    const result = await getTodayLoginStats()
+    todayStats.total = result.total || 0
+    todayStats.success = result.success || 0
+    todayStats.failure = result.failure || 0
+    todayStats.abnormal = result.abnormal || 0
+  } catch (error) {
+    console.error('加载今日登录统计失败:', error)
   }
 }
 
@@ -140,8 +150,8 @@ const search = async () => {
       type: searchForm.type,
       date: searchForm.date ? formatDate(searchForm.date) : ''
     }
-    const { data } = await searchLogs(params)
-    logs.value = data.map(log => ({
+    const result = await searchLogs(params)
+    logs.value = result.map(log => ({
       id: log.id,
       username: log.username,
       ip: log.loginIp || '未知',
@@ -152,16 +162,19 @@ const search = async () => {
       reason: log.failReason || ''
     }))
     
-    updateStats(searchForm.date ? formatDate(searchForm.date) : null)
+    if (searchForm.date) {
+      updateStats(formatDate(searchForm.date))
+    } else {
+      loadTodayStats()
+    }
   } catch (error) {
     console.error('搜索日志失败:', error)
     ElMessage.error('搜索日志失败')
   }
 }
 
-const updateStats = (targetDate = null) => {
-  const dateToFilter = targetDate || new Date().toISOString().split('T')[0]
-  const filteredLogs = logs.value.filter(log => log.time.startsWith(dateToFilter))
+const updateStats = (targetDate) => {
+  const filteredLogs = logs.value.filter(log => log.time.startsWith(targetDate))
   todayStats.total = filteredLogs.length
   todayStats.success = filteredLogs.filter(l => l.type === 'SUCCESS').length
   todayStats.failure = filteredLogs.filter(l => l.type === 'FAILURE').length
@@ -170,6 +183,7 @@ const updateStats = (targetDate = null) => {
 
 onMounted(() => {
   loadLogs()
+  loadTodayStats()
 })
 </script>
 

@@ -237,6 +237,12 @@ const routes = [
         name: 'AdminProfile',
         component: () => import('@/views/admin/profile.vue'),
         meta: { title: '个人中心', requiresAuth: true, roles: ['ADMIN'] }
+      },
+      {
+        path: 'test-chart',
+        name: 'AdminTestChart',
+        component: () => import('@/views/admin/test-chart.vue'),
+        meta: { title: '图表测试', requiresAuth: true, roles: ['ADMIN'] }
       }
     ]
   },

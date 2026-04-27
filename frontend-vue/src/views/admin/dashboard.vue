@@ -70,7 +70,7 @@
               <h3>近7日用户增长趋势</h3>
             </div>
           </template>
-          <div ref="userChart" class="chart-container"></div>
+          <div ref="userChartRef" class="chart-container"></div>
         </el-card>
       </el-col>
       
@@ -81,7 +81,7 @@
               <h3>房源区域占比</h3>
             </div>
           </template>
-          <div ref="regionChart" class="chart-container"></div>
+          <div ref="regionChartRef" class="chart-container"></div>
         </el-card>
       </el-col>
     </el-row>
@@ -94,7 +94,7 @@
               <h3>房源出租率</h3>
             </div>
           </template>
-          <div ref="rentRateChart" class="chart-container"></div>
+          <div ref="rentRateChartRef" class="chart-container"></div>
         </el-card>
       </el-col>
       
@@ -105,7 +105,7 @@
               <h3>用户类型分布</h3>
             </div>
           </template>
-          <div ref="userTypeChart" class="chart-container"></div>
+          <div ref="userTypeChartRef" class="chart-container"></div>
         </el-card>
       </el-col>
     </el-row>
@@ -118,16 +118,19 @@
           </template>
           <div class="pending-list">
             <div class="pending-item">
-              <span class="pending-count">{{ pendingStats.houseAudit }}</span>
+              <span class="pending-icon house"></span>
               <span class="pending-text">房源审核</span>
+              <span class="pending-count">{{ pendingStats.houseAudit || 0 }}</span>
             </div>
             <div class="pending-item">
-              <span class="pending-count">{{ pendingStats.qualificationAudit }}</span>
+              <span class="pending-icon qualification"></span>
               <span class="pending-text">资质审核</span>
+              <span class="pending-count">{{ pendingStats.qualificationAudit || 0 }}</span>
             </div>
             <div class="pending-item">
-              <span class="pending-count">{{ pendingStats.complaintHandle }}</span>
+              <span class="pending-icon complaint"></span>
               <span class="pending-text">投诉处理</span>
+              <span class="pending-count">{{ pendingStats.complaintHandle || 0 }}</span>
             </div>
           </div>
         </el-card>
@@ -138,17 +141,10 @@
           <template #header>
             <h3>最近登录日志</h3>
           </template>
-          <el-table :data="recentLogs" border size="small">
-            <el-table-column prop="username" label="用户名" />
-            <el-table-column prop="ip" label="IP地址" />
-            <el-table-column prop="time" label="登录时间" />
-            <el-table-column prop="status" label="状态">
-              <template #default="scope">
-                <el-tag :type="scope.row.status === 'SUCCESS' ? 'success' : 'danger'">
-                  {{ scope.row.status === 'SUCCESS' ? '成功' : '失败' }}
-                </el-tag>
-              </template>
-            </el-table-column>
+          <el-table :data="recentLogs" :border="false" :show-header="false">
+            <el-table-column prop="username" label="用户名" width="120"></el-table-column>
+            <el-table-column prop="loginTime" label="登录时间" width="180"></el-table-column>
+            <el-table-column prop="ipAddress" label="IP地址"></el-table-column>
           </el-table>
         </el-card>
       </el-col>
@@ -157,15 +153,23 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, onMounted, onUnmounted, nextTick } from 'vue'
+
+const userChartRef = ref(null)
+const regionChartRef = ref(null)
+const rentRateChartRef = ref(null)
+const userTypeChartRef = ref(null)
 import { TrendCharts, OfficeBuilding, User, Document } from '@element-plus/icons-vue'
 import { getDashboardStats, getChartData, getRecentLogs } from '@/api/admin'
+import * as echarts from 'echarts'
 
 const stats = reactive({
   totalRevenue: '0',
   totalHouses: 0,
   totalUsers: 0,
-  totalOrders: 0
+  totalOrders: 0,
+  todayNewHouseCount: 0,
+  todayNewUserCount: 0
 })
 
 const pendingStats = reactive({
@@ -175,17 +179,13 @@ const pendingStats = reactive({
 })
 
 const recentLogs = ref([])
-
-const userChart = ref(null)
-const regionChart = ref(null)
-const rentRateChart = ref(null)
-const userTypeChart = ref(null)
-
 let charts = []
 let chartData = ref({})
 
 onMounted(() => {
-  loadDashboardData()
+  nextTick(() => {
+    loadDashboardData()
+  })
 })
 
 onUnmounted(() => {
@@ -204,114 +204,143 @@ const loadDashboardData = async () => {
       getRecentLogs()
     ])
     
-    Object.assign(stats, statsRes.data)
-    chartData.value = chartsRes.data
-    recentLogs.value = logsRes.data || []
+    Object.assign(stats, statsRes)
+    chartData.value = chartsRes
+    recentLogs.value = logsRes || []
     
-    if (statsRes.data.pendingStats) {
-      Object.assign(pendingStats, statsRes.data.pendingStats)
+    if (statsRes) {
+      pendingStats.houseAudit = statsRes.pendingHouseAuditCount || 0
+      pendingStats.qualificationAudit = statsRes.pendingQualificationAuditCount || 0
+      pendingStats.complaintHandle = statsRes.pendingComplaintCount || 0
     }
     
-    loadCharts()
+    initCharts()
   } catch (error) {
     console.error('加载仪表盘数据失败:', error)
   }
 }
 
-const loadCharts = () => {
-  if (typeof window !== 'undefined' && window.echarts) {
-    const echarts = window.echarts
-    
-    if (userChart.value) {
-      const uc = echarts.init(userChart.value)
-      const userData = chartData.value.userGrowth || {
-        dates: ['1/9', '1/10', '1/11', '1/12', '1/13', '1/14', '1/15'],
-        values: [120, 200, 150, 250, 180, 300, 280]
-      }
-      uc.setOption({
-        tooltip: { trigger: 'axis' },
-        grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
-        xAxis: { type: 'category', data: userData.dates },
-        yAxis: { type: 'value' },
-        series: [{
-          name: '新增用户',
-          type: 'line',
-          data: userData.values,
-          smooth: true,
-          areaStyle: { color: 'rgba(102, 126, 234, 0.1)' },
-          lineStyle: { color: '#667eea', width: 3 }
-        }]
-      })
-      charts.push(uc)
-    }
-    
-    if (regionChart.value) {
-      const rc = echarts.init(regionChart.value)
-      const regionData = chartData.value.regionDistribution || [
-        { value: 35, name: '朝阳区' },
-        { value: 25, name: '海淀区' },
-        { value: 20, name: '西城区' },
-        { value: 15, name: '东城区' },
-        { value: 5, name: '其他' }
-      ]
-      rc.setOption({
-        tooltip: { trigger: 'item' },
-        series: [{
-          name: '区域分布',
-          type: 'pie',
-          radius: '50%',
-          data: regionData,
-          itemStyle: {
-            colors: ['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe']
-          }
-        }]
-      })
-      charts.push(rc)
-    }
-    
-    if (rentRateChart.value) {
-      const rrc = echarts.init(rentRateChart.value)
-      const rentRateData = chartData.value.rentRate || {
-        months: ['1月', '2月', '3月', '4月', '5月', '6月'],
-        values: [65, 72, 68, 78, 82, 85]
-      }
-      rrc.setOption({
-        tooltip: { trigger: 'axis' },
-        grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
-        xAxis: { type: 'category', data: rentRateData.months },
-        yAxis: { type: 'value', max: 100 },
-        series: [{
-          name: '出租率',
-          type: 'bar',
-          data: rentRateData.values,
-          itemStyle: { color: 'rgba(102, 126, 234, 0.8)' }
-        }]
-      })
-      charts.push(rrc)
-    }
-    
-    if (userTypeChart.value) {
-      const utc = echarts.init(userTypeChart.value)
-      const userTypeData = chartData.value.userType || [
-        { value: 65, name: '租客' },
-        { value: 25, name: '房东' },
-        { value: 10, name: '管理员' }
-      ]
-      utc.setOption({
-        tooltip: { trigger: 'item' },
-        series: [{
-          name: '用户类型',
-          type: 'pie',
-          radius: ['40%', '70%'],
-          data: userTypeData,
-          itemStyle: {
-            colors: ['#11998e', '#38ef7d', '#667eea']
-          }
-        }]
-      })
-      charts.push(utc)
-    }
+const initCharts = () => {
+  initUserGrowthChart()
+  initRegionChart()
+  initRentRateChart()
+  initUserTypeChart()
+}
+
+const initUserGrowthChart = () => {
+  const dom = userChartRef.value
+  if (!dom) return
+  
+  const chart = echarts.init(dom)
+  const data = chartData.value.userGrowth || {
+    dates: ['4/19', '4/20', '4/21', '4/22', '4/23', '4/24', '4/25'],
+    values: [4, 0, 0, 0, 0, 0, 0]
   }
+  
+  chart.setOption({
+    tooltip: { trigger: 'axis' },
+    grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+    xAxis: { type: 'category', data: data.dates },
+    yAxis: { type: 'value' },
+    series: [{
+      name: '新增用户',
+      type: 'line',
+      data: data.values,
+      smooth: true,
+      areaStyle: { color: 'rgba(102, 126, 234, 0.1)' },
+      lineStyle: { color: '#667eea', width: 3 }
+    }]
+  })
+  
+  charts.push(chart)
+}
+
+const initRegionChart = () => {
+  const dom = regionChartRef.value
+  if (!dom) return
+  
+  const chart = echarts.init(dom)
+  const data = chartData.value.regionDistribution || [
+    { value: 35, name: '朝阳区' },
+    { value: 25, name: '海淀区' },
+    { value: 20, name: '西城区' },
+    { value: 15, name: '东城区' },
+    { value: 5, name: '其他' }
+  ]
+  
+  chart.setOption({
+    tooltip: { trigger: 'item' },
+    series: [{
+      name: '区域分布',
+      type: 'pie',
+      radius: '50%',
+      data: data,
+      itemStyle: {
+        colors: ['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe']
+      }
+    }]
+  })
+  
+  charts.push(chart)
+}
+
+const initRentRateChart = () => {
+  const dom = rentRateChartRef.value
+  if (!dom) return
+  
+  const chart = echarts.init(dom)
+  const data = chartData.value.rentRate || {
+    months: ['1月', '2月', '3月', '4月', '5月', '6月'],
+    values: [65, 72, 68, 78, 82, 85]
+  }
+  
+  chart.setOption({
+    tooltip: { trigger: 'axis' },
+    grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+    xAxis: { type: 'category', data: data.months },
+    yAxis: { type: 'value', max: 100 },
+    series: [{
+      name: '出租率',
+      type: 'bar',
+      data: data.values,
+      itemStyle: { color: 'rgba(102, 126, 234, 0.8)' }
+    }]
+  })
+  
+  charts.push(chart)
+}
+
+const initUserTypeChart = () => {
+  const dom = userTypeChartRef.value
+  if (!dom) return
+  
+  const chart = echarts.init(dom)
+  const data = chartData.value.userType || [
+    { value: 65, name: '租客' },
+    { value: 25, name: '房东' },
+    { value: 10, name: '管理员' }
+  ]
+  
+  chart.setOption({
+    tooltip: { 
+      trigger: 'item',
+      formatter: '{b}: {d}%'
+    },
+    series: [{
+      name: '用户类型',
+      type: 'pie',
+      radius: ['40%', '70%'],
+      data: data,
+      label: {
+        formatter: '{b}\n{d}%'
+      },
+      itemStyle: {
+        colors: ['#11998e', '#38ef7d', '#667eea']
+      }
+    }]
+  })
+  
+  charts.push(chart)
 }
 </script>
 
@@ -432,6 +461,7 @@ const loadCharts = () => {
     }
     
     .chart-container {
+      width: 100%;
       height: 260px;
     }
   }
@@ -469,48 +499,64 @@ const loadCharts = () => {
   .pending-item {
     display: flex;
     align-items: center;
-    padding: 14px 0;
-    border-bottom: 1px solid #f5f5f5;
+    padding: 12px 0;
+    border-bottom: 1px solid #f0f0f0;
     
     &:last-child {
       border-bottom: none;
     }
     
-    .pending-count {
+    .pending-icon {
       width: 36px;
       height: 36px;
-      background: linear-gradient(135deg, $primary-color 0%, #764ba2 100%);
-      border-radius: 50%;
+      border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 14px;
-      font-weight: 600;
-      color: #fff;
-      margin-right: 14px;
+      margin-right: 12px;
+      
+      &.house {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      }
+      
+      &.qualification {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+      }
+      
+      &.complaint {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      }
     }
     
     .pending-text {
+      flex: 1;
       font-size: 14px;
       color: $text-primary;
+    }
+    
+    .pending-count {
+      background: #f5f7fa;
+      color: #666;
+      font-size: 12px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-weight: 600;
     }
   }
 }
 
 :deep(.el-table) {
-  font-size: 13px;
-  
   .el-table__row {
     &:hover {
-      background: #f9fafb;
+      background: #f5f7fa;
     }
   }
-}
-
-@media (min-width: 1366px) {
-  .admin-dashboard {
-    max-width: 1920px;
-    margin: 0 auto;
+  
+  .el-table__cell {
+    padding: 12px 0;
+    font-size: 14px;
+    color: $text-primary;
+    border-bottom: 1px solid #f0f0f0;
   }
 }
 </style>
