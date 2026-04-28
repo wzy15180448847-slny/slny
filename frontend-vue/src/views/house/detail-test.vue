@@ -5,7 +5,7 @@
     <p>房源ID: {{ currentHouseId }}</p>
     <p>请求次数: {{ requestCount }}</p>
     <p>上次请求时间: {{ lastRequestTime }}</p>
-    
+
     <div v-if="house">
       <h2>{{ house.title }}</h2>
       <p>城市: {{ house.city }}</p>
@@ -20,7 +20,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import axios from 'axios'
 
 const currentHouseId = ref('')
@@ -31,12 +31,7 @@ const lastRequestTime = ref('')
 const loadHouse = async (id) => {
   requestCount.value++
   lastRequestTime.value = new Date().toLocaleTimeString()
-  
-  console.log('=== 开始加载房源 ===')
-  console.log('请求ID:', id)
-  console.log('请求次数:', requestCount.value)
-  console.log('请求时间:', lastRequestTime.value)
-  
+
   try {
     const response = await axios.get(`/api/houses/${id}`, {
       headers: {
@@ -45,11 +40,9 @@ const loadHouse = async (id) => {
         'Expires': '0'
       }
     })
-    console.log('响应数据:', response.data)
-    
+
     if (response.data.code === 200) {
       house.value = response.data.data
-      console.log('house数据已更新:', house.value.title, house.value.city)
     }
   } catch (error) {
     console.error('请求失败:', error)
@@ -57,12 +50,11 @@ const loadHouse = async (id) => {
 }
 
 onMounted(() => {
-  console.log('页面挂载')
   const path = window.location.pathname
   const match = path.match(/\/house\/(\d+)/)
   if (match) {
     currentHouseId.value = match[1]
-    loadHouse(Number(currentHouseId.value))
+    loadHouse(currentHouseId.value)
   }
 })
 </script>

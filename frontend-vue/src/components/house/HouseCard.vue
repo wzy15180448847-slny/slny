@@ -4,40 +4,39 @@
       <img 
         v-if="houseImages && houseImages.length > 0" 
         :src="houseImages[0]" 
-        :alt="props.house.title"
+        :alt="house.title"
       />
       <div v-else class="image-placeholder">
         <el-icon><Picture /></el-icon>
       </div>
       
       <div class="house-tags">
-        <span v-if="props.house.status === 0" class="tag tag-success">已上架</span>
-        <span v-else-if="props.house.status === 1" class="tag tag-warning">已出租</span>
-        <span v-else-if="props.house.status === 2" class="tag tag-danger">已下架</span>
+        <span v-if="house.status === 0" class="tag tag-success">已上架</span>
+        <span v-else-if="house.status === 1" class="tag tag-warning">已出租</span>
+        <span v-else-if="house.status === 2" class="tag tag-danger">已下架</span>
         <span v-else class="tag">待发布</span>
       </div>
       
       <div class="house-price">
-        <span class="price">{{ Math.floor(props.house.rentPrice) }}</span>
+        <span class="price">{{ Math.floor(house.rentPrice) }}</span>
         <span class="unit">元/月</span>
       </div>
     </div>
     
     <div class="house-info">
-      <div class="house-id-badge">ID: {{ props.house.id }}</div>
-      <h3 class="house-title text-ellipsis-2">{{ props.house.title }}</h3>
+      <h3 class="house-title text-ellipsis-2">{{ house.title }}</h3>
       
       <div class="house-meta">
         <span class="meta-item">
           <el-icon><Location /></el-icon>
-          {{ props.house.city }} {{ props.house.district }}
+          {{ house.city }} {{ house.district }}
         </span>
       </div>
       
       <div class="house-detail">
-        <span class="detail-item">{{ props.house.houseType }}</span>
+        <span class="detail-item">{{ house.houseType }}</span>
         <span class="divider">|</span>
-        <span class="detail-item">{{ props.house.area }}㎡</span>
+        <span class="detail-item">{{ house.area }}㎡</span>
         <span class="divider">|</span>
         <span class="detail-item">{{ orientationText }}</span>
       </div>
@@ -46,11 +45,11 @@
         <div class="house-stats">
           <span class="stat-item">
             <el-icon><View /></el-icon>
-            {{ props.house.viewCount || 0 }}
+            {{ house.viewCount || 0 }}
           </span>
           <span class="stat-item">
             <el-icon><Star /></el-icon>
-            {{ props.house.favoriteCount || 0 }}
+            {{ house.favoriteCount || 0 }}
           </span>
         </div>
         
@@ -69,7 +68,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
 import { addFavorite, removeFavorite } from '@/api/house'
@@ -91,11 +90,11 @@ const router = useRouter()
 const userStore = useUserStore()
 
 const isFavorited = computed(() => {
-  return props.house?.isFavorited || false
+  return props.house.isFavorited || false
 })
 
 const houseImages = computed(() => {
-  const images = props.house?.images
+  const images = props.house.images
   if (!images) return []
   try {
     return typeof images === 'string' ? JSON.parse(images) : images
@@ -106,15 +105,10 @@ const houseImages = computed(() => {
 
 const orientationText = computed(() => {
   const map = { 1: '东', 2: '南', 3: '西', 4: '北', 5: '东南', 6: '西南', 7: '东北', 8: '西北' }
-  return map[props.house?.orientation] || '未知'
+  return map[props.house.orientation] || '未知'
 })
 
 const handleClick = () => {
-  console.log('=== HouseCard点击事件 ===')
-  console.log('props.house.id:', props.house.id)
-  console.log('props.house.title:', props.house.title)
-  console.log('props.house.city:', props.house.city)
-  console.log('跳转到:', `/house/${props.house.id}`)
   router.push(`/house/${props.house.id}`)
 }
 
@@ -141,13 +135,6 @@ const handleFavorite = async () => {
     console.error(error)
   }
 }
-
-onMounted(() => {
-  console.log('=== HouseCard mounted ===')
-  console.log('props.house:', props.house)
-  console.log('props.house.id:', props.house?.id)
-  console.log('props.house.title:', props.house?.title)
-})
 </script>
 
 <style lang="scss" scoped>
@@ -231,16 +218,6 @@ onMounted(() => {
 
 .house-info {
   padding: 15px;
-}
-
-.house-id-badge {
-  font-size: 12px;
-  color: $text-secondary;
-  background: $bg-color;
-  padding: 2px 8px;
-  border-radius: 4px;
-  margin-bottom: 8px;
-  display: inline-block;
 }
 
 .house-title {

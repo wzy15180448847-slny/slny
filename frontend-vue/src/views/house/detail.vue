@@ -236,28 +236,19 @@ const orientationText = computed(() => {
 const fetchHouseDetail = async () => {
   loading.value = true
   try {
-    console.log('获取房源详情, id:', route.params.id, 'type:', typeof route.params.id)
-    
     if (!route.params.id) {
-      console.error('房源ID为空')
       ElMessage.error('房源ID为空')
       router.push('/')
       return
     }
     
-    const houseId = Number(route.params.id)
-    console.log('转换后的房源ID:', houseId, 'type:', typeof houseId)
-    
+    const houseId = route.params.id
     const response = await getHouseDetail(houseId)
-    console.log('响应数据:', response)
     
     house.value = response
     isFavorited.value = response.isFavorited || false
-    
-    console.log('房源数据设置成功:', house.value)
   } catch (error) {
     console.error('获取房源详情失败:', error)
-    console.error('错误详情:', error.response || error.message || error)
     ElMessage.error('获取房源详情失败')
     router.push('/')
   } finally {
@@ -346,7 +337,6 @@ const formatDate = (date) => {
 }
 
 watch(() => route.params.id, () => {
-  console.log('路由参数变化，重新获取房源详情')
   house.value = null
   fetchHouseDetail()
 }, { immediate: true })

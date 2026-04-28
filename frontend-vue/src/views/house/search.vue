@@ -173,7 +173,7 @@ const router = useRouter()
 
 const loading = ref(false)
 const sortBy = ref('createTime')
-const houseList = reactive([])
+const houseList = ref([])
 
 const pagination = reactive({
   current: 1,
@@ -213,64 +213,13 @@ const districts = computed(() => {
 const fetchHouses = async () => {
   loading.value = true
   try {
-    console.log('=== 开始搜索 ===')
-    console.log('发送搜索请求:', {
+    const data = await searchHouses({
       current: pagination.current,
       size: pagination.size,
       sortBy: sortBy.value,
       ...searchForm
     })
-    const response = await searchHouses({
-      current: pagination.current,
-      size: pagination.size,
-      sortBy: sortBy.value,
-      ...searchForm
-    })
-    console.log('=== 完整响应数据 ===')
-    console.log('response类型:', typeof response)
-    console.log('response:', response)
-    console.log('response结构:', Object.keys(response))
-    
-    const data = response
-    console.log('=== 数据内容 ===')
-    console.log('records是否存在:', 'records' in data)
-    console.log('records类型:', typeof data.records)
-    console.log('records长度:', data.records ? data.records.length : 'undefined')
-    
-    if (data.records && data.records.length > 0) {
-      console.log('第一条记录:', data.records[0])
-      console.log('第一条记录的ID:', data.records[0].id)
-      console.log('最后一条记录:', data.records[data.records.length - 1])
-      console.log('最后一条记录的ID:', data.records[data.records.length - 1].id)
-      
-      const firstId = data.records[0].id
-      const allSame = data.records.every(h => h.id === firstId)
-      console.log('所有记录ID是否相同:', allSame)
-      if (allSame) {
-        console.error('警告: 后端返回的所有记录ID都相同！')
-      }
-      
-      console.log('=== 每条记录的ID ===')
-      data.records.forEach((h, index) => {
-        console.log(`${index + 1}. ID: ${h.id}`)
-      })
-    }
-    houseList.length = 0
-    const newHouses = JSON.parse(JSON.stringify(data.records || []))
-    newHouses.forEach(house => {
-      houseList.push(house)
-    })
-    console.log('=== houseList赋值后 ===')
-    console.log('houseList长度:', houseList.length)
-    houseList.forEach((h, index) => {
-      console.log(`${index + 1}. houseList ID: ${h.id}, 标题: ${h.title}`)
-    })
-    
-    const ids = houseList.map(h => h.id)
-    const uniqueIds = [...new Set(ids)]
-    if (ids.length !== uniqueIds.length) {
-      console.warn('发现重复的房源ID:', ids)
-    }
+    houseList.value = data.records || []
     pagination.total = data.total || 0
   } catch (error) {
     console.error('搜索失败:', error)
@@ -322,7 +271,7 @@ const handlePageChange = (page) => {
 }
 
 const handleFavoriteChange = ({ id, isFavorited }) => {
-  const house = houseList.find(h => h.id === id)
+  const house = houseList.value.find(h => h.id === id)
   if (house) {
     house.isFavorited = isFavorited
     house.favoriteCount = isFavorited 
