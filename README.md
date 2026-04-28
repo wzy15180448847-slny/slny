@@ -712,7 +712,60 @@ MIT License - 详见 [LICENSE](LICENSE) 文件
 - 问题反馈: https://github.com/yourusername/house-rental-platform/issues
 - 开发者邮箱: developer@example.com
 
+## 更新日志
+
+### v1.1.0 (2026-04-29)
+
+#### 🚀 新功能
+- **个人中心头像上传**: 支持租客、房东、管理员三种角色的头像上传、本地预览和保存功能
+- **预约看房优化**: 预约弹窗下拉框显示用户收藏的房源，支持日期和时间选择器
+- **MinIO 文件存储集成**: 集成 MinIO 对象存储服务，支持文件上传、删除和URL访问
+
+#### 🐛 Bug修复
+- **预约功能修复** (house-rental-system/src/main/java/com/houserental/service/impl/AppointmentServiceImpl.java):
+  - 修复了预约提交后信息不显示的问题
+  - 修复了数据库字段映射错误（house.getCommunity() → house.getAddress()）
+  - 修复了预约状态显示问题，后端将数字状态码转换为字符串（PENDING/CONFIRMED/COMPLETED/CANCELLED/REJECTED）
+- **钱包功能修复** (house-rental-system/src/main/java/com/houserental/controller/WalletController.java):
+  - 修复了钱包充值报错 "Failed to convert value of type java.lang.String to required type java.lang.Long"
+  - 后端从 token 中获取用户 ID 而非从请求体获取
+  - 修复了余额显示不一致问题
+  - 移除了微信/支付宝依赖，使用虚拟钱包完成支付
+  - 修复了账单支付功能
+- **头像上传功能修复** (frontend-vue/src/views/tenant/profile.vue, frontend-vue/src/utils/request.js):
+  - 修复了个人中心加载慢问题（移除了有问题的裁剪组件）
+  - 修复了保存头像报错 "Current request is not a multipart request"
+  - 在请求拦截器中判断如果是 FormData 则删除 Content-Type 头
+  - 优化了文件上传函数，移除错误的 Content-Type 配置
+- **API接口修复**:
+  - 添加了缺失的 API 函数（getLandlordAppointments、getMyHouses）
+  - 修复了 axios 拦截器对 FormData 的处理
+
+#### 🎨 界面优化
+- **响应式设计**: 优化了个人中心的响应式布局
+- **头像显示**: 所有页面导航栏统一显示用户头像
+- **状态标签**: 优化了预约状态标签的显示和颜色
+- **预约弹窗**: 预约看房弹窗显示用户收藏的房源列表
+
+#### 📦 技术改进
+- **文件上传**: 完善了文件上传、下载、删除的完整流程
+- **错误处理**: 添加了详细的错误日志和用户友好的错误提示
+- **MinIO服务**: 完成 MinIO 本地安装配置（D:\MinIO）
+
+#### 🔧 配置更新
+- **MinIO配置**: 添加了 MinIO 配置，默认地址 http://localhost:9000，控制台 http://localhost:9001
+- **文件存储**: 配置了默认存储桶 house-rental，预签名URL有效期7天
+
 ---
 
-**最后更新**: 2026年4月
-**版本**: v1.0.0
+### v1.0.0 (2026-04-28)
+
+#### 🎉 初始版本
+- 完成房屋租赁平台核心功能开发
+- 支持房东、租客、管理员三种角色
+- 实现房源管理、预约看房、合同管理、钱包支付等核心模块
+
+---
+
+**最后更新**: 2026年4月29日
+**版本**: v1.1.0

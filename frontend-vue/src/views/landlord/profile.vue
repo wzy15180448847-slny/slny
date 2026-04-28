@@ -2,9 +2,22 @@
   <div class="landlord-profile">
     <div class="profile-header">
       <div class="avatar-section">
-        <el-avatar :size="120" class="profile-avatar">
-          {{ userStore.nickname.charAt(0) }}
-        </el-avatar>
+        <div class="avatar-container">
+          <el-avatar :size="120" class="profile-avatar" :src="formData.avatar">
+            {{ userStore.nickname.charAt(0) }}
+          </el-avatar>
+          <div class="avatar-overlay" @click="triggerAvatarUpload">
+            <el-icon class="upload-icon"><Camera /></el-icon>
+            <span>更换头像</span>
+          </div>
+        </div>
+        <input 
+          type="file" 
+          ref="avatarInput"
+          accept="image/*"
+          style="display: none"
+          @change="handleAvatarChange"
+        />
         <h2>{{ userStore.nickname }}</h2>
         <p class="user-type">房东</p>
         <p class="credit-score">信用分: {{ userInfo.creditScore }}</p>
@@ -104,9 +117,12 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useUserStore } from '@/store/user'
 import { ElMessage } from 'element-plus'
+import { Camera } from '@element-plus/icons-vue'
 import { updatePassword } from '@/api/auth'
+import { uploadFile, getFileUrl } from '@/api/file'
 
 const userStore = useUserStore()
+const avatarInput = ref(null)
 
 const userInfo = reactive({
   creditScore: 92
@@ -118,7 +134,8 @@ const formData = reactive({
   phone: '',
   email: '',
   idCard: '',
-  registerTime: ''
+  registerTime: '',
+  avatar: ''
 })
 
 const showPasswordDialog = ref(false)
@@ -134,16 +151,51 @@ onMounted(() => {
   formData.nickname = userStore.nickname
   formData.phone = userStore.userInfo?.phone || ''
   formData.email = userStore.userInfo?.email || ''
+  formData.avatar = userStore.avatar || ''
   formData.idCard = '**** **** **** 5678'
   formData.registerTime = '2024-01-01 10:00:00'
 })
+
+const triggerAvatarUpload = () => {
+  avatarInput.value.click()
+}
+
+const handleAvatarChange = async (event) => {
+  const file = event.target.files[0]
+  if (!file) return
+
+  if (file.size > 5 * 1024 * 1024) {
+    ElMessage.error('头像文件大小不能超过 5MB')
+    return
+  }
+
+  if (!file.type.startsWith('image/')) {
+    ElMessage.error('只支持图片格式')
+    return
+  }
+
+  try {
+    const fileName = await uploadFile(file)
+    const avatarUrl = await getFileUrl(fileName)
+    formData.avatar = avatarUrl
+    ElMessage.success('头像上传成功')
+  } catch (error) {
+    console.error('头像上传失败:', error)
+    ElMessage.error('头像上传失败，请重试')
+  } finally {
+    if (avatarInput.value) {
+      avatarInput.value.value = ''
+    }
+  }
+}
 
 const saveProfile = async () => {
   try {
     await userStore.updateProfile({
       nickname: formData.nickname,
       phone: formData.phone,
-      email: formData.email
+      email: formData.email,
+      avatar: formData.avatar
     })
     ElMessage.success('个人信息修改成功')
   } catch (error) {
@@ -204,9 +256,44 @@ const submitPassword = async () => {
   border-radius: 12px;
   color: white;
   
-  .profile-avatar {
-    background: rgba(255, 255, 255, 0.2);
+  .avatar-container {
+    position: relative;
+    display: inline-block;
     margin-bottom: 15px;
+    
+    .profile-avatar {
+      background: rgba(255, 255, 255, 0.2);
+    }
+    
+    .avatar-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.6);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.3s;
+      cursor: pointer;
+      
+      &:hover {
+        opacity: 1;
+      }
+      
+      .upload-icon {
+        font-size: 28px;
+        margin-bottom: 5px;
+      }
+      
+      span {
+        font-size: 12px;
+      }
+    }
   }
   
   h2 {

@@ -14,6 +14,8 @@ public interface WalletService {
 
     UserWallet recharge(Long userId, BigDecimal amount, String remark);
 
+    UserWallet withdraw(Long userId, BigDecimal amount, String remark);
+
     boolean payRent(String orderNo);
 
     List<WalletTransactionLog> getTransactionLogs(Long userId);

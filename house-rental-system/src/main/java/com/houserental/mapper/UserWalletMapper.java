@@ -18,5 +18,7 @@ public interface UserWalletMapper extends BaseMapper<UserWallet> {
 
     int increaseBalance(@Param("userId") Long userId, @Param("amount") BigDecimal amount);
 
+    int decreaseBalance(@Param("userId") Long userId, @Param("amount") BigDecimal amount);
+
     int decreaseBalanceWithCheck(@Param("userId") Long userId, @Param("amount") BigDecimal amount);
 }

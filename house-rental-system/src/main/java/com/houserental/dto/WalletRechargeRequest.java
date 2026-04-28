@@ -9,7 +9,6 @@ import java.math.BigDecimal;
 @Data
 public class WalletRechargeRequest {
 
-    @NotNull(message = "用户ID不能为空")
     private Long userId;
 
     @NotNull(message = "充值金额不能为空")

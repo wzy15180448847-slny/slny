@@ -20,6 +20,12 @@
         WHERE user_id = #{userId} AND is_deleted = 0
     </update>
 
+    <update id="decreaseBalance">
+        UPDATE biz_user_wallet
+        SET balance = balance - #{amount}, update_time = NOW()
+        WHERE user_id = #{userId} AND is_deleted = 0
+    </update>
+
     <update id="decreaseBalanceWithCheck">
         UPDATE biz_user_wallet
         SET balance = balance - #{amount}, update_time = NOW()

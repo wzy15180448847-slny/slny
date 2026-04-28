@@ -22,7 +22,7 @@
         <template v-if="userStore.isLoggedIn">
           <el-dropdown @command="handleCommand">
             <div class="user-info">
-              <el-avatar :size="35" class="user-avatar">
+              <el-avatar :size="35" class="user-avatar" :src="userStore.avatar">
                 {{ (userStore.nickname || '用户').charAt(0) }}
               </el-avatar>
               <span class="username">{{ userStore.nickname || '用户' }}</span>

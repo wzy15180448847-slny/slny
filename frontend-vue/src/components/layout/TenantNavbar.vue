@@ -14,7 +14,7 @@
       <div class="nav-right">
         <el-dropdown @command="handleCommand">
           <div class="user-info">
-            <el-avatar :size="35" class="user-avatar">
+            <el-avatar :size="35" class="user-avatar" :src="userStore.avatar">
               {{ (userStore.nickname || '用户').charAt(0) }}
             </el-avatar>
             <span class="username">{{ userStore.nickname || '用户' }}</span>
@@ -66,7 +66,7 @@
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/store/user'
-import { HomeFilled } from '@element-plus/icons-vue'
+import { HomeFilled, User, Star, Calendar, Document, Wallet, Tools, SwitchButton, ArrowDown, House } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const userStore = useUserStore()

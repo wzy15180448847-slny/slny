@@ -52,3 +52,11 @@ export function rejectAppointment(id, reason) {
     params: { reason }
   })
 }
+
+export function getLandlordAppointments(params) {
+  return request({
+    url: '/appointment/landlord',
+    method: 'get',
+    params
+  })
+}

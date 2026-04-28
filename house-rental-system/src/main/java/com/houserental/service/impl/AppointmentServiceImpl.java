@@ -16,7 +16,11 @@ import com.houserental.service.AppointmentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -115,7 +119,6 @@ public class AppointmentServiceImpl extends ServiceImpl<AppointmentMapper, Appoi
         Page<Appointment> page = new Page<>(pageNum, pageSize);
         QueryWrapper<Appointment> wrapper = new QueryWrapper<>();
 
-        // 添加查询条件
         if (params.containsKey("houseId")) {
             wrapper.eq("house_id", params.get("houseId"));
         }
@@ -129,26 +132,55 @@ public class AppointmentServiceImpl extends ServiceImpl<AppointmentMapper, Appoi
             wrapper.eq("status", params.get("status"));
         }
 
-        // 分页查询
         baseMapper.selectPage(page, wrapper);
 
-        // 填充关联数据
+        List<Map<String, Object>> resultList = new ArrayList<>();
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+        
         for (Appointment appointment : page.getRecords()) {
+            Map<String, Object> item = new HashMap<>();
+            item.put("id", appointment.getId());
+            
             if (appointment.getHouseId() != null) {
                 House house = houseMapper.selectById(appointment.getHouseId());
-                appointment.setHouse(house);
+                if (house != null) {
+                    item.put("houseName", house.getTitle());
+                    item.put("address", house.getAddress() != null ? house.getAddress() : "");
+                }
             }
-            if (appointment.getTenantId() != null) {
-                User tenant = userMapper.selectById(appointment.getTenantId());
-                appointment.setTenant(tenant);
-            }
+            
             if (appointment.getLandlordId() != null) {
                 User landlord = userMapper.selectById(appointment.getLandlordId());
-                appointment.setLandlord(landlord);
+                if (landlord != null) {
+                    item.put("landlordName", landlord.getUsername());
+                    item.put("landlordPhone", landlord.getPhone());
+                }
             }
+            
+            if (appointment.getAppointmentTime() != null) {
+                item.put("date", formatter.format(appointment.getAppointmentTime()));
+            }
+            
+            item.put("status", convertStatus(appointment.getStatus()));
+            
+            resultList.add(item);
         }
 
-        return PageResult.build(page.getCurrent(), page.getSize(), page.getTotal(), page.getRecords());
+        return PageResult.build(page.getCurrent(), page.getSize(), page.getTotal(), (List) resultList);
+    }
+    
+    private String convertStatus(Integer status) {
+        if (status == null) {
+            return "PENDING";
+        }
+        switch (status) {
+            case 0: return "PENDING";
+            case 1: return "CONFIRMED";
+            case 2: return "COMPLETED";
+            case 3: return "CANCELLED";
+            case 4: return "REJECTED";
+            default: return "PENDING";
+        }
     }
 
     @Override

@@ -113,7 +113,7 @@
     <el-dialog title="预约看房" v-model="showCreateDialog" width="500px">
       <el-form :model="createForm" label-width="100px">
         <el-form-item label="选择房源">
-          <el-select v-model="createForm.houseId" placeholder="请选择房源">
+          <el-select v-model="createForm.houseId" placeholder="请选择收藏的房源">
             <el-option v-for="house in availableHouses" :key="house.id" :label="house.name" :value="house.id" />
           </el-select>
         </el-form-item>
@@ -143,7 +143,9 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import dayjs from 'dayjs'
 import { getMyAppointments, createAppointment as createAppointmentApi, cancelAppointment as cancelAppointmentApi } from '@/api/appointment'
+import { getFavoriteHouses } from '@/api/house'
 
 const activeTab = ref('all')
 
@@ -215,7 +217,21 @@ const cancelAppointment = async (appointment) => {
   }
 }
 
+const loadFavorites = async () => {
+  try {
+    const response = await getFavoriteHouses({ page: 1, size: 50 })
+    availableHouses.value = (response?.records || []).map(house => ({
+      id: house.id,
+      name: house.title
+    }))
+  } catch (error) {
+    console.error('加载收藏房源失败:', error)
+    ElMessage.error('加载收藏房源失败')
+  }
+}
+
 const createAppointment = () => {
+  loadFavorites()
   showCreateDialog.value = true
 }
 
@@ -226,9 +242,10 @@ const submitAppointment = async () => {
   }
   
   try {
+    const dateStr = dayjs(createForm.date).format('YYYY-MM-DD')
     await createAppointmentApi({
       houseId: createForm.houseId,
-      date: createForm.date,
+      date: dateStr,
       time: createForm.time,
       remark: createForm.remark
     })

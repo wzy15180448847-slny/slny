@@ -20,41 +20,41 @@
         <el-tabs v-model="activeTab" type="card">
           <el-tab-pane label="交易记录" name="transactions">
             <el-table :data="transactions" border>
-              <el-table-column prop="type" label="类型">
+              <el-table-column prop="transactionType" label="类型">
                 <template #default="scope">
-                  <el-tag :type="getTypeTag(scope.row.type)">{{ getTypeText(scope.row.type) }}</el-tag>
+                  <el-tag :type="getTypeTag(scope.row.transactionType)">{{ getTypeText(scope.row.transactionType) }}</el-tag>
                 </template>
               </el-table-column>
               <el-table-column prop="amount" label="金额">
                 <template #default="scope">
-                  <span :class="scope.row.type === 'RECHARGE' ? 'income' : 'expense'">
-                    {{ scope.row.type === 'RECHARGE' ? '+' : '-' }}¥{{ scope.row.amount }}
+                  <span :class="Number(scope.row.amount) > 0 ? 'income' : 'expense'">
+                    {{ Number(scope.row.amount) > 0 ? '+' : '' }}¥{{ scope.row.amount }}
                   </span>
                 </template>
               </el-table-column>
-              <el-table-column prop="description" label="描述" />
+              <el-table-column prop="remark" label="描述" />
               <el-table-column prop="createTime" label="时间" />
             </el-table>
           </el-tab-pane>
           <el-tab-pane label="充值记录" name="recharges">
-            <el-table :data="transactions.filter(t => t.type === 'RECHARGE')" border>
+            <el-table :data="transactions.filter(t => t.transactionType === 1)" border>
               <el-table-column prop="amount" label="充值金额">
                 <template #default="scope">
                   <span class="income">+¥{{ scope.row.amount }}</span>
                 </template>
               </el-table-column>
-              <el-table-column prop="description" label="描述" />
+              <el-table-column prop="remark" label="描述" />
               <el-table-column prop="createTime" label="时间" />
             </el-table>
           </el-tab-pane>
           <el-tab-pane label="消费记录" name="consumptions">
-            <el-table :data="transactions.filter(t => t.type === 'PAYMENT')" border>
+            <el-table :data="transactions.filter(t => t.transactionType === 2 || t.transactionType === 4)" border>
               <el-table-column prop="amount" label="消费金额">
                 <template #default="scope">
-                  <span class="expense">-¥{{ scope.row.amount }}</span>
+                  <span class="expense">{{ scope.row.amount > 0 ? '-' : '' }}¥{{ Math.abs(scope.row.amount) }}</span>
                 </template>
               </el-table-column>
-              <el-table-column prop="description" label="描述" />
+              <el-table-column prop="remark" label="描述" />
               <el-table-column prop="createTime" label="时间" />
             </el-table>
           </el-tab-pane>
@@ -62,7 +62,7 @@
       </div>
     </div>
     
-    <el-dialog title="充值" v-model="showRechargeDialog" width="400px">
+    <el-dialog title="虚拟充值" v-model="showRechargeDialog" width="400px">
       <el-form :model="rechargeForm" label-width="80px">
         <el-form-item label="充值金额">
           <div class="amount-options">
@@ -77,32 +77,30 @@
           </div>
           <el-input v-model="rechargeForm.amount" placeholder="自定义金额" style="margin-top: 15px" />
         </el-form-item>
-        <el-form-item label="支付方式">
-          <el-radio-group v-model="rechargeForm.paymentMethod">
-            <el-radio label="微信支付" />
-            <el-radio label="支付宝" />
-          </el-radio-group>
-        </el-form-item>
       </el-form>
+      <div class="recharge-tip">
+        <el-alert title="提示" type="info" :closable="false">
+          此为虚拟充值，仅用于演示。充值金额将直接添加到您的钱包余额。
+        </el-alert>
+      </div>
       <template #footer>
         <el-button @click="showRechargeDialog = false">取消</el-button>
         <el-button type="primary" @click="submitRecharge">确认充值</el-button>
       </template>
     </el-dialog>
     
-    <el-dialog title="提现" v-model="showWithdrawDialog" width="400px">
+    <el-dialog title="虚拟提现" v-model="showWithdrawDialog" width="400px">
       <el-form :model="withdrawForm" label-width="80px">
         <el-form-item label="提现金额">
           <el-input v-model="withdrawForm.amount" placeholder="请输入提现金额" />
           <p class="tips">可用余额: ¥{{ wallet.balance }}</p>
         </el-form-item>
-        <el-form-item label="收款账户">
-          <el-select v-model="withdrawForm.account" placeholder="请选择收款账户">
-            <el-option label="微信" value="WECHAT" />
-            <el-option label="支付宝" value="ALIPAY" />
-          </el-select>
-        </el-form-item>
       </el-form>
+      <div class="recharge-tip">
+        <el-alert title="提示" type="info" :closable="false">
+          此为虚拟提现，仅用于演示。提现金额将直接从您的钱包余额扣除。
+        </el-alert>
+      </div>
       <template #footer>
         <el-button @click="showWithdrawDialog = false">取消</el-button>
         <el-button type="primary" @click="submitWithdraw">确认提现</el-button>
@@ -114,7 +112,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getWallet, getTransactions, recharge } from '@/api/wallet'
+import { getWallet, getTransactions, recharge, withdraw } from '@/api/wallet'
 
 const activeTab = ref('transactions')
 
@@ -138,23 +136,25 @@ const withdrawForm = reactive({
 })
 
 const getTypeTag = (type) => {
-  return type === 'RECHARGE' || type === '1' ? 'success' : 'danger'
+  const t = Number(type)
+  return t === 1 ? 'success' : 'danger'
 }
 
 const getTypeText = (type) => {
-  if (type === 'RECHARGE' || type === '1') return '充值'
-  if (type === 'PAYMENT' || type === '2') return '消费'
-  if (type === 'TRANSFER' || type === '4') return '转账'
-  return type
+  const t = Number(type)
+  if (t === 1) return '充值'
+  if (t === 2) return '消费'
+  if (t === 4) return '转账'
+  return '其他'
 }
 
 const loadWalletData = async () => {
   try {
     const walletRes = await getWallet()
-    wallet.balance = walletRes.data.balance || 0
+    wallet.balance = walletRes.balance || 0
     
     const transactionsRes = await getTransactions()
-    transactions.value = transactionsRes.data || []
+    transactions.value = transactionsRes || []
   } catch (error) {
     console.error('加载钱包数据失败:', error)
     ElMessage.error('加载钱包数据失败')
@@ -188,11 +188,6 @@ const submitWithdraw = async () => {
     return
   }
   
-  if (withdrawForm.amount > wallet.balance) {
-    ElMessage.error('提现金额超过可用余额')
-    return
-  }
-  
   try {
     await ElMessageBox.confirm(`确定提现 ¥${withdrawForm.amount} 吗？`, '提现确认', {
       confirmButtonText: '确定',
@@ -200,22 +195,14 @@ const submitWithdraw = async () => {
       type: 'warning'
     })
     
-    wallet.balance -= withdrawForm.amount
-    transactions.value.unshift({
-      id: Date.now(),
-      type: 'PAYMENT',
-      amount: withdrawForm.amount,
-      description: '提现',
-      createTime: new Date().toLocaleString()
-    })
-    
-    ElMessage.success('提现申请已提交，将在1-3个工作日内到账')
+    await withdraw({ amount: withdrawForm.amount })
+    ElMessage.success('提现成功')
+    await loadWalletData()
     showWithdrawDialog.value = false
     withdrawForm.amount = ''
-    withdrawForm.account = ''
   } catch (error) {
     if (error !== 'cancel') {
-      console.error(error)
+      ElMessage.error('提现失败: ' + (error.response?.data?.message || error.message))
     }
   }
 }
@@ -307,6 +294,10 @@ const submitWithdraw = async () => {
   color: $text-secondary;
   font-size: 13px;
   margin-top: 10px;
+}
+
+.recharge-tip {
+  margin-bottom: 20px;
 }
 
 .income {

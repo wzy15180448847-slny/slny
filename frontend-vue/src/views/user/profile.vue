@@ -41,6 +41,38 @@
               </el-button>
             </div>
             
+            <!-- 头像上传区域 -->
+            <div class="avatar-section">
+              <div class="avatar-wrapper">
+                <div class="avatar-container">
+                  <img 
+                    v-if="profileForm.avatar" 
+                    :src="profileForm.avatar" 
+                    class="avatar"
+                    alt="用户头像"
+                  />
+                  <div v-else class="avatar-placeholder">
+                    <el-icon class="avatar-icon"><User /></el-icon>
+                  </div>
+                  <div v-if="isEditing" class="avatar-overlay" @click="triggerAvatarUpload">
+                    <el-icon class="upload-icon"><Camera /></el-icon>
+                    <span>更换头像</span>
+                  </div>
+                </div>
+                <input 
+                  type="file" 
+                  ref="avatarInput"
+                  accept="image/*"
+                  style="display: none"
+                  @change="handleAvatarChange"
+                />
+              </div>
+              <div class="avatar-info">
+                <h4>头像</h4>
+                <p>支持 JPG、PNG、GIF 格式，大小不超过 5MB</p>
+              </div>
+            </div>
+            
             <el-form 
               ref="profileFormRef"
               :model="profileForm"
@@ -233,7 +265,9 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { Camera, User } from '@element-plus/icons-vue'
 import { useUserStore } from '@/store/user'
+import { uploadFile, getFileUrl } from '@/api/file'
 
 const userStore = useUserStore()
 const activeTab = ref('basic')
@@ -241,6 +275,7 @@ const isEditing = ref(false)
 const profileFormRef = ref(null)
 const passwordFormRef = ref(null)
 const changePasswordDialogVisible = ref(false)
+const avatarInput = ref(null)
 
 const profileForm = reactive({
   username: '',
@@ -249,7 +284,8 @@ const profileForm = reactive({
   nickname: '',
   userType: '',
   gender: '',
-  realName: ''
+  realName: '',
+  avatar: ''
 })
 
 const profileRules = {
@@ -368,8 +404,45 @@ const loadUserProfile = () => {
     nickname: userStore.nickname || '',
     userType: userStore.userType || '',
     gender: userStore.gender || '',
-    bio: userStore.bio || ''
+    realName: userStore.realName || '',
+    avatar: userStore.avatar || ''
   })
+}
+
+const triggerAvatarUpload = () => {
+  avatarInput.value.click()
+}
+
+const handleAvatarChange = async (event) => {
+  const file = event.target.files[0]
+  if (!file) return
+
+  // 检查文件大小（5MB）
+  if (file.size > 5 * 1024 * 1024) {
+    ElMessage.error('头像文件大小不能超过 5MB')
+    return
+  }
+
+  // 检查文件类型
+  if (!file.type.startsWith('image/')) {
+    ElMessage.error('只支持图片格式')
+    return
+  }
+
+  try {
+    const fileName = await uploadFile(file)
+    const avatarUrl = await getFileUrl(fileName)
+    profileForm.avatar = avatarUrl
+    ElMessage.success('头像上传成功')
+  } catch (error) {
+    console.error('头像上传失败:', error)
+    ElMessage.error('头像上传失败，请重试')
+  } finally {
+    // 清空文件输入，允许重新选择同一文件
+    if (avatarInput.value) {
+      avatarInput.value.value = ''
+    }
+  }
 }
 
 onMounted(() => {
@@ -452,6 +525,91 @@ onMounted(() => {
       font-size: 20px;
       color: $text-primary;
       font-weight: 600;
+    }
+  }
+}
+
+.avatar-section {
+  display: flex;
+  gap: 30px;
+  margin-bottom: 40px;
+  padding: 25px;
+  background: #f8f9fa;
+  border-radius: 10px;
+
+  .avatar-wrapper {
+    .avatar-container {
+      position: relative;
+      width: 120px;
+      height: 120px;
+      cursor: pointer;
+
+      .avatar {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        object-fit: cover;
+      }
+
+      .avatar-placeholder {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        .avatar-icon {
+          font-size: 50px;
+          color: white;
+        }
+      }
+
+      .avatar-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        background: rgba(0, 0, 0, 0.6);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        opacity: 0;
+        transition: opacity 0.3s;
+
+        &:hover {
+          opacity: 1;
+        }
+
+        .upload-icon {
+          font-size: 28px;
+          margin-bottom: 5px;
+        }
+
+        span {
+          font-size: 12px;
+        }
+      }
+    }
+  }
+
+  .avatar-info {
+    h4 {
+      font-size: 16px;
+      color: $text-primary;
+      margin-bottom: 10px;
+      font-weight: 500;
+    }
+
+    p {
+      font-size: 14px;
+      color: $text-secondary;
+      margin: 0;
     }
   }
 }

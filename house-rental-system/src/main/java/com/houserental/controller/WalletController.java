@@ -19,19 +19,33 @@ public class WalletController {
 
     private final WalletService walletService;
 
-    @GetMapping("/{userId}")
-    public Result<UserWallet> getWallet(@PathVariable Long userId) {
-        Long currentUserId = com.houserental.common.utils.SecurityUtils.getCurrentUserId();
-        if (currentUserId == null) {
+    @GetMapping("/me")
+    public Result<UserWallet> getWallet() {
+        Long userId = com.houserental.common.utils.SecurityUtils.getCurrentUserId();
+        if (userId == null) {
             return Result.error("用户未登录");
         }
-        UserWallet wallet = walletService.getWallet(currentUserId);
+        UserWallet wallet = walletService.getWallet(userId);
         return Result.success(wallet);
     }
 
     @PostMapping("/recharge")
     public Result<UserWallet> recharge(@Validated @RequestBody WalletRechargeRequest request) {
-        UserWallet wallet = walletService.recharge(request.getUserId(), request.getAmount(), request.getRemark());
+        Long userId = com.houserental.common.utils.SecurityUtils.getCurrentUserId();
+        if (userId == null) {
+            return Result.error("用户未登录");
+        }
+        UserWallet wallet = walletService.recharge(userId, request.getAmount(), request.getRemark());
+        return Result.success(wallet);
+    }
+
+    @PostMapping("/withdraw")
+    public Result<UserWallet> withdraw(@Validated @RequestBody WalletRechargeRequest request) {
+        Long userId = com.houserental.common.utils.SecurityUtils.getCurrentUserId();
+        if (userId == null) {
+            return Result.error("用户未登录");
+        }
+        UserWallet wallet = walletService.withdraw(userId, request.getAmount(), request.getRemark());
         return Result.success(wallet);
     }
 
@@ -41,8 +55,12 @@ public class WalletController {
         return Result.success(success);
     }
 
-    @GetMapping("/{userId}/transactions")
-    public Result<List<WalletTransactionLog>> getTransactionLogs(@PathVariable Long userId) {
+    @GetMapping("/me/transactions")
+    public Result<List<WalletTransactionLog>> getTransactionLogs() {
+        Long userId = com.houserental.common.utils.SecurityUtils.getCurrentUserId();
+        if (userId == null) {
+            return Result.error("用户未登录");
+        }
         List<WalletTransactionLog> logs = walletService.getTransactionLogs(userId);
         return Result.success(logs);
     }

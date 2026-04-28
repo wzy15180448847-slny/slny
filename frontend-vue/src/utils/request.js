@@ -22,6 +22,10 @@ service.interceptors.request.use(
     config.headers['Pragma'] = 'no-cache'
     config.headers['Expires'] = '0'
     
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type']
+    }
+    
     return config
   },
   (error) => {

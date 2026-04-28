@@ -133,9 +133,9 @@ const loadData = async () => {
     
     recentAppointments.value = (appointmentsRes.records || []).map(app => ({
       id: app.id,
-      houseName: app.house && app.house.title || '未知房源',
-      date: formatDateTime(app.appointmentTime),
-      status: app.status === 0 ? 'PENDING' : app.status === 1 ? 'CONFIRMED' : app.status === 2 ? 'COMPLETED' : 'CANCELLED'
+      houseName: app.houseName || app.house && app.house.title || '未知房源',
+      date: app.date || formatDateTime(app.appointmentTime),
+      status: app.status
     }))
     
     recentContracts.value = (contractsRes.records || []).map(contract => ({
@@ -171,7 +171,8 @@ const getStatusType = (status) => {
     'PENDING': 'warning',
     'CONFIRMED': 'success',
     'COMPLETED': 'info',
-    'CANCELLED': 'danger'
+    'CANCELLED': 'danger',
+    'REJECTED': 'danger'
   }
   return types[status] || 'default'
 }
@@ -181,7 +182,8 @@ const getStatusText = (status) => {
     'PENDING': '待确认',
     'CONFIRMED': '已安排',
     'COMPLETED': '已完成',
-    'CANCELLED': '已取消'
+    'CANCELLED': '已取消',
+    'REJECTED': '已拒绝'
   }
   return texts[status] || status
 }

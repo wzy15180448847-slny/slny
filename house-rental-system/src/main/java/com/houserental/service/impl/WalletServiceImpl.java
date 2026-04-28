@@ -96,13 +96,52 @@ public class WalletServiceImpl implements WalletService {
         logEntry.setUserId(currentUserId);
         logEntry.setTransactionType(TRANSACTION_TYPE_RECHARGE);
         logEntry.setAmount(amount);
-        logEntry.setBalanceBefore(balanceBefore);
-        logEntry.setBalanceAfter(balanceAfter);
+        logEntry.setOrderNo(null);
         logEntry.setRemark(remark != null ? remark : "充值");
-        transactionLogMapper.insert(logEntry);
+        transactionLogMapper.insertTransaction(logEntry);
 
         wallet.setBalance(balanceAfter);
         log.info("充值成功, userId={}, amount={}, balance={}", currentUserId, amount, balanceAfter);
+        return wallet;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public UserWallet withdraw(Long userId, BigDecimal amount, String remark) {
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+        
+        if (!currentUserId.equals(userId)) {
+            throw new BusinessException("无权为他人提现");
+        }
+
+        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessException("提现金额必须大于0");
+        }
+
+        UserWallet wallet = getWallet(currentUserId);
+        BigDecimal balanceBefore = wallet.getBalance();
+        
+        if (balanceBefore.compareTo(amount) < 0) {
+            throw new BusinessException("余额不足");
+        }
+
+        BigDecimal balanceAfter = balanceBefore.subtract(amount);
+
+        int updateCount = userWalletMapper.decreaseBalance(currentUserId, amount);
+        if (updateCount == 0) {
+            throw new BusinessException("提现失败");
+        }
+
+        WalletTransactionLog logEntry = new WalletTransactionLog();
+        logEntry.setUserId(currentUserId);
+        logEntry.setTransactionType(TRANSACTION_TYPE_CONSUME);
+        logEntry.setAmount(amount.negate());
+        logEntry.setOrderNo(null);
+        logEntry.setRemark(remark != null ? remark : "提现");
+        transactionLogMapper.insertTransaction(logEntry);
+
+        wallet.setBalance(balanceAfter);
+        log.info("提现成功, userId={}, amount={}, balance={}", currentUserId, amount, balanceAfter);
         return wallet;
     }
 
@@ -189,12 +228,9 @@ public class WalletServiceImpl implements WalletService {
         tenantLog.setUserId(tenantId);
         tenantLog.setTransactionType(TRANSACTION_TYPE_CONSUME);
         tenantLog.setAmount(amount.negate());
-        tenantLog.setBalanceBefore(tenantBalanceBefore);
-        tenantLog.setBalanceAfter(tenantBalanceAfter);
         tenantLog.setOrderNo(orderNo);
-        tenantLog.setRelatedUserId(landlordId);
         tenantLog.setRemark("支付租金");
-        transactionLogMapper.insert(tenantLog);
+        transactionLogMapper.insertTransaction(tenantLog);
 
         BigDecimal landlordBalanceBefore = landlordWallet.getBalance();
         BigDecimal landlordBalanceAfter = landlordBalanceBefore.add(amount);
@@ -205,12 +241,9 @@ public class WalletServiceImpl implements WalletService {
         landlordLog.setUserId(landlordId);
         landlordLog.setTransactionType(TRANSACTION_TYPE_TRANSFER);
         landlordLog.setAmount(amount);
-        landlordLog.setBalanceBefore(landlordBalanceBefore);
-        landlordLog.setBalanceAfter(landlordBalanceAfter);
         landlordLog.setOrderNo(orderNo);
-        landlordLog.setRelatedUserId(tenantId);
         landlordLog.setRemark("收到租金");
-        transactionLogMapper.insert(landlordLog);
+        transactionLogMapper.insertTransaction(landlordLog);
 
         paymentRecord.setStatus(1);
         paymentRecordMapper.updateById(paymentRecord);

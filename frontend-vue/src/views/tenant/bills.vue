@@ -192,8 +192,8 @@ const loadBills = async () => {
 
 const loadWalletBalance = async () => {
   try {
-    const res = await getWallet(userStore.userInfo?.userId)
-    walletBalance.value = res.data?.balance || 0
+    const res = await getWallet()
+    walletBalance.value = res.balance || 0
   } catch (error) {
     console.error('加载余额失败:', error)
   }

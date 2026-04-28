@@ -1,15 +1,15 @@
 import request from '@/utils/request'
 
-export function getWallet(userId) {
+export function getWallet() {
   return request({
-    url: `/wallet/${userId}`,
+    url: '/wallet/me',
     method: 'get'
   })
 }
 
-export function getTransactions(userId) {
+export function getTransactions() {
   return request({
-    url: `/wallet/${userId}/transactions`,
+    url: '/wallet/me/transactions',
     method: 'get'
   })
 }
@@ -17,6 +17,14 @@ export function getTransactions(userId) {
 export function recharge(data) {
   return request({
     url: '/wallet/recharge',
+    method: 'post',
+    data
+  })
+}
+
+export function withdraw(data) {
+  return request({
+    url: '/wallet/withdraw',
     method: 'post',
     data
   })

@@ -164,3 +164,11 @@ export function getAreaStatistics() {
     method: 'get'
   })
 }
+
+export function getMyHouses(params) {
+  return request({
+    url: '/houses/my',
+    method: 'get',
+    params
+  })
+}

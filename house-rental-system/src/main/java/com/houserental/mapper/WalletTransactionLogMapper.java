@@ -13,4 +13,6 @@ public interface WalletTransactionLogMapper extends BaseMapper<WalletTransaction
     List<WalletTransactionLog> selectByUserId(@Param("userId") Long userId);
 
     List<WalletTransactionLog> selectByOrderNo(@Param("orderNo") String orderNo);
+
+    void insertTransaction(WalletTransactionLog logEntry);
 }
