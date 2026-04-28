@@ -34,6 +34,10 @@
                   <el-icon><User /></el-icon>
                   个人中心
                 </el-dropdown-item>
+                <el-dropdown-item command="tenant-center" v-if="isTenant">
+                  <el-icon><HomeFilled /></el-icon>
+                  租客中心
+                </el-dropdown-item>
                 <el-dropdown-item command="my-houses" v-if="canPublish">
                   <el-icon><House /></el-icon>
                   我的房源
@@ -45,6 +49,18 @@
                 <el-dropdown-item command="appointments">
                   <el-icon><Calendar /></el-icon>
                   我的预约
+                </el-dropdown-item>
+                <el-dropdown-item command="contracts" v-if="isTenant">
+                  <el-icon><Document /></el-icon>
+                  我的合同
+                </el-dropdown-item>
+                <el-dropdown-item command="bills" v-if="isTenant">
+                  <el-icon><Wallet /></el-icon>
+                  账单支付
+                </el-dropdown-item>
+                <el-dropdown-item command="repairs" v-if="isTenant">
+                  <el-icon><Tools /></el-icon>
+                  报修管理
                 </el-dropdown-item>
                 <el-dropdown-item command="admin" v-if="isAdmin">
                   <el-icon><Setting /></el-icon>
@@ -72,6 +88,7 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/store/user'
+import { User, Star, Calendar, Document, Wallet, Tools, Setting, SwitchButton, ArrowDown, House, HomeFilled } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -84,19 +101,37 @@ const isAdmin = computed(() => {
   return userStore.userType === 'ADMIN'
 })
 
+const isTenant = computed(() => {
+  return userStore.userType === 'TENANT'
+})
+
 const handleCommand = async (command) => {
+  const prefix = userStore.userType === 'LANDLORD' ? '/landlord' : '/tenant'
+  
   switch (command) {
     case 'profile':
-      router.push('/profile')
+      router.push(`${prefix}/profile`)
+      break
+    case 'tenant-center':
+      router.push('/tenant')
       break
     case 'my-houses':
       router.push('/my-houses')
       break
     case 'favorites':
-      router.push('/my-favorites')
+      router.push(`${prefix}/favorites`)
       break
     case 'appointments':
-      router.push('/my-appointments')
+      router.push(`${prefix}/appointments`)
+      break
+    case 'contracts':
+      router.push('/tenant/contracts')
+      break
+    case 'bills':
+      router.push('/tenant/bills')
+      break
+    case 'repairs':
+      router.push('/tenant/repairs')
       break
     case 'admin':
       router.push('/admin')

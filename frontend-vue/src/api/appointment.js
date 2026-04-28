@@ -10,7 +10,7 @@ export function createAppointment(data) {
 
 export function getMyAppointments(params) {
   return request({
-    url: '/appointment/page',
+    url: '/appointment/my',
     method: 'get',
     params
   })

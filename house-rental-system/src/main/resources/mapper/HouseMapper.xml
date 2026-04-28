@@ -132,4 +132,14 @@
         ) as t
     </select>
 
+    <!-- 获取热门区域房源统计 -->
+    <select id="selectAreaStatistics" resultType="java.util.Map">
+        SELECT district as name, city, COUNT(*) as count 
+        FROM biz_house 
+        WHERE is_deleted = 0 AND status = 2 
+        GROUP BY city, district 
+        ORDER BY count DESC 
+        LIMIT 6
+    </select>
+
 </mapper>

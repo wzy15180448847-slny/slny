@@ -26,6 +26,10 @@
                 <el-icon><User /></el-icon>
                 个人中心
               </el-dropdown-item>
+              <el-dropdown-item command="tenant-center">
+                <el-icon><HomeFilled /></el-icon>
+                租客中心
+              </el-dropdown-item>
               <el-dropdown-item command="favorites">
                 <el-icon><Star /></el-icon>
                 我的收藏
@@ -62,6 +66,7 @@
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/store/user'
+import { HomeFilled } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -70,6 +75,9 @@ const handleCommand = async (command) => {
   switch (command) {
     case 'profile':
       router.push('/tenant/profile')
+      break
+    case 'tenant-center':
+      router.push('/tenant')
       break
     case 'favorites':
       router.push('/tenant/favorites')

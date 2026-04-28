@@ -8,6 +8,7 @@ import com.houserental.dto.HouseQueryRequest;
 import com.houserental.entity.AuditLog;
 import com.houserental.entity.Favorite;
 import com.houserental.entity.House;
+import com.houserental.entity.User;
 import com.houserental.mapper.FavoriteMapper;
 import com.houserental.mapper.HouseMapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -17,6 +18,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.houserental.service.AuditLogService;
 import com.houserental.service.HouseService;
 import com.houserental.service.FileService;
+import com.houserental.service.UserService;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONArray;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +29,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import java.util.Map;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -49,6 +52,7 @@ public class HouseServiceImpl implements HouseService {
     private final RedisTemplate<String, Object> redisTemplate;
     private final FileService fileService;
     private final AuditLogService auditLogService;
+    private final UserService userService;
 
 
     private static final String FAVORITE_SET = "favorite:user:";
@@ -120,6 +124,27 @@ public class HouseServiceImpl implements HouseService {
         if (house == null || house.getIsDeleted() != 0) {
             log.warn("房源不存在或已删除, id: {}", id);
             throw new BusinessException(ResultCode.HOUSE_NOT_FOUND);
+        }
+        
+        Long landlordId = house.getLandlordId();
+        if (landlordId != null) {
+            try {
+                User landlord = userService.getById(landlordId);
+                if (landlord != null) {
+                    house.setContactName(landlord.getUsername());
+                    house.setContactPhone(landlord.getPhone());
+                }
+            } catch (Exception e) {
+                log.warn("获取房东信息失败: {}", e.getMessage());
+            }
+        }
+        
+        Long userId = SecurityUtils.getCurrentUserId();
+        if (userId != null) {
+            boolean favorited = favoriteMapper.selectByUserIdAndHouseId(userId, id) != null;
+            house.setIsFavorited(favorited);
+        } else {
+            house.setIsFavorited(false);
         }
         log.info("获取房源成功, id: {}, title: {}", id, house.getTitle());
         return house;
@@ -430,26 +455,51 @@ public class HouseServiceImpl implements HouseService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public PageResult<House> getFavoriteHouses(int page, int size, Long userId) {
+        log.info("获取用户收藏列表, userId: {}, page: {}, size: {}", userId, page, size);
+        
         List<Long> favoriteIds = getFavorites(userId);
+        log.info("用户收藏的房源ID列表: {}", favoriteIds);
         
         if (favoriteIds == null || favoriteIds.isEmpty()) {
+            log.info("用户暂无收藏房源");
             return PageResult.build((long) page, (long) size, 0L, java.util.Collections.emptyList());
         }
         
         List<House> houses = houseMapper.selectBatchIds(favoriteIds);
+        log.info("查询到的房源数量: {}", houses != null ? houses.size() : 0);
         
-        int start = (page - 1) * size;
-        int end = Math.min(start + size, houses.size());
-        
-        List<House> pageList;
-        if (start >= houses.size()) {
-            pageList = java.util.Collections.emptyList();
-        } else {
-            pageList = houses.subList(start, end);
+        if (houses == null || houses.isEmpty()) {
+            return PageResult.build((long) page, (long) size, 0L, java.util.Collections.emptyList());
         }
         
-        return PageResult.build((long) page, (long) size, (long) houses.size(), pageList);
+        Map<Long, House> houseMap = new java.util.LinkedHashMap<>();
+        for (House house : houses) {
+            houseMap.put(house.getId(), house);
+        }
+        
+        List<House> orderedHouses = new java.util.ArrayList<>();
+        for (Long id : favoriteIds) {
+            House house = houseMap.get(id);
+            if (house != null) {
+                orderedHouses.add(house);
+            }
+        }
+        
+        int total = orderedHouses.size();
+        int start = (page - 1) * size;
+        int end = Math.min(start + size, total);
+        
+        List<House> pageList;
+        if (start >= total) {
+            pageList = java.util.Collections.emptyList();
+        } else {
+            pageList = new java.util.ArrayList<>(orderedHouses.subList(start, end));
+        }
+        
+        log.info("返回收藏列表, total: {}, pageSize: {}", total, pageList.size());
+        return PageResult.build((long) page, (long) size, (long) total, pageList);
     }
 
     @Override
@@ -773,5 +823,10 @@ public class HouseServiceImpl implements HouseService {
         houseMapper.delete(null);
         clearSearchCache();
         log.info("已清空所有房源数据");
+    }
+
+    @Override
+    public java.util.List<java.util.Map<String, Object>> getAreaStatistics() {
+        return houseMapper.selectAreaStatistics();
     }
 }

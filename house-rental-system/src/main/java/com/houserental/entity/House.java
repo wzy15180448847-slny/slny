@@ -259,6 +259,12 @@ public class House extends BaseEntity {
     @TableField(value = "appointment_count", exist = true)
     private Integer appointmentCount = 0;
 
+    /**
+     * 是否已收藏（非数据库字段）
+     */
+    @TableField(exist = false)
+    private Boolean isFavorited;
+
     // Getters and Setters
     public String getHouseNo() {
         return houseNo;
@@ -586,5 +592,13 @@ public class House extends BaseEntity {
 
     public void setAppointmentCount(Integer appointmentCount) {
         this.appointmentCount = appointmentCount;
+    }
+
+    public Boolean getIsFavorited() {
+        return isFavorited;
+    }
+
+    public void setIsFavorited(Boolean isFavorited) {
+        this.isFavorited = isFavorited;
     }
 }

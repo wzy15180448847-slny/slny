@@ -32,27 +32,27 @@
         <div v-else class="houses-grid">
           <div v-for="item in favorites" :key="item.id" class="house-card">
             <div class="house-image">
-              <img :src="item.house.images[0] || 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=modern%20apartment%20interior&image_size=square_hd'" :alt="item.house.title" />
-              <div class="favorite-icon" @click="removeFavorite(item.id)">
+              <img :src="item.images && item.images[0] ? item.images[0] : 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=modern%20apartment%20interior&image_size=square_hd'" :alt="item.title" />
+              <div class="favorite-icon" @click="removeFavoriteItem(item.id)">
                 <el-icon><StarFilled /></el-icon>
               </div>
             </div>
             
             <div class="house-info">
-              <h3 class="house-title">{{ item.house.title }}</h3>
+              <h3 class="house-title">{{ item.title }}</h3>
               <div class="house-details">
-                <span class="price">¥{{ item.house.price }}/月</span>
-                <span class="rent-type">{{ getRentTypeText(item.house.rentType) }}</span>
-                <span class="house-type">{{ getHouseTypeText(item.house.houseType) }}</span>
-                <span class="area">{{ item.house.area }}㎡</span>
+                <span class="price">¥{{ item.price }}/月</span>
+                <span class="rent-type">{{ getRentTypeText(item.rentType) }}</span>
+                <span class="house-type">{{ getHouseTypeText(item.houseType) }}</span>
+                <span class="area">{{ item.area }}㎡</span>
               </div>
               <div class="house-location">
                 <el-icon><Position /></el-icon>
-                <span>{{ item.house.city }} {{ item.house.district }} {{ item.house.community }}</span>
+                <span>{{ item.city }} {{ item.district }} {{ item.community }}</span>
               </div>
               <div class="house-actions">
-                <el-button type="primary" size="small" @click="viewHouse(item.house.id)">查看详情</el-button>
-                <el-button size="small" @click="removeFavorite(item.id)">取消收藏</el-button>
+                <el-button type="primary" size="small" @click="viewHouse(item.id)">查看详情</el-button>
+                <el-button size="small" @click="removeFavoriteItem(item.id)">取消收藏</el-button>
               </div>
             </div>
           </div>
@@ -77,11 +77,11 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { useHouseStore } from '@/store/house'
+import { ElMessage } from 'element-plus'
+import { StarFilled, Position } from '@element-plus/icons-vue'
+import { getFavoriteHouses, removeFavorite } from '@/api/house'
 
 const router = useRouter()
-const houseStore = useHouseStore()
 
 const favorites = ref([])
 const loading = ref(false)
@@ -112,12 +112,12 @@ const getHouseTypeText = (houseType) => {
 const fetchFavorites = async () => {
   loading.value = true
   try {
-    const response = await houseStore.getMyFavorites({
+    const response = await getFavoriteHouses({
       page: currentPage.value,
       size: pageSize.value,
       keyword: searchKeyword.value
     })
-    favorites.value = response.favorites
+    favorites.value = response.records
     total.value = response.total
   } catch (error) {
     console.error(error)
@@ -150,9 +150,9 @@ const viewHouse = (id) => {
   router.push(`/house/${id}`)
 }
 
-const removeFavorite = async (id) => {
+const removeFavoriteItem = async (id) => {
   try {
-    await houseStore.removeFavorite(id)
+    await removeFavorite(id)
     ElMessage.success('取消收藏成功')
     fetchFavorites()
   } catch (error) {

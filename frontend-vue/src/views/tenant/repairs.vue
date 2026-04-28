@@ -167,7 +167,8 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getMyRepairs, getMyContracts } from '@/api/contract'
+import { getMyRepairs } from '@/api/repairs'
+import { getMyContracts } from '@/api/contracts'
 
 const activeTab = ref('all')
 

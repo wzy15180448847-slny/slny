@@ -2,7 +2,7 @@ import request from '@/utils/request'
 
 export function getMyContracts(params) {
   return request({
-    url: '/lease/page',
+    url: '/lease/my',
     method: 'get',
     params
   })

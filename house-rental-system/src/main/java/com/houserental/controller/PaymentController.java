@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
  * 注：第三方支付接口已移除，当前仅支持钱包支付
  */
 @RestController
-@RequestMapping("/api/payment")
+@RequestMapping("/payment")
 @RequiredArgsConstructor
 public class PaymentController {
 
@@ -39,6 +39,22 @@ public class PaymentController {
      */
     @GetMapping("/user/{userId}")
     public Result<Object> getUserPayments(@PathVariable Long userId) {
+        return Result.success(paymentService.getPaymentsByUserId(userId));
+    }
+
+    /**
+     * 获取用户支付记录（前端调用）
+     */
+    @GetMapping("/payments")
+    public Result<Object> getUserPaymentsByParam(@RequestParam Long userId) {
+        return Result.success(paymentService.getPaymentsByUserId(userId));
+    }
+
+    /**
+     * 获取用户支付记录（前端直接调用）
+     */
+    @GetMapping("/")
+    public Result<Object> getUserPaymentsByRoot(@RequestParam Long userId) {
         return Result.success(paymentService.getPaymentsByUserId(userId));
     }
 

@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/wallet")
+@RequestMapping("/wallet")
 @RequiredArgsConstructor
 public class WalletController {
 
@@ -21,7 +21,11 @@ public class WalletController {
 
     @GetMapping("/{userId}")
     public Result<UserWallet> getWallet(@PathVariable Long userId) {
-        UserWallet wallet = walletService.getWallet(userId);
+        Long currentUserId = com.houserental.common.utils.SecurityUtils.getCurrentUserId();
+        if (currentUserId == null) {
+            return Result.error("用户未登录");
+        }
+        UserWallet wallet = walletService.getWallet(currentUserId);
         return Result.success(wallet);
     }
 

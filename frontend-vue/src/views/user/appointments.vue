@@ -113,10 +113,9 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import dayjs from 'dayjs'
-import { useHouseStore } from '@/store/house'
+import { getMyAppointments, cancelAppointment as cancelAppointmentApi } from '@/api/appointment'
 
 const router = useRouter()
-const houseStore = useHouseStore()
 
 const appointments = ref([])
 const loading = ref(false)
@@ -153,13 +152,13 @@ const formatDate = (date) => {
 const fetchAppointments = async () => {
   loading.value = true
   try {
-    const response = await houseStore.getMyAppointments({
+    const response = await getMyAppointments({
       page: currentPage.value,
       size: pageSize.value,
       status: filterStatus.value === 'ALL' ? '' : filterStatus.value,
       keyword: searchKeyword.value
     })
-    appointments.value = response.appointments
+    appointments.value = response.records
     total.value = response.total
   } catch (error) {
     console.error(error)
@@ -199,7 +198,7 @@ const cancelAppointment = async (id) => {
       cancelButtonText: '取消',
       type: 'warning'
     })
-    await houseStore.cancelAppointment(id)
+    await cancelAppointmentApi(id, '用户主动取消')
     ElMessage.success('预约取消成功')
     fetchAppointments()
   } catch (error) {

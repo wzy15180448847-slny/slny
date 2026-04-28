@@ -109,7 +109,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
 import { getMyAppointments } from '@/api/appointment'
-import { getMyContracts } from '@/api/contract'
+import { getMyContracts } from '@/api/contracts'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -131,16 +131,16 @@ const loadData = async () => {
       getMyContracts()
     ])
     
-    recentAppointments.value = (appointmentsRes.data || []).map(app => ({
+    recentAppointments.value = (appointmentsRes.records || []).map(app => ({
       id: app.id,
-      houseName: app.houseName || '未知房源',
+      houseName: app.house && app.house.title || '未知房源',
       date: formatDateTime(app.appointmentTime),
       status: app.status === 0 ? 'PENDING' : app.status === 1 ? 'CONFIRMED' : app.status === 2 ? 'COMPLETED' : 'CANCELLED'
     }))
     
-    recentContracts.value = (contractsRes.data || []).map(contract => ({
+    recentContracts.value = (contractsRes.records || []).map(contract => ({
       id: contract.id,
-      houseName: contract.houseName || '未知房源',
+      houseName: contract.house && contract.house.title || '未知房源',
       startDate: formatDate(contract.startDate),
       endDate: formatDate(contract.endDate),
       status: contract.status === 0 ? 'PENDING' : contract.status === 1 ? 'ACTIVE' : contract.status === 2 ? 'EXPIRED' : 'TERMINATED'

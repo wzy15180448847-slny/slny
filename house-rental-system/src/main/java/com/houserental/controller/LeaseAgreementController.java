@@ -14,7 +14,7 @@ import java.util.Map;
  * 租约控制器
  */
 @RestController
-@RequestMapping("/api/lease")
+@RequestMapping("/lease")
 public class LeaseAgreementController {
 
     @Autowired
@@ -118,5 +118,17 @@ public class LeaseAgreementController {
     public Result<Void> generateBill(@PathVariable Long id) {
         boolean success = leaseAgreementService.generateBill(id);
         return success ? Result.success() : Result.error("生成账单失败");
+    }
+
+    /**
+     * 获取当前用户的合同列表
+     * @param params 查询参数
+     * @return 结果
+     */
+    @GetMapping("/my")
+    public Result<Object> getMyContracts(@RequestParam Map<String, Object> params) {
+        Long userId = com.houserental.common.utils.SecurityUtils.getCurrentUserId();
+        params.put("tenantId", userId);
+        return Result.success(leaseAgreementService.pageLeases(params));
     }
 }

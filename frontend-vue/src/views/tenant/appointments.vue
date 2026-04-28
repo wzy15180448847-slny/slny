@@ -183,7 +183,7 @@ const getStatusText = (status) => {
 
 const loadAppointments = async () => {
   try {
-    const { data } = await getMyAppointments()
+    const data = await getMyAppointments()
     appointments.value = data?.records || []
   } catch (error) {
     console.error('加载预约列表失败:', error)

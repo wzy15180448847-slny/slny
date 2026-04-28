@@ -70,6 +70,12 @@ public class SecurityConfig {
                 .requestMatchers(new AntPathRequestMatcher("/webjars/**")).permitAll()
                 .requestMatchers(new AntPathRequestMatcher("/test-data/**")).permitAll()
                 .requestMatchers(new AntPathRequestMatcher("/houses/**")).permitAll()
+                .requestMatchers(new AntPathRequestMatcher("/appointment/my")).permitAll()
+                .requestMatchers(new AntPathRequestMatcher("/lease/my")).permitAll()
+                .requestMatchers(new AntPathRequestMatcher("/repairs/my")).permitAll()
+                .requestMatchers(new AntPathRequestMatcher("/bill/my")).permitAll()
+                .requestMatchers(new AntPathRequestMatcher("/wallet/**")).permitAll()
+                .requestMatchers(new AntPathRequestMatcher("/payment/**")).permitAll()
                 .requestMatchers(new AntPathRequestMatcher("/uploads/**")).permitAll()
                 // 允许匿名访问静态资源
                 .requestMatchers(new AntPathRequestMatcher("/**/*.html")).permitAll()

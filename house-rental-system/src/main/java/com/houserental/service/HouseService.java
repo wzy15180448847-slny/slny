@@ -159,4 +159,9 @@ public interface HouseService {
      * 清空所有房源数据（仅用于测试）
      */
     void cleanAll();
+
+    /**
+     * 获取热门区域房源统计
+     */
+    java.util.List<java.util.Map<String, Object>> getAreaStatistics();
 }

@@ -71,7 +71,7 @@
                 >
                   {{ house.status === 'PUBLISHED' ? '下架' : '上架' }}
                 </el-button>
-                <el-button type="danger" size="small" @click="deleteHouse(house.id)">删除</el-button>
+                <el-button type="danger" size="small" @click="deleteHouseItem(house.id)">删除</el-button>
               </div>
             </div>
           </div>
@@ -97,10 +97,8 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { useHouseStore } from '@/store/house'
-
-const router = useRouter()
-const houseStore = useHouseStore()
+import { Plus, Position } from '@element-plus/icons-vue'
+import { deleteHouse as deleteHouseApi, onlineHouse, offlineHouse } from '@/api/house'
 
 const houses = ref([])
 const loading = ref(false)
@@ -141,14 +139,21 @@ const getHouseTypeText = (houseType) => {
 const fetchMyHouses = async () => {
   loading.value = true
   try {
-    const response = await houseStore.getMyHouses({
-      page: currentPage.value,
-      size: pageSize.value,
-      status: filterStatus.value === 'ALL' ? '' : filterStatus.value,
-      keyword: searchKeyword.value
-    })
-    houses.value = response.houses
-    total.value = response.total
+    const response = await fetch('/api/houses/my')
+    const result = await response.json()
+    if (result.code === 200) {
+      let data = result.data
+      if (filterStatus.value !== 'ALL') {
+        data = data.filter(house => house.status === filterStatus.value)
+      }
+      if (searchKeyword.value) {
+        data = data.filter(house => house.title.includes(searchKeyword.value))
+      }
+      const start = (currentPage.value - 1) * pageSize.value
+      const end = start + pageSize.value
+      houses.value = data.slice(start, end)
+      total.value = data.length
+    }
   } catch (error) {
     console.error(error)
   } finally {
@@ -186,22 +191,27 @@ const editHouse = (id) => {
 
 const toggleStatus = async (house) => {
   try {
-    await houseStore.updateHouseStatus(house.id, house.status === 'PUBLISHED' ? 'UNPUBLISHED' : 'PUBLISHED')
-    ElMessage.success(`${house.status === 'PUBLISHED' ? '下架' : '上架'}成功`)
+    if (house.status === 'PUBLISHED') {
+      await offlineHouse(house.id)
+      ElMessage.success('下架成功')
+    } else {
+      await onlineHouse(house.id)
+      ElMessage.success('上架成功')
+    }
     fetchMyHouses()
   } catch (error) {
     console.error(error)
   }
 }
 
-const deleteHouse = async (id) => {
+const deleteHouseItem = async (id) => {
   try {
     await ElMessageBox.confirm('确定要删除这个房源吗？', '提示', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'warning'
     })
-    await houseStore.deleteHouse(id)
+    await deleteHouseApi(id)
     ElMessage.success('删除成功')
     fetchMyHouses()
   } catch (error) {

@@ -56,7 +56,7 @@ export function searchHouses(params) {
   })
 }
 
-export function getFavorites(params) {
+export function getFavoriteHouses(params) {
   return request({
     url: '/houses/favorites/list',
     method: 'get',
@@ -155,5 +155,12 @@ export function getLatestHouses(limit) {
     url: '/houses/latest',
     method: 'get',
     params: { limit }
+  })
+}
+
+export function getAreaStatistics() {
+  return request({
+    url: '/houses/area-statistics',
+    method: 'get'
   })
 }

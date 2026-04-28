@@ -116,4 +116,9 @@ public interface HouseMapper extends BaseMapper<House> {
      */
     Integer calculateRentRateByMonth(@Param("month") String month);
 
+    /**
+     * 获取热门区域房源统计
+     */
+    List<Map<String, Object>> selectAreaStatistics();
+
 }

@@ -48,17 +48,29 @@ const favorites = ref([])
 
 const loadFavorites = async () => {
   try {
-    const { data } = await getFavoriteHouses()
-    favorites.value = (data?.records || []).map(house => ({
-      id: house.id,
-      houseName: house.houseName,
-      address: house.address,
-      rent: house.rent,
-      area: house.area,
-      rooms: house.houseType,
-      image: house.images ? (JSON.parse(house.images)[0] || '') : '',
-      tags: house.tags ? JSON.parse(house.tags) : []
-    }))
+    const response = await getFavoriteHouses({ page: 1, size: 20 })
+    
+    favorites.value = (response?.records || []).map(house => {
+      let imagesArray = []
+      if (house.images) {
+        try {
+          imagesArray = typeof house.images === 'string' ? JSON.parse(house.images) : house.images
+        } catch (e) {
+          imagesArray = []
+        }
+      }
+      
+      return {
+        id: house.id,
+        houseName: house.title,
+        address: (house.district || '') + ' ' + (house.community || ''),
+        rent: house.rentPrice || house.price,
+        area: house.area,
+        rooms: house.houseType,
+        image: imagesArray.length > 0 ? imagesArray[0] : '',
+        tags: []
+      }
+    })
   } catch (error) {
     console.error('加载收藏列表失败:', error)
     ElMessage.error('加载收藏列表失败')

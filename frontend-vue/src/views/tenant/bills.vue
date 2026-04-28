@@ -116,8 +116,10 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getPaymentRecords, payRent, getWallet } from '@/api/wallet'
+import { useUserStore } from '@/store/user'
 
 const router = useRouter()
+const userStore = useUserStore()
 const activeTab = ref('all')
 const walletBalance = ref(0)
 
@@ -180,7 +182,7 @@ const viewBill = (bill) => {
 
 const loadBills = async () => {
   try {
-    const res = await getPaymentRecords()
+    const res = await getPaymentRecords(userStore.userInfo?.userId)
     bills.value = res.data || []
   } catch (error) {
     console.error('加载账单失败:', error)
@@ -190,8 +192,8 @@ const loadBills = async () => {
 
 const loadWalletBalance = async () => {
   try {
-    const res = await getWallet()
-    walletBalance.value = res.data.balance || 0
+    const res = await getWallet(userStore.userInfo?.userId)
+    walletBalance.value = res.data?.balance || 0
   } catch (error) {
     console.error('加载余额失败:', error)
   }

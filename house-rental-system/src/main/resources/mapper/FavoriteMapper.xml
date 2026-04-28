@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.houserental.mapper.FavoriteMapper">
+
+    <select id="selectHouseIdsByUserId" resultType="java.lang.Long">
+        SELECT house_id FROM biz_favorite WHERE user_id = #{userId} AND is_deleted = 0
+    </select>
+
+    <select id="selectByUserIdAndHouseId" resultType="com.houserental.entity.Favorite">
+        SELECT * FROM biz_favorite WHERE user_id = #{userId} AND house_id = #{houseId} AND is_deleted = 0 LIMIT 1
+    </select>
+
+    <insert id="insert">
+        INSERT INTO biz_favorite (house_id, user_id, is_deleted, create_time)
+        VALUES (#{houseId}, #{userId}, 0, NOW())
+    </insert>
+
+    <update id="deleteByUserIdAndHouseId">
+        UPDATE biz_favorite SET is_deleted = 1 WHERE user_id = #{userId} AND house_id = #{houseId}
+    </update>
+
+    <select id="selectCountByHouseId" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM biz_favorite WHERE house_id = #{houseId} AND is_deleted = 0
+    </select>
+
+</mapper>

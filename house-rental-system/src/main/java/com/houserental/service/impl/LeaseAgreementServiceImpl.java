@@ -322,7 +322,9 @@ public class LeaseAgreementServiceImpl extends ServiceImpl<LeaseAgreementMapper,
 
     @Override
     public PageResult<LeaseAgreement> pageLeases(Map<String, Object> params) {
-        Page<LeaseAgreement> page = new Page<>(Long.parseLong(params.get("page").toString()), Long.parseLong(params.get("size").toString()));
+        long pageNum = params.containsKey("page") ? Long.parseLong(params.get("page").toString()) : 1;
+        long pageSize = params.containsKey("size") ? Long.parseLong(params.get("size").toString()) : 10;
+        Page<LeaseAgreement> page = new Page<>(pageNum, pageSize);
         QueryWrapper<LeaseAgreement> wrapper = new QueryWrapper<>();
 
         // 添加查询条件

@@ -32,7 +32,7 @@ export function payRent(data) {
 
 export function getPaymentRecords(userId) {
   return request({
-    url: `/payments`,
+    url: `/payment/payments`,
     method: 'get',
     params: { userId }
   })

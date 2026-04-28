@@ -242,4 +242,13 @@ public class HouseController {
         com.houserental.common.result.PageResult<House> result = houseService.getPendingAuditList(page, size);
         return Result.success(result);
     }
+
+    /**
+     * 获取热门区域房源统计
+     */
+    @GetMapping("/area-statistics")
+    public Result<List<java.util.Map<String, Object>>> getAreaStatistics() {
+        List<java.util.Map<String, Object>> statistics = houseService.getAreaStatistics();
+        return Result.success(statistics);
+    }
 }
