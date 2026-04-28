@@ -50,26 +50,25 @@ public class TestDataGenerator {
 
     public List<User> generateLandlords(int count) {
         List<User> users = new ArrayList<>();
-        String[] surnames = {"张", "李", "王", "赵", "刘", "陈", "杨", "黄", "周", "吴"};
-        String[] names = {"伟", "强", "明", "华", "军", "磊", "涛", "波", "杰", "鹏"};
+        String[] names = {"张", "李", "王", "赵", "刘", "陈", "杨", "黄", "周", "吴"};
 
         for (int i = 0; i < count; i++) {
             User user = new User();
             user.setId(IdWorker.getId());
             user.setUsername("landlord" + i);
-            user.setPassword("123456");
-            user.setNickname(surnames[i % surnames.length] + names[random.nextInt(names.length)]);
-            user.setRealName(user.getNickname());
-            user.setPhone("139000000" + String.format("%02d", i));
+            user.setPassword("admin123");
+            user.setNickname("房东" + names[i % names.length]);
+            user.setRealName(names[i % names.length] + "房东");
+            user.setPhone("1380000010" + i);
             user.setEmail("landlord" + i + "@houserental.com");
-            user.setAvatar("https://picsum.photos/200/200?random=100" + i);
-            user.setGender(random.nextInt(2) == 0 ? 0 : 1);
+            user.setAvatar("https://picsum.photos/200/200?random=" + (i + 100));
+            user.setGender(random.nextInt(2));
             user.setIdCard("11010119750101" + String.format("%04d", i + 2000));
             user.setUserType("LANDLORD");
             user.setStatus(1);
             user.setLastLoginTime(LocalDateTime.now().minusDays(random.nextInt(14)));
-            user.setLastLoginIp("192.168.1." + (random.nextInt(10) + 10));
-            user.setLoginFailCount(random.nextInt(2));
+            user.setLastLoginIp("192.168.1.2");
+            user.setLoginFailCount(0);
             user.setPasswordUpdateTime(LocalDateTime.now().minusMonths(random.nextInt(6)));
             user.setCreateTime(LocalDateTime.now().minusDays(random.nextInt(30)));
             user.setUpdateTime(LocalDateTime.now().minusDays(random.nextInt(15)));
@@ -80,99 +79,95 @@ public class TestDataGenerator {
 
     public List<User> generateTenants(int count) {
         List<User> users = new ArrayList<>();
-        String[] surnames = {"张", "李", "王", "赵", "刘", "陈", "杨", "黄", "周", "吴"};
-        String[] names = {"伟", "强", "明", "华", "军", "磊", "涛", "波", "杰", "鹏"};
+        String[] names = {"租客", "用户", "租户"};
 
         for (int i = 0; i < count; i++) {
             User user = new User();
             user.setId(IdWorker.getId());
             user.setUsername("tenant" + i);
             user.setPassword("123456");
-            user.setNickname(surnames[i % surnames.length] + names[random.nextInt(names.length)] + (i % 10));
-            user.setRealName(user.getNickname());
-            user.setPhone("137000000" + String.format("%02d", i));
+            user.setNickname(names[i % names.length] + i);
+            user.setRealName("租户" + (i + 1));
+            user.setPhone("1390000000" + i);
             user.setEmail("tenant" + i + "@houserental.com");
-            user.setAvatar("https://picsum.photos/200/200?random=200" + i);
-            user.setGender(random.nextInt(2) == 0 ? 0 : 1);
+            user.setAvatar("https://picsum.photos/200/200?random=" + (i + 200));
+            user.setGender(random.nextInt(2));
             user.setIdCard("11010119900101" + String.format("%04d", i + 3000));
             user.setUserType("TENANT");
             user.setStatus(1);
-            user.setLastLoginTime(LocalDateTime.now().minusDays(random.nextInt(7)));
-            user.setLastLoginIp("192.168.1." + (random.nextInt(20) + 20));
+            user.setLastLoginTime(LocalDateTime.now().minusDays(random.nextInt(30)));
+            user.setLastLoginIp("192.168.1.3");
             user.setLoginFailCount(random.nextInt(3));
-            user.setPasswordUpdateTime(LocalDateTime.now().minusMonths(random.nextInt(4)));
-            user.setCreateTime(LocalDateTime.now().minusDays(random.nextInt(20)));
-            user.setUpdateTime(LocalDateTime.now().minusDays(random.nextInt(10)));
+            user.setPasswordUpdateTime(LocalDateTime.now().minusMonths(random.nextInt(12)));
+            user.setCreateTime(LocalDateTime.now().minusDays(random.nextInt(60)));
+            user.setUpdateTime(LocalDateTime.now().minusDays(random.nextInt(30)));
             users.add(user);
         }
         return users;
     }
 
-    public List<House> generateHouses(int count, List<User> landlords) {
+    public List<House> generateHouses(List<User> landlords, int count) {
         List<House> houses = new ArrayList<>();
-        String[] provinces = {"北京市", "北京市", "北京市", "上海市", "广州市"};
-        String[] cities = {"北京", "北京", "北京", "上海", "广州"};
-        String[] districts = {"朝阳区", "海淀区", "西城区", "东城区", "丰台区"};
-        String[] streets = {"望京街道", "中关村街道", "金融街", "王府井", "方庄"};
+        String[] cities = {"北京", "上海", "广州", "深圳", "杭州", "成都", "武汉", "西安"};
+        String[][] districts = {
+            {"朝阳区", "海淀区", "西城区", "东城区", "丰台区"},
+            {"浦东新区", "徐汇区", "静安区", "黄浦区", "长宁区"},
+            {"天河区", "海珠区", "白云区", "越秀区", "番禺区"},
+            {"南山区", "福田区", "罗湖区", "宝安区", "龙岗区"},
+            {"西湖区", "拱墅区", "滨江区", "上城区", "下城区"},
+            {"锦江区", "武侯区", "青羊区", "成华区", "金牛区"},
+            {"武昌区", "汉口区", "汉阳", "江岸区", "洪山区"},
+            {"雁塔区", "碑林区", "未央区", "莲湖区", "新城区"}
+        };
         String[] houseTypes = {"1室1厅1卫", "2室1厅1卫", "2室2厅1卫", "3室1厅2卫", "3室2厅2卫", "4室2厅2卫"};
-        String[] decorations = {"1", "2", "3"};
-        String[] orientations = {"1", "2", "3", "4", "5"};
-        String[] tags = {"精装", "简装", "毛坯", "南北通透", "近地铁", "学区房", "带车位", "拎包入住"};
+        String[] titles = {
+            "精装两居", "温馨一居", "大三居", "小户型", "学区房", "地铁房",
+            "带车位", "南北通透", "采光好", "近地铁", "交通便利", "配套齐全"
+        };
 
         for (int i = 0; i < count; i++) {
             House house = new House();
             house.setId(IdWorker.getId());
-            house.setHouseNo("HS" + String.format("%06d", i + 1));
-            house.setLandlordId(landlords.get(random.nextInt(landlords.size())).getId());
+            house.setLandlordId(landlords.get(i % landlords.size()).getId());
+            house.setHouseNo("HZ" + System.currentTimeMillis() % 100000 + "-" + i);
             
-            String houseType = houseTypes[random.nextInt(houseTypes.length)];
-            String tag = tags[random.nextInt(tags.length)];
-            house.setTitle(tag + houseType + "诚意出租");
-            house.setDescription("交通便利，周边配套齐全，环境优美，采光良好，适合居住");
-            house.setProvince(provinces[random.nextInt(provinces.length)]);
-            house.setCity(cities[random.nextInt(cities.length)]);
-            house.setDistrict(districts[random.nextInt(districts.length)]);
-            house.setStreet(streets[random.nextInt(streets.length)]);
-            house.setAddress(house.getDistrict() + house.getStreet() + i + "号");
-            house.setLongitude(new BigDecimal("116." + (random.nextInt(999999) + 100000)));
-            house.setLatitude(new BigDecimal("39." + (random.nextInt(999999) + 100000)));
-            house.setHouseType(houseType);
+            int cityIdx = i % cities.length;
+            house.setProvince(cities[cityIdx]);
+            house.setCity(cities[cityIdx]);
+            house.setDistrict(districts[cityIdx][random.nextInt(districts[cityIdx].length)]);
+            house.setStreet("街道" + (i + 1) + "号");
+            house.setAddress(house.getCity() + house.getDistrict() + house.getStreet());
             
-            String[] parts = houseType.split("室");
-            int roomCount = Integer.parseInt(parts[0]);
-            house.setRoomCount(roomCount);
+            house.setLongitude(BigDecimal.valueOf(116.0 + random.nextDouble() * 3));
+            house.setLatitude(BigDecimal.valueOf(39.0 + random.nextDouble() * 3));
             
-            String hallBath = parts[1];
-            int hallCount = 1;
-            int bathCount = 1;
-            if (hallBath.contains("厅")) {
-                String[] hallParts = hallBath.split("厅");
-                hallCount = Integer.parseInt(hallParts[0]);
-                if (hallParts.length > 1 && hallParts[1].contains("卫")) {
-                    bathCount = Integer.parseInt(hallParts[1].replace("卫", ""));
-                }
-            }
-            house.setHallCount(hallCount);
-            house.setBathroomCount(bathCount);
+            house.setHouseType(houseTypes[i % houseTypes.length]);
             
-            int baseArea = roomCount * 30 + 20;
-            house.setArea(new BigDecimal((baseArea + random.nextInt(30)) + ".00"));
-            house.setFloor(random.nextInt(25) + 1);
+            String[] typeParts = house.getHouseType().split("室");
+            int rooms = Integer.parseInt(typeParts[0]);
+            house.setRoomCount(rooms);
+            house.setHallCount(1);
+            house.setBathroomCount(typeParts[1].contains("2卫") ? 2 : 1);
+            
+            house.setArea(BigDecimal.valueOf(40 + random.nextDouble() * 120));
+            house.setFloor(random.nextInt(20) + 1);
             house.setTotalFloor(random.nextInt(10) + 15);
-            house.setHasElevator(house.getFloor() > 6 ? 1 : random.nextInt(2));
-            house.setDecoration(Integer.parseInt(decorations[random.nextInt(decorations.length)]));
-            house.setOrientation(Integer.parseInt(orientations[random.nextInt(orientations.length)]));
+            house.setHasElevator(random.nextBoolean() ? 1 : 0);
+            house.setDecoration(random.nextBoolean() ? 3 : 2);
             
-            int baseRent = roomCount * 1500 + 1000;
-            house.setRentPrice(new BigDecimal((baseRent + random.nextInt(2000) / 100 * 100) + ".00"));
+            Integer[] orientations = {1, 2, 3, 4, 5, 6, 7, 8};
+            house.setOrientation(orientations[random.nextInt(orientations.length)]);
+            
+            house.setRentPrice(new BigDecimal(2000 + random.nextInt(10000)));
             house.setDepositMonth(random.nextInt(3) + 1);
             house.setPaymentWay(random.nextInt(4) + 1);
-            house.setRentWay(random.nextInt(2) + 1);
-            house.setFacilities("{\"wifi\":true,\"airConditioner\":true,\"washingMachine\":true,\"refrigerator\":true,\"waterHeater\":true}");
+            house.setRentWay(random.nextBoolean() ? 1 : 2);
+            
+            house.setTitle(titles[i % titles.length] + house.getHouseType() + "诚意出租");
+            house.setDescription("交通便利，配套齐全，适合居住");
             
             StringBuilder images = new StringBuilder("[");
-            int imageCount = random.nextInt(3) + 3;
-            for (int j = 0; j < imageCount; j++) {
+            for (int j = 0; j < 4; j++) {
                 if (j > 0) images.append(",");
                 images.append("\"https://picsum.photos/800/600?random=").append(i * 10 + j).append("\"");
             }
@@ -187,16 +182,16 @@ public class TestDataGenerator {
             
             int rand = random.nextInt(100);
             if (rand < 60) {
-                house.setHouseStatus(2);
+                house.setStatus(2);
                 house.setAuditStatus(1);
             } else if (rand < 75) {
-                house.setHouseStatus(2);
+                house.setStatus(2);
                 house.setAuditStatus(0);
             } else if (rand < 85) {
-                house.setHouseStatus(1);
+                house.setStatus(1);
                 house.setAuditStatus(1);
             } else {
-                house.setHouseStatus(0);
+                house.setStatus(0);
                 house.setAuditStatus(1);
             }
             
@@ -210,9 +205,9 @@ public class TestDataGenerator {
         return houses;
     }
 
-    public List<Appointment> generateAppointments(int count, List<House> houses, List<User> tenants) {
+    public List<Appointment> generateAppointments(List<House> houses, List<User> tenants, int count) {
         List<Appointment> appointments = new ArrayList<>();
-        Integer[] statuses = {0, 1, 2, 3, 4};
+        Integer[] statuses = {0, 1, 2, 3};
 
         for (int i = 0; i < count; i++) {
             Appointment appointment = new Appointment();

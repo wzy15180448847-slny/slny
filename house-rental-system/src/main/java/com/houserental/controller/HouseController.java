@@ -41,6 +41,28 @@ public class HouseController {
         return Result.success();
     }
 
+    /**
+     * 查询已通过审核的房源列表
+     */
+    @GetMapping("/approved")
+    public Result<com.houserental.common.result.PageResult<House>> getApprovedHouses(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        com.houserental.common.result.PageResult<House> result = houseService.getApprovedHouses(page, size);
+        return Result.success(result);
+    }
+
+    /**
+     * 查询已拒绝的房源列表
+     */
+    @GetMapping("/rejected")
+    public Result<com.houserental.common.result.PageResult<House>> getRejectedHouses(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        com.houserental.common.result.PageResult<House> result = houseService.getRejectedHouses(page, size);
+        return Result.success(result);
+    }
+
     @GetMapping("/{id}")
     public Result<House> getById(@PathVariable Long id) {
         houseService.incrementViewCount(id);

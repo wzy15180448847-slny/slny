@@ -90,11 +90,49 @@ public class TestDataController {
                 userService.save(user);
             }
         }
-        List<House> houses = testDataGenerator.generateHouses(count, landlords);
+        List<House> houses = testDataGenerator.generateHouses(landlords, count);
         for (House house : houses) {
             houseService.save(house);
         }
         return "成功生成 " + houses.size() + " 个房源数据";
+    }
+
+    /**
+     * 清理并重新生成房源数据（解决数据重复问题）
+     */
+    @PostMapping("/houses/refresh")
+    public String refreshHouses(@RequestParam(defaultValue = "50") int count) {
+        // 清理Redis缓存
+        runRedisFlush();
+        
+        // 获取所有房东
+        List<User> landlords = userService.listByUserType("LANDLORD");
+        if (landlords.isEmpty()) {
+            landlords = testDataGenerator.generateLandlords(5);
+            for (User user : landlords) {
+                user.setPassword(passwordEncoder.encode(user.getPassword()));
+                userService.save(user);
+            }
+        }
+        
+        // 清理现有房源数据
+        houseService.cleanAll();
+        
+        // 重新生成房源数据
+        List<House> houses = testDataGenerator.generateHouses(landlords, count);
+        for (House house : houses) {
+            houseService.save(house);
+        }
+        
+        return "成功清理并重新生成 " + houses.size() + " 个房源数据";
+    }
+
+    private void runRedisFlush() {
+        try {
+            Runtime.getRuntime().exec("redis-cli flushall");
+        } catch (Exception e) {
+            // 忽略错误
+        }
     }
 
     /**
@@ -114,7 +152,7 @@ public class TestDataController {
                 userService.save(user);
             }
         }
-        List<Appointment> appointments = testDataGenerator.generateAppointments(count, houses, tenants);
+        List<Appointment> appointments = testDataGenerator.generateAppointments(houses, tenants, count);
         for (Appointment appointment : appointments) {
             appointmentService.save(appointment);
         }
@@ -144,12 +182,12 @@ public class TestDataController {
             userService.save(tenant);
         }
 
-        List<House> houses = testDataGenerator.generateHouses(50, landlords);
+        List<House> houses = testDataGenerator.generateHouses(landlords, 50);
         for (House house : houses) {
             houseService.save(house);
         }
 
-        List<Appointment> appointments = testDataGenerator.generateAppointments(100, houses, tenants);
+        List<Appointment> appointments = testDataGenerator.generateAppointments(houses, tenants, 100);
         for (Appointment appointment : appointments) {
             appointmentService.save(appointment);
         }

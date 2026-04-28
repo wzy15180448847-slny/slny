@@ -113,7 +113,7 @@ public class TerminationApplicationServiceImpl extends ServiceImpl<TerminationAp
 
         // 添加查询条件
         if (params.containsKey("leaseId")) {
-            wrapper.eq("lease_id", params.get("leaseId"));
+            wrapper.eq("agreement_id", params.get("leaseId"));
         }
         if (params.containsKey("applicantId")) {
             wrapper.eq("applicant_id", params.get("applicantId"));

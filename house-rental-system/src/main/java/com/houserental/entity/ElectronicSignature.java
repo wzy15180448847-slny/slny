@@ -23,6 +23,7 @@ public class ElectronicSignature extends BaseEntity {
     /**
      * 租约ID
      */
+    @TableField(value = "agreement_id", exist = true)
     private Long leaseId;
 
     /**

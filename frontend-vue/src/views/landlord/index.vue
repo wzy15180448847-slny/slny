@@ -149,9 +149,9 @@ const loadData = async () => {
     
     const houses = housesRes.data || []
     stats.houses = houses.length
-    stats.activeHouses = houses.filter(h => h.houseStatus === 0).length
-    stats.pendingHouses = houses.filter(h => h.houseStatus === 3).length
-    stats.rentedHouses = houses.filter(h => h.houseStatus === 1).length
+    stats.activeHouses = houses.filter(h => h.status === 0).length
+    stats.pendingHouses = houses.filter(h => h.status === 3).length
+    stats.rentedHouses = houses.filter(h => h.status === 1).length
     stats.appointments = recentAppointments.value.filter(a => a.status === 'PENDING').length
   } catch (error) {
     console.error('加载数据失败:', error)

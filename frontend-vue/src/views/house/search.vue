@@ -55,6 +55,10 @@
                   <el-option label="二室" value="2室" />
                   <el-option label="三室" value="3室" />
                   <el-option label="四室及以上" value="4室" />
+                  <el-option label="一室一厅" value="一室一厅" />
+                  <el-option label="两室一厅" value="两室一厅" />
+                  <el-option label="三室两厅" value="三室两厅" />
+                  <el-option label="四室两厅" value="四室两厅" />
                 </el-select>
               </el-form-item>
               
@@ -96,6 +100,14 @@
                   <el-radio :label="2">合租</el-radio>
                   <el-radio :label="null">不限</el-radio>
                 </el-radio-group>
+              </el-form-item>
+              
+              <el-form-item label="房源状态">
+                <el-select v-model="searchForm.status" placeholder="选择状态" clearable @change="handleSearch">
+                  <el-option label="已上架" :value="0" />
+                  <el-option label="已出租" :value="1" />
+                  <el-option label="已下架" :value="2" />
+                </el-select>
               </el-form-item>
               
               <el-form-item>
@@ -161,7 +173,8 @@ const router = useRouter()
 
 const loading = ref(false)
 const sortBy = ref('createTime')
-const houseList = ref([])
+const houseList = reactive([])
+
 const pagination = reactive({
   current: 1,
   size: 12,
@@ -176,7 +189,8 @@ const searchForm = reactive({
   maxPrice: null,
   minArea: null,
   maxArea: null,
-  rentWay: null
+  rentWay: null,
+  status: null
 })
 
 const cities = ['北京', '上海', '广州', '深圳', '杭州', '成都', '武汉', '西安']
@@ -199,16 +213,67 @@ const districts = computed(() => {
 const fetchHouses = async () => {
   loading.value = true
   try {
-    const { data } = await searchHouses({
+    console.log('=== 开始搜索 ===')
+    console.log('发送搜索请求:', {
       current: pagination.current,
       size: pagination.size,
       sortBy: sortBy.value,
       ...searchForm
     })
-    houseList.value = data.records || []
+    const response = await searchHouses({
+      current: pagination.current,
+      size: pagination.size,
+      sortBy: sortBy.value,
+      ...searchForm
+    })
+    console.log('=== 完整响应数据 ===')
+    console.log('response类型:', typeof response)
+    console.log('response:', response)
+    console.log('response结构:', Object.keys(response))
+    
+    const data = response
+    console.log('=== 数据内容 ===')
+    console.log('records是否存在:', 'records' in data)
+    console.log('records类型:', typeof data.records)
+    console.log('records长度:', data.records ? data.records.length : 'undefined')
+    
+    if (data.records && data.records.length > 0) {
+      console.log('第一条记录:', data.records[0])
+      console.log('第一条记录的ID:', data.records[0].id)
+      console.log('最后一条记录:', data.records[data.records.length - 1])
+      console.log('最后一条记录的ID:', data.records[data.records.length - 1].id)
+      
+      const firstId = data.records[0].id
+      const allSame = data.records.every(h => h.id === firstId)
+      console.log('所有记录ID是否相同:', allSame)
+      if (allSame) {
+        console.error('警告: 后端返回的所有记录ID都相同！')
+      }
+      
+      console.log('=== 每条记录的ID ===')
+      data.records.forEach((h, index) => {
+        console.log(`${index + 1}. ID: ${h.id}`)
+      })
+    }
+    houseList.length = 0
+    const newHouses = JSON.parse(JSON.stringify(data.records || []))
+    newHouses.forEach(house => {
+      houseList.push(house)
+    })
+    console.log('=== houseList赋值后 ===')
+    console.log('houseList长度:', houseList.length)
+    houseList.forEach((h, index) => {
+      console.log(`${index + 1}. houseList ID: ${h.id}, 标题: ${h.title}`)
+    })
+    
+    const ids = houseList.map(h => h.id)
+    const uniqueIds = [...new Set(ids)]
+    if (ids.length !== uniqueIds.length) {
+      console.warn('发现重复的房源ID:', ids)
+    }
     pagination.total = data.total || 0
   } catch (error) {
-    console.error(error)
+    console.error('搜索失败:', error)
   } finally {
     loading.value = false
   }
@@ -232,7 +297,8 @@ const handleReset = () => {
     maxPrice: null,
     minArea: null,
     maxArea: null,
-    rentWay: null
+    rentWay: null,
+    status: null
   })
   pagination.current = 1
   fetchHouses()
@@ -256,7 +322,7 @@ const handlePageChange = (page) => {
 }
 
 const handleFavoriteChange = ({ id, isFavorited }) => {
-  const house = houseList.value.find(h => h.id === id)
+  const house = houseList.find(h => h.id === id)
   if (house) {
     house.isFavorited = isFavorited
     house.favoriteCount = isFavorited 

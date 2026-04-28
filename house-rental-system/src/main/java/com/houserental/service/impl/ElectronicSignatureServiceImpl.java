@@ -45,7 +45,7 @@ public class ElectronicSignatureServiceImpl extends ServiceImpl<ElectronicSignat
     @Override
     public List<ElectronicSignature> getSignaturesByLeaseId(Long leaseId) {
         QueryWrapper<ElectronicSignature> wrapper = new QueryWrapper<>();
-        wrapper.eq("lease_id", leaseId);
+        wrapper.eq("agreement_id", leaseId);
         return baseMapper.selectList(wrapper);
     }
 
@@ -53,7 +53,7 @@ public class ElectronicSignatureServiceImpl extends ServiceImpl<ElectronicSignat
     public ElectronicSignature getSignatureByUserAndLease(Long userId, Long leaseId) {
         QueryWrapper<ElectronicSignature> wrapper = new QueryWrapper<>();
         wrapper.eq("user_id", userId);
-        wrapper.eq("lease_id", leaseId);
+        wrapper.eq("agreement_id", leaseId);
         return baseMapper.selectOne(wrapper);
     }
 }

@@ -56,6 +56,11 @@ public class HouseQueryRequest {
     private Integer rentWay;
 
     /**
+     * 房源状态（0-展示中，1-已租，2-已下架）
+     */
+    private Integer status;
+
+    /**
      * 排序字段
      */
     private String sortBy = "createTime";
@@ -160,5 +165,13 @@ public class HouseQueryRequest {
 
     public void setSortOrder(String sortOrder) {
         this.sortOrder = sortOrder;
+    }
+
+    public Integer getStatus() {
+        return status;
+    }
+
+    public void setStatus(Integer status) {
+        this.status = status;
     }
 }

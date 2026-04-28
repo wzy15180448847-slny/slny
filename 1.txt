@@ -1,0 +1,142 @@
+=== Route Guard Start ===
+index.js:278 to.path: /search to.meta: {"title":"房源搜索","requiresAuth":false}
+index.js:279 from.path: /
+index.js:280 userStore.isLoggedIn: false
+index.js:281 userStore.userType: 
+index.js:282 userStore.userInfo: null
+index.js:315 Route guard: Proceeding to: /search
+7error.ts:22 ElementPlusError: [el-radio] [API] label act as value is about to be deprecated in version 3.0.0, please use value instead.
+For more detail, please visit: https://element-plus.org/en-US/component/radio.html
+
+    at debugWarn (error.ts:19:9)
+    at watch.immediate (index.ts:23:9)
+    at callWithErrorHandling (runtime-core.esm-bundler.js:199:19)
+    at callWithAsyncErrorHandling (runtime-core.esm-bundler.js:206:17)
+    at baseWatchOptions.call (runtime-core.esm-bundler.js:880:47)
+    at job (reactivity.esm-bundler.js:1908:18)
+    at watch (reactivity.esm-bundler.js:1943:7)
+    at doWatch (runtime-core.esm-bundler.js:908:23)
+    at watch2 (runtime-core.esm-bundler.js:841:10)
+    at useDeprecated (index.ts:19:3)
+debugWarn @ error.ts:22
+search.vue:216 === 开始搜索 ===
+search.vue:217 发送搜索请求: Object
+request.js:36 === 请求响应 ===
+request.js:37 URL: /houses/search
+request.js:38 完整响应: Object
+request.js:39 res.code: 200
+request.js:40 res.data: Object
+search.vue:229 === 完整响应数据 ===
+search.vue:230 response类型: object
+search.vue:231 response: Object
+search.vue:232 response结构: Array(7)
+search.vue:235 === 数据内容 ===
+search.vue:236 records是否存在: true
+search.vue:237 records类型: object
+search.vue:238 records长度: 12
+search.vue:241 第一条记录: Object
+search.vue:242 第一条记录的ID: 2048785986457034800
+search.vue:243 最后一条记录: Objectaddress: "成都武侯区街道38号"appointmentCount: 8area: 131.46auditRemark: nullauditStatus: 1auditTime: nullauditorId: nullavailableDate: "2026-06-16T23:26:58"bathroomCount: 1city: "成都"contactName: "联系人37"contactPhone: "13600000037"coverImage: "https://picsum.photos/800/600?random=37"createBy: 0createTime: "2026-04-15 23:26:58"decoration: 3depositMonth: 3description: "交通便利，配套齐全，适合居住"district: "武侯区"facilities: nullfavoriteCount: 38floor: 10hallCount: 1hasElevator: 0houseNo: "HZ18431-37"houseType: "2室1厅1卫"id: 2048785986457034800images: "[\"https://picsum.photos/800/600?random=370\",\"https://picsum.photos/800/600?random=371\",\"https://picsum.photos/800/600?random=372\",\"https://picsum.photos/800/600?random=373\"]"isDeleted: 0landlordId: 2045885563991605200latitude: 41.72651197longitude: 118.55527267minLeaseTerm: 11orientation: 5paymentWay: 1province: "成都"remark: nullrentPrice: 4728.92rentWay: 1roomCount: 2status: 2street: "街道38号"title: "温馨一居2室1厅1卫诚意出租"totalFloor: 19updateBy: 0updateTime: "2026-04-09 23:26:58"version: 0viewCount: 460viewTimeType: 2[[Prototype]]: Object
+search.vue:244 最后一条记录的ID: 2048785986457034800
+search.vue:248 所有记录ID是否相同: true
+search.vue:250 警告: 后端返回的所有记录ID都相同！
+(匿名) @ search.vue:250
+search.vue:253 === 每条记录的ID ===
+search.vue:255 1. ID: 2048785986457034800
+search.vue:255 2. ID: 2048785986457034800
+search.vue:255 3. ID: 2048785986457034800
+search.vue:255 4. ID: 2048785986457034800
+search.vue:255 5. ID: 2048785986457034800
+search.vue:255 6. ID: 2048785986457034800
+search.vue:255 7. ID: 2048785986457034800
+search.vue:255 8. ID: 2048785986457034800
+search.vue:255 9. ID: 2048785986457034800
+search.vue:255 10. ID: 2048785986457034800
+search.vue:255 11. ID: 2048785986457034800
+search.vue:255 12. ID: 2048785986457034800
+search.vue:263 === houseList赋值后 ===
+search.vue:264 houseList长度: 12
+search.vue:266 1. houseList ID: 2048785986457034800, 标题: 交通便利3室2厅2卫诚意出租
+search.vue:266 2. houseList ID: 2048785986457034800, 标题: 温馨一居2室1厅1卫诚意出租
+search.vue:266 3. houseList ID: 2048785986457034800, 标题: 南北通透2室1厅1卫诚意出租
+search.vue:266 4. houseList ID: 2048785986457034800, 标题: 学区房3室2厅2卫诚意出租
+search.vue:266 5. houseList ID: 2048785986457034800, 标题: 交通便利3室2厅2卫诚意出租
+search.vue:266 6. houseList ID: 2048785986457034800, 标题: 带车位1室1厅1卫诚意出租
+search.vue:266 7. houseList ID: 2048785986457034800, 标题: 带车位1室1厅1卫诚意出租
+search.vue:266 8. houseList ID: 2048785986457034800, 标题: 地铁房4室2厅2卫诚意出租
+search.vue:266 9. houseList ID: 2048785986457034800, 标题: 地铁房4室2厅2卫诚意出租
+search.vue:266 10. houseList ID: 2048785986457034800, 标题: 采光好2室2厅1卫诚意出租
+search.vue:266 11. houseList ID: 2048785986457034800, 标题: 南北通透2室1厅1卫诚意出租
+search.vue:266 12. houseList ID: 2048785986457034800, 标题: 温馨一居2室1厅1卫诚意出租
+search.vue:272 发现重复的房源ID: Array(12)0: 20487859864570348001: 20487859864570348002: 20487859864570348003: 20487859864570348004: 20487859864570348005: 20487859864570348006: 20487859864570348007: 20487859864570348008: 20487859864570348009: 204878598645703480010: 204878598645703480011: 2048785986457034800length: 12[[Prototype]]: Array(0)
+(匿名) @ search.vue:272
+HouseCard.vue:146 === HouseCard mounted ===
+HouseCard.vue:147 props.house: Proxy(Object)
+HouseCard.vue:148 props.house.id: 2048785986457034800
+HouseCard.vue:149 props.house.title: 交通便利3室2厅2卫诚意出租
+HouseCard.vue:146 === HouseCard mounted ===
+HouseCard.vue:147 props.house: Proxy(Object)
+HouseCard.vue:148 props.house.id: 2048785986457034800
+HouseCard.vue:149 props.house.title: 温馨一居2室1厅1卫诚意出租
+HouseCard.vue:146 === HouseCard mounted ===
+HouseCard.vue:147 props.house: Proxy(Object)
+HouseCard.vue:148 props.house.id: 2048785986457034800
+HouseCard.vue:149 props.house.title: 南北通透2室1厅1卫诚意出租
+HouseCard.vue:146 === HouseCard mounted ===
+HouseCard.vue:147 props.house: Proxy(Object)
+HouseCard.vue:148 props.house.id: 2048785986457034800
+HouseCard.vue:149 props.house.title: 学区房3室2厅2卫诚意出租
+HouseCard.vue:146 === HouseCard mounted ===
+HouseCard.vue:147 props.house: Proxy(Object)
+HouseCard.vue:148 props.house.id: 2048785986457034800
+HouseCard.vue:149 props.house.title: 交通便利3室2厅2卫诚意出租
+HouseCard.vue:146 === HouseCard mounted ===
+HouseCard.vue:147 props.house: Proxy(Object)
+HouseCard.vue:148 props.house.id: 2048785986457034800
+HouseCard.vue:149 props.house.title: 带车位1室1厅1卫诚意出租
+HouseCard.vue:146 === HouseCard mounted ===
+HouseCard.vue:147 props.house: Proxy(Object)
+HouseCard.vue:148 props.house.id: 2048785986457034800
+HouseCard.vue:149 props.house.title: 带车位1室1厅1卫诚意出租
+HouseCard.vue:146 === HouseCard mounted ===
+HouseCard.vue:147 props.house: Proxy(Object)
+HouseCard.vue:148 props.house.id: 2048785986457034800
+HouseCard.vue:149 props.house.title: 地铁房4室2厅2卫诚意出租
+HouseCard.vue:146 === HouseCard mounted ===
+HouseCard.vue:147 props.house: Proxy(Object)
+HouseCard.vue:148 props.house.id: 2048785986457034800
+HouseCard.vue:149 props.house.title: 地铁房4室2厅2卫诚意出租
+HouseCard.vue:146 === HouseCard mounted ===
+HouseCard.vue:147 props.house: Proxy(Object)
+HouseCard.vue:148 props.house.id: 2048785986457034800
+HouseCard.vue:149 props.house.title: 采光好2室2厅1卫诚意出租
+HouseCard.vue:146 === HouseCard mounted ===
+HouseCard.vue:147 props.house: Proxy(Object)
+HouseCard.vue:148 props.house.id: 2048785986457034800
+HouseCard.vue:149 props.house.title: 南北通透2室1厅1卫诚意出租
+HouseCard.vue:146 === HouseCard mounted ===
+HouseCard.vue:147 props.house: Proxy(Object)
+HouseCard.vue:148 props.house.id: 2048785986457034800
+HouseCard.vue:149 props.house.title: 温馨一居2室1厅1卫诚意出租
+HouseCard.vue:113 === HouseCard点击事件 ===
+HouseCard.vue:114 props.house.id: 2048785986457034800
+HouseCard.vue:115 props.house.title: 交通便利3室2厅2卫诚意出租
+HouseCard.vue:116 props.house.city: 武汉
+HouseCard.vue:117 跳转到: /house/2048785986457034800
+index.js:277 === Route Guard Start ===
+index.js:278 to.path: /house/2048785986457034800 to.meta: {"title":"房源详情","requiresAuth":false}
+index.js:279 from.path: /search
+index.js:280 userStore.isLoggedIn: false
+index.js:281 userStore.userType: 
+index.js:282 userStore.userInfo: null
+index.js:315 Route guard: Proceeding to: /house/2048785986457034800
+detail.vue:349 路由参数变化，重新获取房源详情
+detail.vue:239 获取房源详情, id: 2048785986457034800 type: string
+detail.vue:249 转换后的房源ID: 2048785986457034800 type: number
+request.js:36 === 请求响应 ===
+request.js:37 URL: /houses/2048785986457034800
+request.js:38 完整响应: Object
+request.js:39 res.code: 200
+request.js:40 res.data: Object
+detail.vue:252 响应数据: Object
+detail.vue:257 房源数据设置成功: Proxy(Object)

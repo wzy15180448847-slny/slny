@@ -17,6 +17,11 @@ service.interceptors.request.use(
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`
     }
+    
+    config.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    config.headers['Pragma'] = 'no-cache'
+    config.headers['Expires'] = '0'
+    
     return config
   },
   (error) => {
@@ -28,6 +33,11 @@ service.interceptors.request.use(
 service.interceptors.response.use(
   (response) => {
     const res = response.data
+    console.log('=== 请求响应 ===')
+    console.log('URL:', response.config.url)
+    console.log('完整响应:', res)
+    console.log('res.code:', res.code)
+    console.log('res.data:', res.data)
 
     if (res.code === 200) {
       return res.data

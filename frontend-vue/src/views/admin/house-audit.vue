@@ -4,7 +4,7 @@
       <h1>房源审核</h1>
     </div>
     
-    <el-tabs v-model="activeTab" type="card">
+    <el-tabs v-model="activeTab" type="card" @tab-change="handleTabChange">
       <el-tab-pane label="待审核" name="pending">
         <el-table :data="pendingHouses" border>
           <el-table-column prop="houseName" label="房源名称" />
@@ -111,8 +111,15 @@
 
 <script setup>import { ref, reactive, onMounted } from 'vue';
 import { ElMessage } from 'element-plus';
-import { getPendingAuditList, auditHouse } from '@/api/house';
+import { getPendingAuditList, getApprovedHouses, getRejectedHouses, auditHouse } from '@/api/house';
 const activeTab = ref('pending');
+const handleTabChange = (tabName) => {
+ if (tabName === 'approved' && approvedHouses.value.length === 0) {
+ loadApprovedHouses();
+ } else if (tabName === 'rejected' && rejectedHouses.value.length === 0) {
+ loadRejectedHouses();
+ }
+};
 const pendingHouses = ref([]);
 const approvedHouses = ref([]);
 const rejectedHouses = ref([]);
@@ -160,6 +167,26 @@ const loadPendingAuditList = async () => {
  catch (error) {
  console.error('加载待审核列表失败:', error);
  ElMessage.error('加载待审核列表失败');
+ }
+};
+const loadApprovedHouses = async () => {
+ try {
+ const response = await getApprovedHouses({ page: 1, size: 20 });
+ approvedHouses.value = response.records.map(formatHouse);
+ }
+ catch (error) {
+ console.error('加载已通过列表失败:', error);
+ ElMessage.error('加载已通过列表失败');
+ }
+};
+const loadRejectedHouses = async () => {
+ try {
+ const response = await getRejectedHouses({ page: 1, size: 20 });
+ rejectedHouses.value = response.records.map(formatHouse);
+ }
+ catch (error) {
+ console.error('加载已拒绝列表失败:', error);
+ ElMessage.error('加载已拒绝列表失败');
  }
 };
 const viewDetail = (house) => {

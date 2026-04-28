@@ -38,8 +38,7 @@ import java.util.concurrent.TimeUnit;
 import org.springframework.data.redis.core.RedisTemplate;
 
 /**
- * 房源服务实现类
- */
+ * 房源服务实现类 */
 @Service
 @RequiredArgsConstructor
 public class HouseServiceImpl implements HouseService {
@@ -60,7 +59,7 @@ public class HouseServiceImpl implements HouseService {
     public House publish(House house) {
         house.setHouseNo(generateHouseNo());
         house.setLandlordId(SecurityUtils.getCurrentUserId());
-        house.setHouseStatus(2);
+        house.setStatus(2);
         house.setAuditStatus(0);
         house.setViewCount(0);
         house.setFavoriteCount(0);
@@ -106,7 +105,7 @@ public class HouseServiceImpl implements HouseService {
         }
 
         house.setIsDeleted(1);
-        house.setHouseStatus(2);
+        house.setStatus(2);
         houseMapper.updateById(house);
         
         deleteFromElasticsearch(id);
@@ -115,12 +114,14 @@ public class HouseServiceImpl implements HouseService {
     }
 
     @Override
-    @Cacheable(value = "houses", key = "#id")
     public House getById(Long id) {
+        log.info("获取房源详情, id: {}", id);
         House house = houseMapper.selectById(id);
         if (house == null || house.getIsDeleted() != 0) {
+            log.warn("房源不存在或已删除, id: {}", id);
             throw new BusinessException(ResultCode.HOUSE_NOT_FOUND);
         }
+        log.info("获取房源成功, id: {}, title: {}", id, house.getTitle());
         return house;
     }
 
@@ -130,13 +131,22 @@ public class HouseServiceImpl implements HouseService {
         String cacheKey = generateSearchCacheKey(request);
         PageResult<House> cachedResult = (PageResult<House>) redisTemplate.opsForValue().get(cacheKey);
         if (cachedResult != null) {
+            log.debug("使用缓存结果, cacheKey={}", cacheKey);
             return cachedResult;
         }
+
+        log.info("执行房源搜索, status={}, city={}, district={}, rentWay={}, sortBy={}", 
+                request.getStatus(), request.getCity(), request.getDistrict(), 
+                request.getRentWay(), request.getSortBy());
 
         IPage<House> page = new Page<>(request.getCurrent(), request.getSize());
 
         QueryWrapper<House> wrapper = new QueryWrapper<>();
-        wrapper.eq("house_status", 0);
+        wrapper.eq("is_deleted", 0);
+        
+        if (request.getStatus() != null && request.getStatus() >= 0) {
+            wrapper.eq("status", request.getStatus());
+        }
 
         if (request.getCity() != null && !request.getCity().trim().isEmpty()) {
             wrapper.eq("city", request.getCity());
@@ -147,20 +157,21 @@ public class HouseServiceImpl implements HouseService {
         if (request.getHouseType() != null && !request.getHouseType().trim().isEmpty()) {
             wrapper.like("house_type", request.getHouseType());
         }
-        if (request.getMinPrice() != null) {
+        if (request.getMinPrice() != null && !request.getMinPrice().trim().isEmpty()) {
             wrapper.ge("rent_price", new BigDecimal(request.getMinPrice()));
         }
-        if (request.getMaxPrice() != null) {
+        if (request.getMaxPrice() != null && !request.getMaxPrice().trim().isEmpty()) {
             wrapper.le("rent_price", new BigDecimal(request.getMaxPrice()));
         }
-        if (request.getMinArea() != null) {
+        if (request.getMinArea() != null && !request.getMinArea().trim().isEmpty()) {
             wrapper.ge("area", new BigDecimal(request.getMinArea()));
         }
-        if (request.getMaxArea() != null) {
+        if (request.getMaxArea() != null && !request.getMaxArea().trim().isEmpty()) {
             wrapper.le("area", new BigDecimal(request.getMaxArea()));
         }
         if (request.getRentWay() != null) {
             wrapper.eq("rent_way", request.getRentWay());
+            log.info("添加租赁方式筛选条件: rentWay={}", request.getRentWay());
         }
 
         if ("rentPrice".equals(request.getSortBy())) {
@@ -174,6 +185,46 @@ public class HouseServiceImpl implements HouseService {
         }
 
         IPage<House> result = houseMapper.selectPage(page, wrapper);
+        
+        log.info("搜索结果: 总数={}, 当前页记录数={}", result.getTotal(), result.getRecords().size());
+        
+        // 打印所有记录的ID和对象哈希码用于调试
+        StringBuilder ids = new StringBuilder("房源ID列表: ");
+        StringBuilder objects = new StringBuilder("对象哈希码列表: ");
+        for (House h : result.getRecords()) {
+            ids.append(h.getId()).append(", ");
+            objects.append(System.identityHashCode(h)).append(", ");
+        }
+        log.info(ids.toString());
+        log.info(objects.toString());
+        
+        // 检查是否有重复的ID
+        java.util.Set<Long> uniqueIds = new java.util.HashSet<>();
+        boolean hasDuplicateId = false;
+        for (House h : result.getRecords()) {
+            if (!uniqueIds.add(h.getId())) {
+                hasDuplicateId = true;
+                log.error("发现重复的房源ID: {}", h.getId());
+                break;
+            }
+        }
+        if (hasDuplicateId) {
+            log.error("警告: 查询结果中存在重复的房源ID！");
+        }
+        
+        // 检查是否是同一个对象引用
+        java.util.Set<Integer> uniqueObjects = new java.util.HashSet<>();
+        boolean hasSameObject = false;
+        for (House h : result.getRecords()) {
+            if (!uniqueObjects.add(System.identityHashCode(h))) {
+                hasSameObject = true;
+                log.error("发现重复的对象引用，哈希码: {}", System.identityHashCode(h));
+                break;
+            }
+        }
+        if (hasSameObject) {
+            log.error("警告: 查询结果中存在相同的对象引用！");
+        }
 
         PageResult<House> pageResult = PageResult.build(
                 request.getCurrent().longValue(),
@@ -187,12 +238,12 @@ public class HouseServiceImpl implements HouseService {
     }
     
     /**
-     * 生成搜索缓存键
-     */
+     * 生成搜索缓存 */
     private String generateSearchCacheKey(HouseQueryRequest request) {
         StringBuilder key = new StringBuilder("house:search:");
         key.append("page=").append(request.getCurrent()).append(":");
         key.append("size=").append(request.getSize()).append(":");
+        key.append("status=").append(request.getStatus() != null ? request.getStatus() : "null").append(":");
         key.append("city=").append(request.getCity() != null ? request.getCity() : "null").append(":");
         key.append("district=").append(request.getDistrict() != null ? request.getDistrict() : "null").append(":");
         key.append("type=").append(request.getHouseType() != null ? request.getHouseType() : "null").append(":");
@@ -200,7 +251,8 @@ public class HouseServiceImpl implements HouseService {
         key.append("maxPrice=").append(request.getMaxPrice() != null ? request.getMaxPrice() : "null").append(":");
         key.append("minArea=").append(request.getMinArea() != null ? request.getMinArea() : "null").append(":");
         key.append("maxArea=").append(request.getMaxArea() != null ? request.getMaxArea() : "null").append(":");
-        key.append("rentWay=").append(request.getRentWay() != null ? request.getRentWay() : "null");
+        key.append("rentWay=").append(request.getRentWay() != null ? request.getRentWay() : "null").append(":");
+        key.append("sortBy=").append(request.getSortBy() != null ? request.getSortBy() : "createTime");
         return key.toString();
     }
 
@@ -243,7 +295,7 @@ public class HouseServiceImpl implements HouseService {
     public House audit(Long houseId, Integer auditStatus, String auditRemark, Long auditorId) {
         House house = getById(houseId);
         
-        Integer beforeStatus = house.getHouseStatus();
+        Integer beforeStatus = house.getStatus();
         Integer beforeAuditStatus = house.getAuditStatus();
         
         house.setAuditStatus(auditStatus);
@@ -252,7 +304,7 @@ public class HouseServiceImpl implements HouseService {
         house.setAuditTime(LocalDateTime.now());
         
         if (auditStatus == 1) {
-            house.setHouseStatus(0);
+            house.setStatus(0);
             syncToElasticsearch(house);
         } else if (auditStatus == 2) {
             deleteFromElasticsearch(houseId);
@@ -263,9 +315,9 @@ public class HouseServiceImpl implements HouseService {
         AuditLog auditLog = new AuditLog();
         auditLog.setHouseId(houseId);
         auditLog.setAuditorId(auditorId);
-        auditLog.setAuditorName("审核员");
+        auditLog.setAuditorName("审核人");
         auditLog.setBeforeStatus(beforeStatus);
-        auditLog.setAfterStatus(house.getHouseStatus());
+        auditLog.setAfterStatus(house.getStatus());
         auditLog.setBeforeAuditStatus(beforeAuditStatus);
         auditLog.setAfterAuditStatus(auditStatus);
         auditLog.setAuditRemark(auditRemark);
@@ -287,7 +339,7 @@ public class HouseServiceImpl implements HouseService {
             throw new BusinessException("房源未通过审核，无法上架");
         }
 
-        house.setHouseStatus(0);
+        house.setStatus(0);
         houseMapper.updateById(house);
         
         syncToElasticsearch(house);
@@ -300,7 +352,7 @@ public class HouseServiceImpl implements HouseService {
     @CacheEvict(value = "houses", key = "#id")
     public void offline(Long id) {
         House house = getById(id);
-        house.setHouseStatus(2);
+        house.setStatus(2);
         houseMapper.updateById(house);
         
         deleteFromElasticsearch(id);
@@ -430,7 +482,7 @@ public class HouseServiceImpl implements HouseService {
             }
             
             houseMapper.updateById(house);
-            log.info("数据库更新成功, houseId={}", houseId);
+            log.info("数据库更新成功 houseId={}", houseId);
             return uploadedFiles;
             
         } catch (Exception e) {
@@ -552,7 +604,7 @@ public class HouseServiceImpl implements HouseService {
         if (house.getViewTimeType() != null) existHouse.setViewTimeType(house.getViewTimeType());
         if (house.getAvailableDate() != null) existHouse.setAvailableDate(house.getAvailableDate());
         if (house.getMinLeaseTerm() != null) existHouse.setMinLeaseTerm(house.getMinLeaseTerm());
-        if (house.getHouseStatus() != null) existHouse.setHouseStatus(house.getHouseStatus());
+        if (house.getStatus() != null) existHouse.setStatus(house.getStatus());
         if (house.getAuditStatus() != null) existHouse.setAuditStatus(house.getAuditStatus());
     }
 
@@ -576,7 +628,7 @@ public class HouseServiceImpl implements HouseService {
         log.info("使用MySQL降级方案搜索: {}", keyword);
         
         QueryWrapper<House> wrapper = new QueryWrapper<>();
-        wrapper.eq("house_status", 0);
+        wrapper.eq("status", 0);
         
         if (keyword != null && !keyword.trim().isEmpty()) {
             wrapper.and(w -> w.like("title", keyword)
@@ -606,7 +658,7 @@ public class HouseServiceImpl implements HouseService {
         log.info("使用MySQL降级方案综合搜索: keyword={}, city={}, district={}", keyword, city, district);
         
         QueryWrapper<House> wrapper = new QueryWrapper<>();
-        wrapper.eq("house_status", 0);
+        wrapper.eq("status", 0);
         
         if (keyword != null && !keyword.trim().isEmpty()) {
             wrapper.and(w -> w.like("title", keyword)
@@ -677,6 +729,34 @@ public class HouseServiceImpl implements HouseService {
     }
 
     @Override
+    public com.houserental.common.result.PageResult<House> getApprovedHouses(int page, int size) {
+        com.baomidou.mybatisplus.core.metadata.IPage<House> pageInfo = new com.baomidou.mybatisplus.extension.plugins.pagination.Page<>(page, size);
+        com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<House> wrapper = new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>();
+        wrapper.eq("audit_status", 1).orderByDesc("audit_time");
+        com.baomidou.mybatisplus.core.metadata.IPage<House> result = houseMapper.selectPage(pageInfo, wrapper);
+        return com.houserental.common.result.PageResult.build(
+                pageInfo.getCurrent(),
+                pageInfo.getSize(),
+                result.getTotal(),
+                result.getRecords()
+        );
+    }
+
+    @Override
+    public com.houserental.common.result.PageResult<House> getRejectedHouses(int page, int size) {
+        com.baomidou.mybatisplus.core.metadata.IPage<House> pageInfo = new com.baomidou.mybatisplus.extension.plugins.pagination.Page<>(page, size);
+        com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<House> wrapper = new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>();
+        wrapper.eq("audit_status", 2).orderByDesc("audit_time");
+        com.baomidou.mybatisplus.core.metadata.IPage<House> result = houseMapper.selectPage(pageInfo, wrapper);
+        return com.houserental.common.result.PageResult.build(
+                pageInfo.getCurrent(),
+                pageInfo.getSize(),
+                result.getTotal(),
+                result.getRecords()
+        );
+    }
+
+    @Override
     public List<House> list() {
         return houseMapper.selectList(null);
     }
@@ -684,5 +764,14 @@ public class HouseServiceImpl implements HouseService {
     @Override
     public void save(House house) {
         houseMapper.insert(house);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void cleanAll() {
+        // 直接执行 SQL 语句删除所有数据
+        houseMapper.delete(null);
+        clearSearchCache();
+        log.info("已清空所有房源数据");
     }
 }

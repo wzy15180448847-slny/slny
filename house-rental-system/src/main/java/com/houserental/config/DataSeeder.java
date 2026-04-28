@@ -78,14 +78,14 @@ public class DataSeeder implements CommandLineRunner {
         log.info("   ✓ 生成租客: {} 个 (用户名: tenant0-tenant19, 密码: 123456)", tenants.size());
 
         log.info("4. 生成房源数据...");
-        List<House> houses = testDataGenerator.generateHouses(50, landlords);
+        List<House> houses = testDataGenerator.generateHouses(landlords, 50);
         for (House house : houses) {
             houseService.save(house);
         }
         log.info("   ✓ 生成房源: {} 个 (包含待审核、展示中、已出租、已下架状态)", houses.size());
 
         log.info("5. 生成预约数据...");
-        List<Appointment> appointments = testDataGenerator.generateAppointments(50, houses, tenants);
+        List<Appointment> appointments = testDataGenerator.generateAppointments(houses, tenants, 50);
         for (Appointment appointment : appointments) {
             appointmentService.save(appointment);
         }

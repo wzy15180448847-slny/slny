@@ -118,7 +118,7 @@ const hotAreas = [
 const fetchHouseList = async () => {
   loading.value = true
   try {
-    const { data } = await getHouseList({ current: 1, size: 8 })
+    const data = await getHouseList({ current: 1, size: 8 })
     houseList.value = data.records || []
   } catch (error) {
     console.error(error)

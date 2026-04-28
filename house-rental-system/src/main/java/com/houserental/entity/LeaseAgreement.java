@@ -19,6 +19,7 @@ public class LeaseAgreement extends BaseEntity {
     /**
      * 租约编号
      */
+    @TableField(value = "agreement_no", exist = true)
     private String leaseNo;
 
     /**

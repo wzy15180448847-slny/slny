@@ -127,15 +127,21 @@ const getStatusText = (status) => {
 const loadHouses = async () => {
   try {
     const data = await getAllHouses()
+    const houseTypeMapping = {
+      'ONE_BEDROOM': '一室一厅',
+      'TWO_BEDROOM': '两室一厅',
+      'THREE_BEDROOM': '三室一厅',
+      'FOUR_PLUS_BEDROOM': '四室及以上'
+    }
     houses.value = data.map(house => ({
       id: house.id,
-      houseName: house.houseName,
+      houseName: house.title || '未命名',
       address: house.address,
       landlordName: house.landlordName || '未知',
-      rent: house.rent,
+      rent: house.rentPrice,
       area: house.area,
-      rooms: house.houseType,
-      status: house.houseStatus === 0 ? 'ACTIVE' : house.houseStatus === 1 ? 'RENTED' : house.houseStatus === 2 ? 'INACTIVE' : 'PENDING',
+      rooms: houseTypeMapping[house.houseType] || house.houseType || '未知',
+      status: house.status === 0 ? 'ACTIVE' : house.status === 1 ? 'RENTED' : house.status === 2 ? 'INACTIVE' : 'PENDING',
       viewCount: house.viewCount || 0,
       createTime: formatDate(house.createTime),
       images: house.images ? JSON.parse(house.images) : [],

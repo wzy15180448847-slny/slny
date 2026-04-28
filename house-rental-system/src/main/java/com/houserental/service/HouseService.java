@@ -136,6 +136,16 @@ public interface HouseService {
     com.houserental.common.result.PageResult<House> getPendingAuditList(int page, int size);
 
     /**
+     * 查询已通过审核的房源列表
+     */
+    com.houserental.common.result.PageResult<House> getApprovedHouses(int page, int size);
+
+    /**
+     * 查询已拒绝的房源列表
+     */
+    com.houserental.common.result.PageResult<House> getRejectedHouses(int page, int size);
+
+    /**
      * 查询所有房源列表
      */
     List<House> list();
@@ -144,4 +154,9 @@ public interface HouseService {
      * 保存房源
      */
     void save(House house);
+
+    /**
+     * 清空所有房源数据（仅用于测试）
+     */
+    void cleanAll();
 }

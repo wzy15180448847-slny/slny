@@ -74,7 +74,7 @@ public class LeaseAgreementServiceImpl extends ServiceImpl<LeaseAgreementMapper,
             throw new com.houserental.common.exception.BusinessException("房源不存在");
         }
 
-        if (house.getHouseStatus() != null && house.getHouseStatus() == 1) {
+        if (house.getStatus() != null && house.getStatus() == 1) {
             throw new com.houserental.common.exception.BusinessException("该房源已出租，无法重复发起合同");
         }
 
@@ -103,7 +103,7 @@ public class LeaseAgreementServiceImpl extends ServiceImpl<LeaseAgreementMapper,
         tenantSignature.setLeaseId(lease.getId());
         tenantSignature.setUserId(lease.getTenantId());
         tenantSignature.setUserType("TENANT");
-        tenantSignature.setStatus(0); // 待签章
+        tenantSignature.setStatus(0); // 待签署
         tenantSignature.setCreateTime(LocalDateTime.now());
         tenantSignature.setUpdateTime(LocalDateTime.now());
         electronicSignatureMapper.insert(tenantSignature);
@@ -114,7 +114,7 @@ public class LeaseAgreementServiceImpl extends ServiceImpl<LeaseAgreementMapper,
         landlordSignature.setLeaseId(lease.getId());
         landlordSignature.setUserId(lease.getLandlordId());
         landlordSignature.setUserType("LANDLORD");
-        landlordSignature.setStatus(0); // 待签章
+        landlordSignature.setStatus(0); // 待签署
         landlordSignature.setCreateTime(LocalDateTime.now());
         landlordSignature.setUpdateTime(LocalDateTime.now());
         electronicSignatureMapper.insert(landlordSignature);
@@ -131,7 +131,7 @@ public class LeaseAgreementServiceImpl extends ServiceImpl<LeaseAgreementMapper,
         }
 
         QueryWrapper<ElectronicSignature> wrapper = new QueryWrapper<>();
-        wrapper.eq("lease_id", id);
+        wrapper.eq("agreement_id", id);
         wrapper.eq("user_id", userId);
         wrapper.eq("user_type", userType);
         ElectronicSignature signature = electronicSignatureMapper.selectOne(wrapper);
@@ -142,7 +142,7 @@ public class LeaseAgreementServiceImpl extends ServiceImpl<LeaseAgreementMapper,
             signature.setUpdateTime(LocalDateTime.now());
             electronicSignatureMapper.updateById(signature);
         } else {
-            log.warn("签章已完成或不存在, leaseId={}, userId={}, userType={}", id, userId, userType);
+            log.warn("签章已完成或不存在 leaseId={}, userId={}, userType={}", id, userId, userType);
             return true;
         }
 
@@ -161,7 +161,7 @@ public class LeaseAgreementServiceImpl extends ServiceImpl<LeaseAgreementMapper,
             }
             
             baseMapper.updateById(lease);
-            log.info("租约签署完成并生成合同, leaseId={}, contractUrl={}", id, contractUrl);
+            log.info("租约签署完成并生成合同 leaseId={}, contractUrl={}", id, contractUrl);
         }
 
         return true;

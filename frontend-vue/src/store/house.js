@@ -32,7 +32,7 @@ export const useHouseStore = defineStore('house', {
     async fetchHouseList(params = {}) {
       this.loading = true
       try {
-        const { data } = await getHouseList({
+        const data = await getHouseList({
           current: this.pagination.current,
           size: this.pagination.size,
           ...this.searchParams,
@@ -51,7 +51,7 @@ export const useHouseStore = defineStore('house', {
     async fetchHouseDetail(id) {
       this.loading = true
       try {
-        const { data } = await getHouseDetail(id)
+        const data = await getHouseDetail(id)
         this.currentHouse = data
         return Promise.resolve(data)
       } catch (error) {
@@ -66,7 +66,7 @@ export const useHouseStore = defineStore('house', {
       this.searchParams = { ...this.searchParams, ...params }
       this.pagination.current = 1
       try {
-        const { data } = await searchHouses({
+        const data = await searchHouses({
           current: this.pagination.current,
           size: this.pagination.size,
           ...this.searchParams

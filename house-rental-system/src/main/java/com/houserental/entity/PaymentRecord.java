@@ -19,22 +19,14 @@ public class PaymentRecord extends BaseEntity {
     /**
      * 支付编号
      */
+    @TableField(value = "order_no", exist = true)
     private String paymentNo;
 
     /**
-     * 租约ID
+     * 用户ID
      */
-    private Long leaseAgreementId;
-
-    /**
-     * 租客ID
-     */
+    @TableField(value = "user_id", exist = true)
     private Long tenantId;
-
-    /**
-     * 房东ID
-     */
-    private Long landlordId;
 
     /**
      * 支付金额
@@ -44,12 +36,8 @@ public class PaymentRecord extends BaseEntity {
     /**
      * 支付类型（1-租金，2-押金，3-违约金）
      */
+    @TableField(value = "pay_type", exist = true)
     private Integer paymentType;
-
-    /**
-     * 支付方式（1-微信支付，2-支付宝）
-     */
-    private Integer paymentMethod;
 
     /**
      * 支付状态（0-待支付，1-支付成功，2-支付失败，3-退款中，4-已退款）
@@ -57,28 +45,33 @@ public class PaymentRecord extends BaseEntity {
     private Integer status;
 
     /**
-     * 交易号
-     */
-    private String tradeNo;
-
-    /**
      * 第三方支付平台订单号
      */
+    @TableField(value = "third_party_no", exist = true)
     private String platformOrderNo;
 
     /**
-     * 支付时间
+     * 支付方式（1-微信，2-支付宝，3-钱包）
      */
-    private Date paymentTime;
+    @TableField(value = "pay_method", exist = true)
+    private Integer paymentMethod;
+
+    /**
+     * 租约ID
+     */
+    @TableField(value = "lease_agreement_id", exist = true)
+    private Long leaseAgreementId;
 
     /**
      * 退款时间
      */
+    @TableField(value = "refund_time", exist = true)
     private Date refundTime;
 
     /**
-     * 支付备注
+     * 备注
      */
+    @TableField(value = "remark", exist = true)
     private String remark;
 
     /**

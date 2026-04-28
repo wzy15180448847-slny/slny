@@ -213,7 +213,7 @@ const confirmReject = async () => {
   }
   
   try {
-    await request.post(`/api/agent-qualification/audit/${selectedQualification.value.id}`, null, {
+    await request.post(`/agent-qualification/audit/${selectedQualification.value.id}`, null, {
       params: { auditStatus: 2, auditRemark: rejectForm.reason }
     })
     

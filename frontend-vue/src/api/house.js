@@ -18,7 +18,10 @@ export function getAllHouses() {
 export function getHouseDetail(id) {
   return request({
     url: `/houses/${id}`,
-    method: 'get'
+    method: 'get',
+    params: {
+      _t: Date.now()
+    }
   })
 }
 
@@ -101,11 +104,27 @@ export function getPendingAuditList(params) {
   })
 }
 
-export function auditHouse(id, auditStatus, auditRemark) {
+export function getApprovedHouses(params) {
+  return request({
+    url: '/houses/approved',
+    method: 'get',
+    params
+  })
+}
+
+export function getRejectedHouses(params) {
+  return request({
+    url: '/houses/rejected',
+    method: 'get',
+    params
+  })
+}
+
+export function auditHouse(id, data) {
   return request({
     url: `/houses/${id}/audit`,
     method: 'post',
-    params: { auditStatus, auditRemark }
+    params: data
   })
 }
 
