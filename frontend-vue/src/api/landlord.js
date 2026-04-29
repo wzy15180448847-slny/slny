@@ -24,7 +24,7 @@ export function offlineHouse(id) {
 
 export function getLandlordAppointments(params) {
   return request({
-    url: '/appointment/page',
+    url: '/appointment/landlord',
     method: 'get',
     params
   })

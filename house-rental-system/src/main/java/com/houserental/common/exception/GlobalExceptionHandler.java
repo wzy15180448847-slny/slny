@@ -31,8 +31,8 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<Result<Object>> handleBusinessException(BusinessException e, HttpServletRequest request) {
-        log.warn("业务异常: url={}, code={}, message={}", request.getRequestURI(), e.getCode(), e.getMessage());
-        return ResponseEntity.ok(Result.error(e.getCode(), e.getMessage()));
+        log.warn("业务异常: url={}, message={}", request.getRequestURI(), e.getMessage());
+        return ResponseEntity.ok(Result.error(500, e.getMessage()));
     }
 
     /**

@@ -295,9 +295,24 @@ const submitAppointment = async () => {
   }
   
   try {
+    let dateStr = ''
+    if (appointmentForm.date instanceof Date) {
+      dateStr = dayjs(appointmentForm.date).format('YYYY-MM-DD')
+    } else if (typeof appointmentForm.date === 'string') {
+      const dateObj = new Date(appointmentForm.date)
+      if (!isNaN(dateObj.getTime())) {
+        dateStr = dayjs(dateObj).format('YYYY-MM-DD')
+      } else {
+        dateStr = appointmentForm.date
+      }
+    }
+    
+    console.log('预约日期:', dateStr)
+    console.log('预约时间:', appointmentForm.time)
+    
     await createAppointment({
       houseId: house.value.id,
-      date: appointmentForm.date,
+      date: dateStr,
       time: appointmentForm.time,
       remark: appointmentForm.remark
     })

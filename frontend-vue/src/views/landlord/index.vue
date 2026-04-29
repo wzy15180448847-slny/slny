@@ -154,8 +154,8 @@ const loadData = async () => {
         id: app.id,
         houseName: app.houseName || '未知房源',
         tenantName: app.tenantName || '未知用户',
-        date: formatDateTime(app.appointmentTime),
-        status: app.status === 0 ? 'PENDING' : app.status === 1 ? 'CONFIRMED' : app.status === 2 ? 'COMPLETED' : 'CANCELLED'
+        date: app.date || formatDateTime(app.appointmentTime),
+        status: app.status || 'PENDING'
       }))
     } else if (appointmentsRes && appointmentsRes.records && Array.isArray(appointmentsRes.records)) {
       // 如果是分页对象
@@ -163,8 +163,8 @@ const loadData = async () => {
         id: app.id,
         houseName: app.houseName || '未知房源',
         tenantName: app.tenantName || '未知用户',
-        date: formatDateTime(app.appointmentTime),
-        status: app.status === 0 ? 'PENDING' : app.status === 1 ? 'CONFIRMED' : app.status === 2 ? 'COMPLETED' : 'CANCELLED'
+        date: app.date || formatDateTime(app.appointmentTime),
+        status: app.status || 'PENDING'
       }))
     }
     

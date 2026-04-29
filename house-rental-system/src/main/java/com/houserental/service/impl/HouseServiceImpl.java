@@ -169,8 +169,12 @@ public class HouseServiceImpl implements HouseService {
         QueryWrapper<House> wrapper = new QueryWrapper<>();
         wrapper.eq("is_deleted", 0);
         
-        if (request.getStatus() != null && request.getStatus() >= 0) {
+        if (request.getStatus() != null) {
+            // 如果用户明确指定了状态，使用用户指定的状态
             wrapper.eq("status", request.getStatus());
+        } else {
+            // 默认只显示上架状态的房源（status=0）
+            wrapper.eq("status", 0);
         }
 
         if (request.getCity() != null && !request.getCity().trim().isEmpty()) {

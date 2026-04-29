@@ -171,6 +171,17 @@ public class AppointmentServiceImpl extends ServiceImpl<AppointmentMapper, Appoi
                 }
             }
             
+            if (appointment.getTenantId() != null) {
+                User tenant = userMapper.selectById(appointment.getTenantId());
+                if (tenant != null) {
+                    item.put("tenantName", tenant.getUsername());
+                    item.put("tenantPhone", tenant.getPhone());
+                } else {
+                    item.put("tenantName", "未知用户");
+                    item.put("tenantPhone", "");
+                }
+            }
+            
             if (appointment.getAppointmentTime() != null) {
                 item.put("date", formatter.format(appointment.getAppointmentTime()));
             }

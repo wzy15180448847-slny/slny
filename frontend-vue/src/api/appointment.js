@@ -18,9 +18,8 @@ export function getMyAppointments(params) {
 
 export function cancelAppointment(id, reason) {
   return request({
-    url: `/appointment/cancel/${id}`,
-    method: 'put',
-    params: { reason }
+    url: `/appointment/cancel/${id}?reason=${encodeURIComponent(reason)}`,
+    method: 'put'
   })
 }
 
