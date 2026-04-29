@@ -41,4 +41,23 @@ public class RepairController {
         boolean success = repairService.evaluateRepair(id, content, score);
         return success ? Result.success() : Result.error("评价失败");
     }
+
+    @GetMapping("/landlord")
+    public Result<Object> getLandlordRepairs(@RequestParam Map<String, Object> params) {
+        Long userId = com.houserental.common.utils.SecurityUtils.getCurrentUserId();
+        params.put("landlordId", userId);
+        return Result.success(repairService.pageRepairs(params));
+    }
+
+    @PutMapping("/{id}/accept")
+    public Result<Void> acceptRepair(@PathVariable Long id) {
+        boolean success = repairService.acceptRepair(id);
+        return success ? Result.success() : Result.error("接单失败");
+    }
+
+    @PutMapping("/{id}/complete")
+    public Result<Void> completeRepair(@PathVariable Long id) {
+        boolean success = repairService.completeRepair(id);
+        return success ? Result.success() : Result.error("完成维修失败");
+    }
 }

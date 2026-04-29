@@ -64,6 +64,9 @@
             </template>
           </el-table-column>
         </el-table>
+        <div v-if="bills.length === 0" class="empty-state">
+          <el-empty description="暂无账单记录" />
+        </div>
       </el-tab-pane>
       <el-tab-pane label="待收款" name="unpaid">
         <el-table :data="bills.filter(b => b.status === 'UNPAID')" border>
@@ -83,6 +86,9 @@
             </template>
           </el-table-column>
         </el-table>
+        <div v-if="bills.filter(b => b.status === 'UNPAID').length === 0" class="empty-state">
+          <el-empty description="暂无待收款账单" />
+        </div>
       </el-tab-pane>
       <el-tab-pane label="逾期" name="overdue">
         <el-table :data="bills.filter(b => b.status === 'OVERDUE')" border>
@@ -104,6 +110,9 @@
             </template>
           </el-table-column>
         </el-table>
+        <div v-if="bills.filter(b => b.status === 'OVERDUE').length === 0" class="empty-state">
+          <el-empty description="暂无逾期账单" />
+        </div>
       </el-tab-pane>
     </el-tabs>
     
@@ -146,24 +155,19 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ref, reactive, onMounted } from 'vue'
+import { ElMessage, ElEmpty } from 'element-plus'
+import { getLandlordReminders, getLandlordReminderSummary, sendReminder as apiSendReminder, sendCollection as apiSendCollection } from '@/api/landlord'
 
 const activeTab = ref('all')
 
 const summary = reactive({
-  totalIncome: 28500,
-  pendingAmount: 6300,
-  overdueCount: 2
+  totalIncome: 0,
+  pendingAmount: 0,
+  overdueCount: 0
 })
 
-const bills = ref([
-  { id: 1, billNo: 'ZD202401001', houseName: '阳光小区3室2厅', tenantName: '用户A', type: 'RENT', amount: 3500, dueDate: '2024-02-01', status: 'UNPAID', daysOverdue: null },
-  { id: 2, billNo: 'ZD202401002', houseName: '幸福花园2室1厅', tenantName: '用户B', type: 'RENT', amount: 2800, dueDate: '2024-02-01', status: 'UNPAID', daysOverdue: null },
-  { id: 3, billNo: 'ZD202401003', houseName: '锦绣家园1室1厅', tenantName: '用户C', type: 'RENT', amount: 2000, dueDate: '2024-01-15', status: 'OVERDUE', daysOverdue: 5 },
-  { id: 4, billNo: 'ZD202401004', houseName: '星河湾4室2厅', tenantName: '用户D', type: 'RENT', amount: 5500, dueDate: '2024-01-10', status: 'OVERDUE', daysOverdue: 10 },
-  { id: 5, billNo: 'ZD202401005', houseName: '阳光小区3室2厅', tenantName: '用户A', type: 'RENT', amount: 3500, dueDate: '2024-01-01', status: 'PAID', daysOverdue: null }
-])
+const bills = ref([])
 
 const selectedBill = ref(null)
 const showDetailDialog = ref(false)
@@ -206,18 +210,91 @@ const getStatusText = (status) => {
   return texts[status] || status
 }
 
-const sendReminder = (bill) => {
-  ElMessage.success('提醒通知已发送')
+const mapStatus = (status) => {
+  const statusMap = {
+    0: 'UNPAID',
+    1: 'NOTIFIED',
+    2: 'PAID',
+    3: 'OVERDUE'
+  }
+  return statusMap[status] || 'UNPAID'
 }
 
-const sendCollection = (bill) => {
-  ElMessage.success('催收通知已发送')
+const formatDate = (dateStr) => {
+  if (!dateStr) return ''
+  const date = new Date(dateStr)
+  return date.toLocaleDateString('zh-CN')
+}
+
+const calculateDaysOverdue = (dueDateStr) => {
+  if (!dueDateStr) return null
+  const dueDate = new Date(dueDateStr)
+  const today = new Date()
+  const diffTime = today.getTime() - dueDate.getTime()
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+  return diffDays > 0 ? diffDays : null
+}
+
+const loadBills = async () => {
+  try {
+    const data = await getLandlordReminders()
+    bills.value = (data || []).map(reminder => ({
+      id: reminder.id,
+      billNo: reminder.reminderNo || '',
+      houseName: reminder.remark?.split(' - ')[1] || '未知房源',
+      tenantName: '租户' + reminder.tenantId,
+      type: 'RENT',
+      amount: reminder.amount?.toString() || '0',
+      dueDate: reminder.dueDate ? formatDate(reminder.dueDate) : '',
+      status: mapStatus(reminder.status),
+      daysOverdue: calculateDaysOverdue(reminder.dueDate)
+    }))
+    loadSummary()
+  } catch (error) {
+    console.error('加载账单失败:', error)
+    ElMessage.error('加载账单失败')
+  }
+}
+
+const loadSummary = async () => {
+  try {
+    const data = await getLandlordReminderSummary()
+    summary.totalIncome = data?.totalIncome?.toString() || '0'
+    summary.pendingAmount = data?.pendingAmount?.toString() || '0'
+    summary.overdueCount = data?.overdueCount || 0
+  } catch (error) {
+    console.error('加载统计失败:', error)
+  }
+}
+
+const sendReminder = async (bill) => {
+  try {
+    await apiSendReminder(bill.id)
+    ElMessage.success('提醒通知已发送')
+    loadBills()
+  } catch (error) {
+    ElMessage.error('发送失败')
+  }
+}
+
+const sendCollection = async (bill) => {
+  try {
+    await apiSendCollection(bill.id)
+    ElMessage.success('催收通知已发送')
+    loadBills()
+  } catch (error) {
+    ElMessage.error('发送失败')
+  }
 }
 
 const viewBill = (bill) => {
   selectedBill.value = bill
   showDetailDialog.value = true
 }
+
+onMounted(() => {
+  loadBills()
+})
 </script>
 
 <style lang="scss" scoped>
@@ -303,6 +380,11 @@ const viewBill = (bill) => {
 .overdue-amount {
   color: #f56c6c;
   font-weight: bold;
+}
+
+.empty-state {
+  padding: 60px 0;
+  text-align: center;
 }
 
 .detail-content {

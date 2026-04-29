@@ -74,17 +74,17 @@
         <h2>房源状态</h2>
         <div class="status-chart">
           <div class="status-item">
-            <div class="status-bar" style="width: 60%">
+            <div class="status-bar" :class="{ empty: stats.activeHouses === 0 }" :style="{ width: getBarWidth(stats.activeHouses, stats.houses) + '%' }">
               <span>展示中 ({{ stats.activeHouses }})</span>
             </div>
           </div>
           <div class="status-item">
-            <div class="status-bar pending" style="width: 20%">
+            <div class="status-bar pending" :class="{ empty: stats.pendingHouses === 0 }" :style="{ width: getBarWidth(stats.pendingHouses, stats.houses) + '%' }">
               <span>审核中 ({{ stats.pendingHouses }})</span>
             </div>
           </div>
           <div class="status-item">
-            <div class="status-bar rented" style="width: 20%">
+            <div class="status-bar rented" :class="{ empty: stats.rentedHouses === 0 }" :style="{ width: getBarWidth(stats.rentedHouses, stats.houses) + '%' }">
               <span>已出租 ({{ stats.rentedHouses }})</span>
             </div>
           </div>
@@ -134,25 +134,59 @@ const recentAppointments = ref([])
 
 const loadData = async () => {
   try {
-    const [appointmentsRes, housesRes] = await Promise.all([
-      getLandlordAppointments(),
-      getMyHouses()
-    ])
+    console.log('开始加载数据...')
     
-    recentAppointments.value = (appointmentsRes.data || []).map(app => ({
-      id: app.id,
-      houseName: app.houseName || '未知房源',
-      tenantName: app.tenantName || '未知用户',
-      date: formatDateTime(app.appointmentTime),
-      status: app.status === 0 ? 'PENDING' : app.status === 1 ? 'CONFIRMED' : app.status === 2 ? 'COMPLETED' : 'CANCELLED'
-    }))
+    const appointmentsRes = await getLandlordAppointments().catch(e => {
+      console.log('预约加载失败:', e)
+      return null
+    })
+    const housesRes = await getMyHouses().catch(e => {
+      console.log('房源加载失败:', e)
+      return null
+    })
     
-    const houses = housesRes.data || []
-    stats.houses = houses.length
-    stats.activeHouses = houses.filter(h => h.status === 0).length
-    stats.pendingHouses = houses.filter(h => h.status === 3).length
-    stats.rentedHouses = houses.filter(h => h.status === 1).length
+    console.log('appointmentsRes:', appointmentsRes)
+    console.log('housesRes:', housesRes)
+    
+    // 处理预约数据
+    if (appointmentsRes && Array.isArray(appointmentsRes)) {
+      recentAppointments.value = appointmentsRes.map(app => ({
+        id: app.id,
+        houseName: app.houseName || '未知房源',
+        tenantName: app.tenantName || '未知用户',
+        date: formatDateTime(app.appointmentTime),
+        status: app.status === 0 ? 'PENDING' : app.status === 1 ? 'CONFIRMED' : app.status === 2 ? 'COMPLETED' : 'CANCELLED'
+      }))
+    } else if (appointmentsRes && appointmentsRes.records && Array.isArray(appointmentsRes.records)) {
+      // 如果是分页对象
+      recentAppointments.value = appointmentsRes.records.map(app => ({
+        id: app.id,
+        houseName: app.houseName || '未知房源',
+        tenantName: app.tenantName || '未知用户',
+        date: formatDateTime(app.appointmentTime),
+        status: app.status === 0 ? 'PENDING' : app.status === 1 ? 'CONFIRMED' : app.status === 2 ? 'COMPLETED' : 'CANCELLED'
+      }))
+    }
+    
+    // 处理房源数据
+    if (housesRes && Array.isArray(housesRes)) {
+      const houses = housesRes
+      stats.houses = houses.length
+      stats.activeHouses = houses.filter(h => h.auditStatus === 1 && h.status === 0).length
+      stats.pendingHouses = houses.filter(h => h.auditStatus === 0).length
+      stats.rentedHouses = houses.filter(h => h.status === 1).length
+    } else if (housesRes && housesRes.records && Array.isArray(housesRes.records)) {
+      // 如果是分页对象
+      const houses = housesRes.records
+      stats.houses = houses.length
+      stats.activeHouses = houses.filter(h => h.auditStatus === 1 && h.status === 0).length
+      stats.pendingHouses = houses.filter(h => h.auditStatus === 0).length
+      stats.rentedHouses = houses.filter(h => h.status === 1).length
+    }
+    
     stats.appointments = recentAppointments.value.filter(a => a.status === 'PENDING').length
+    
+    console.log('stats:', stats)
   } catch (error) {
     console.error('加载数据失败:', error)
   }
@@ -185,6 +219,12 @@ const getStatusText = (status) => {
     'CANCELLED': '已取消'
   }
   return texts[status] || status
+}
+
+const getBarWidth = (count, total) => {
+  if (total === 0) return 0
+  // 最小宽度10%，避免0的情况看不到
+  return Math.max(10, (count / total) * 100)
 }
 
 onMounted(() => {
@@ -347,6 +387,7 @@ onMounted(() => {
       color: white;
       font-size: 14px;
       font-weight: 500;
+      transition: all 0.3s ease;
       
       &.pending {
         background: linear-gradient(135deg, #faad14 0%, #ffc53d 100%);
@@ -354,6 +395,14 @@ onMounted(() => {
       
       &.rented {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      }
+      
+      &.empty {
+        background: #f0f0f0;
+        color: #999;
+        width: 100% !important;
+        justify-content: center;
+        padding-left: 0;
       }
     }
   }

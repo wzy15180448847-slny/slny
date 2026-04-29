@@ -16,4 +16,14 @@ public interface PaymentRecordMapper extends BaseMapper<PaymentRecord> {
      * 按月统计支付成功的总金额
      */
     java.math.BigDecimal sumPaymentByMonth(@Param("month") String month);
+    
+    /**
+     * 统计所有支付成功的总金额
+     */
+    java.math.BigDecimal sumAllPayment();
+    
+    /**
+     * 统计所有支付成功的订单数
+     */
+    Integer countAllPayments();
 }

@@ -6,11 +6,11 @@
     
     <el-tabs v-model="activeTab" type="card">
       <el-tab-pane label="全部" name="all">
-        <el-table :data="repairs" border>
+        <el-table :data="repairList" border>
           <el-table-column prop="houseName" label="房源" />
-          <el-table-column prop="type" label="报修类型">
+          <el-table-column prop="repairType" label="报修类型">
             <template #default="scope">
-              <el-tag :type="getTypeTag(scope.row.type)">{{ getTypeText(scope.row.type) }}</el-tag>
+              <el-tag :type="getTypeTag(scope.row.repairType)">{{ getTypeText(scope.row.repairType) }}</el-tag>
             </template>
           </el-table-column>
           <el-table-column prop="tenantName" label="租客" />
@@ -31,9 +31,9 @@
         </el-table>
       </el-tab-pane>
       <el-tab-pane label="待处理" name="pending">
-        <el-table :data="repairs.filter(r => r.status === 'PENDING')" border>
+        <el-table :data="repairList.filter(r => r.status === 'PENDING')" border>
           <el-table-column prop="houseName" label="房源" />
-          <el-table-column prop="type" label="报修类型" />
+          <el-table-column prop="repairType" label="报修类型" />
           <el-table-column prop="tenantName" label="租客" />
           <el-table-column prop="description" label="问题描述" />
           <el-table-column prop="createTime" label="提交时间" />
@@ -46,12 +46,12 @@
         </el-table>
       </el-tab-pane>
       <el-tab-pane label="维修中" name="repairing">
-        <el-table :data="repairs.filter(r => r.status === 'REPAIRING')" border>
+        <el-table :data="repairList.filter(r => r.status === 'REPAIRING')" border>
           <el-table-column prop="houseName" label="房源" />
-          <el-table-column prop="type" label="报修类型" />
+          <el-table-column prop="repairType" label="报修类型" />
           <el-table-column prop="tenantName" label="租客" />
-          <el-table-column prop="handler" label="维修人员" />
-          <el-table-column prop="repairTime" label="接单时间" />
+          <el-table-column prop="description" label="问题描述" />
+          <el-table-column prop="updateTime" label="接单时间" />
           <el-table-column label="操作">
             <template #default="scope">
               <el-button size="small" @click="viewDetail(scope.row)">详情</el-button>
@@ -70,7 +70,7 @@
         </div>
         <div class="detail-row">
           <span class="detail-label">报修类型</span>
-          <el-tag :type="getTypeTag(selectedRepair.type)">{{ getTypeText(selectedRepair.type) }}</el-tag>
+          <el-tag :type="getTypeTag(selectedRepair.repairType)">{{ getTypeText(selectedRepair.repairType) }}</el-tag>
         </div>
         <div class="detail-row">
           <span class="detail-label">租客</span>
@@ -88,19 +88,9 @@
           <span class="detail-label">提交时间</span>
           <span class="detail-value">{{ selectedRepair.createTime }}</span>
         </div>
-        <div class="detail-row" v-if="selectedRepair.handler">
-          <span class="detail-label">维修人员</span>
-          <span class="detail-value">{{ selectedRepair.handler }}</span>
-        </div>
         <div class="detail-row">
           <span class="detail-label">状态</span>
           <el-tag :type="getStatusType(selectedRepair.status)">{{ getStatusText(selectedRepair.status) }}</el-tag>
-        </div>
-        <div class="detail-images" v-if="selectedRepair.images && selectedRepair.images.length > 0">
-          <span class="detail-label">现场照片</span>
-          <div class="images-grid">
-            <img v-for="(img, index) in selectedRepair.images" :key="index" :src="img" class="repair-image" />
-          </div>
         </div>
       </div>
       <template #footer>
@@ -113,17 +103,12 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { getLandlordRepairs, acceptRepair as acceptRepairApi, completeRepair as completeRepairApi } from '@/api/landlord'
 
 const activeTab = ref('all')
-
-const repairs = ref([
-  { id: 1, houseName: '阳光小区3室2厅', type: 'WATER_LEAK', tenantName: '用户A', tenantPhone: '138****8888', description: '卫生间水管漏水严重，需要维修', createTime: '2024-01-15 10:30', status: 'PENDING', handler: null, repairTime: null, images: [] },
-  { id: 2, houseName: '幸福花园2室1厅', type: 'ELECTRIC', tenantName: '用户B', tenantPhone: '139****9999', description: '客厅空调无法启动', createTime: '2024-01-14 15:00', status: 'REPAIRING', handler: '维修师傅张', repairTime: '2024-01-14 16:00', images: [] },
-  { id: 3, houseName: '锦绣家园1室1厅', type: 'WALL', tenantName: '用户C', tenantPhone: '137****7777', description: '卧室墙面有裂缝', createTime: '2024-01-10 09:00', status: 'COMPLETED', handler: '维修师傅李', repairTime: '2024-01-10 10:00', images: [] }
-])
-
+const repairList = ref([])
 const selectedRepair = ref(null)
 const showDetailDialog = ref(false)
 
@@ -169,24 +154,99 @@ const getStatusText = (status) => {
   return texts[status] || status
 }
 
+const loadRepairs = async () => {
+  try {
+    const response = await getLandlordRepairs()
+    if (response.code === 200) {
+      const data = response.data
+      repairList.value = data.records.map(item => ({
+        ...item,
+        status: mapStatus(item.status),
+        repairType: item.repairType || 'OTHER',
+        createTime: formatDate(item.createTime),
+        updateTime: formatDate(item.updateTime),
+        houseName: item.houseName || '未知房源',
+        tenantName: item.tenantName || '未知租客',
+        tenantPhone: item.tenantPhone || '未知'
+      }))
+    }
+  } catch (error) {
+    console.error('加载报修列表失败:', error)
+    ElMessage.error('加载报修列表失败')
+  }
+}
+
+const mapStatus = (status) => {
+  const statusMap = {
+    0: 'PENDING',
+    1: 'REPAIRING',
+    2: 'COMPLETED',
+    3: 'CANCELLED'
+  }
+  return statusMap[status] || 'PENDING'
+}
+
+const formatDate = (date) => {
+  if (!date) return ''
+  return date.replace('T', ' ').substring(0, 16)
+}
+
 const viewDetail = (repair) => {
   selectedRepair.value = repair
   showDetailDialog.value = true
 }
 
+const handleAcceptRepair = async (repair) => {
+  try {
+    const response = await acceptRepairApi(repair.id)
+    if (response.code === 200) {
+      repair.status = 'REPAIRING'
+      ElMessage.success('已接单处理')
+      showDetailDialog.value = false
+    } else {
+      ElMessage.error('接单失败')
+    }
+  } catch (error) {
+    console.error('接单失败:', error)
+    ElMessage.error('接单失败')
+  }
+}
+
+const handleCompleteRepair = async (repair) => {
+  try {
+    const response = await completeRepairApi(repair.id)
+    if (response.code === 200) {
+      repair.status = 'COMPLETED'
+      ElMessage.success('维修已完成')
+      showDetailDialog.value = false
+    } else {
+      ElMessage.error('完成维修失败')
+    }
+  } catch (error) {
+    console.error('完成维修失败:', error)
+    ElMessage.error('完成维修失败')
+  }
+}
+
 const acceptRepair = (repair) => {
-  repair.status = 'REPAIRING'
-  repair.handler = '维修师傅张'
-  repair.repairTime = new Date().toLocaleString()
-  ElMessage.success('已接单处理')
-  showDetailDialog.value = false
+  if (showDetailDialog.value) {
+    handleAcceptRepair(repair)
+  } else {
+    handleAcceptRepair(repair)
+  }
 }
 
 const completeRepair = (repair) => {
-  repair.status = 'COMPLETED'
-  ElMessage.success('维修已完成')
-  showDetailDialog.value = false
+  if (showDetailDialog.value) {
+    handleCompleteRepair(repair)
+  } else {
+    handleCompleteRepair(repair)
+  }
 }
+
+onMounted(() => {
+  loadRepairs()
+})
 </script>
 
 <style lang="scss" scoped>
@@ -229,23 +289,6 @@ const completeRepair = (repair) => {
       color: $text-primary;
       font-size: 14px;
       font-weight: 500;
-    }
-  }
-  
-  .detail-images {
-    padding: 12px 0;
-    
-    .images-grid {
-      display: flex;
-      gap: 10px;
-      margin-top: 10px;
-      
-      .repair-image {
-        width: 100px;
-        height: 100px;
-        object-fit: cover;
-        border-radius: 8px;
-      }
     }
   }
 }

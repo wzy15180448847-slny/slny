@@ -159,6 +159,7 @@
 import { ref, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { publishHouse } from '@/api/landlord'
 
 const router = useRouter()
 const currentStep = ref(0)
@@ -207,15 +208,60 @@ const submitHouse = async () => {
     ElMessage.error('请填写必填项')
     return
   }
-  
+
   submitting.value = true
-  
-  await new Promise(resolve => setTimeout(resolve, 1500))
-  
-  ElMessage.success('房源发布成功，等待审核')
-  router.push('/landlord/houses')
-  
-  submitting.value = false
+
+  try {
+    const decorationMap = {
+      'RAW': 1,
+      'SIMPLE': 2,
+      'FINE': 3
+    }
+
+    const paymentWayMap = {
+      'MONTHLY': 1,
+      'QUARTERLY': 2,
+      'HALF_YEAR': 3,
+      'YEARLY': 4
+    }
+
+    const orientationMap = {
+      '朝南': 2,
+      '朝北': 4,
+      '朝东': 1,
+      '朝西': 3,
+      '南北通透': 5
+    }
+
+    const houseData = {
+      title: houseForm.houseName,
+      address: houseForm.address,
+      city: houseForm.city,
+      houseType: houseForm.rooms || houseForm.houseType,
+      area: houseForm.area ? parseFloat(houseForm.area) : null,
+      floor: houseForm.floor ? parseInt(houseForm.floor.split('/')[0]) : null,
+      totalFloor: houseForm.floor ? parseInt(houseForm.floor.split('/')[1] || houseForm.floor) : null,
+      decoration: decorationMap[houseForm.decoration] || 3,
+      orientation: orientationMap[houseForm.direction] || null,
+      description: houseForm.description,
+      facilities: JSON.stringify(houseForm.facilities),
+      rentPrice: houseForm.rent ? parseFloat(houseForm.rent) : null,
+      depositMonth: houseForm.deposit ? parseInt(houseForm.deposit) : 1,
+      paymentWay: paymentWayMap[houseForm.paymentMethod] || 1,
+      minLeaseTerm: houseForm.minLeaseTerm ? parseInt(houseForm.minLeaseTerm) : 12,
+      availableDate: houseForm.availableDate || null,
+      rentWay: 1
+    }
+
+    await publishHouse(houseData)
+    ElMessage.success('房源发布成功，等待审核')
+    router.push('/landlord/houses')
+  } catch (error) {
+    console.error('发布房源失败:', error)
+    ElMessage.error(error.message || '发布房源失败，请重试')
+  } finally {
+    submitting.value = false
+  }
 }
 </script>
 

@@ -68,4 +68,26 @@ public class RepairServiceImpl extends ServiceImpl<RepairMapper, Repair> impleme
         baseMapper.selectPage(page, wrapper);
         return PageResult.build(page.getCurrent(), page.getSize(), page.getTotal(), page.getRecords());
     }
+
+    @Override
+    public boolean acceptRepair(Long id) {
+        Repair repair = baseMapper.selectById(id);
+        if (repair == null) {
+            return false;
+        }
+        repair.setStatus(1);
+        repair.setUpdateTime(LocalDateTime.now());
+        return baseMapper.updateById(repair) > 0;
+    }
+
+    @Override
+    public boolean completeRepair(Long id) {
+        Repair repair = baseMapper.selectById(id);
+        if (repair == null) {
+            return false;
+        }
+        repair.setStatus(2);
+        repair.setUpdateTime(LocalDateTime.now());
+        return baseMapper.updateById(repair) > 0;
+    }
 }

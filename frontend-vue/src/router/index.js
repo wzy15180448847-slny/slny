@@ -28,12 +28,7 @@ const routes = [
         component: () => import('@/views/house/detail.vue'),
         meta: { title: '房源详情', requiresAuth: false }
       },
-      {
-        path: 'publish',
-        name: 'PublishHouse',
-        component: () => import('@/views/house/publish.vue'),
-        meta: { title: '发布房源', requiresAuth: true, roles: ['LANDLORD', 'AGENT'] }
-      }
+      
     ]
   },
   {

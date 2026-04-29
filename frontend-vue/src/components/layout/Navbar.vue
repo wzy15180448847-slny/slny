@@ -11,7 +11,7 @@
         <router-link to="/search" class="nav-item">找房</router-link>
         <router-link 
           v-if="userStore.isLoggedIn && canPublish" 
-          to="/publish" 
+          to="/landlord/houses/add" 
           class="nav-item"
         >
           发布房源

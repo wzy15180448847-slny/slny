@@ -50,4 +50,32 @@ public interface RentReminderService extends IService<RentReminder> {
      * @return 生成的催缴单数量
      */
     int autoGenerateReminders();
+
+    /**
+     * 根据房东ID查询催缴单
+     * @param landlordId 房东ID
+     * @return 催缴单列表
+     */
+    List<RentReminder> getRemindersByLandlordId(Long landlordId);
+
+    /**
+     * 根据房东ID查询待处理催缴单
+     * @param landlordId 房东ID
+     * @return 催缴单列表
+     */
+    List<RentReminder> getPendingRemindersByLandlordId(Long landlordId);
+
+    /**
+     * 根据房东ID查询逾期催缴单
+     * @param landlordId 房东ID
+     * @return 催缴单列表
+     */
+    List<RentReminder> getOverdueRemindersByLandlordId(Long landlordId);
+
+    /**
+     * 获取房东统计信息
+     * @param landlordId 房东ID
+     * @return 统计信息
+     */
+    java.util.Map<String, Object> getLandlordSummary(Long landlordId);
 }

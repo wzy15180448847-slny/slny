@@ -125,7 +125,7 @@ export const useHouseStore = defineStore('house', {
       }
 
       const response = await publishHouse(houseData)
-      const houseId = response.data.id
+      const houseId = response.id
 
       if (fileList && fileList.length > 0) {
         const formData = new FormData()

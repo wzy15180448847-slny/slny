@@ -237,8 +237,7 @@ const initForm = async () => {
   const houseId = route.params.id
   if (houseId) {
     try {
-      const res = await getHouseDetail(houseId)
-      const data = res.data
+      const data = await getHouseDetail(houseId)
       Object.assign(houseForm, data)
       
       if (data.facilities) {
@@ -318,11 +317,14 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .edit-house-page {
-  padding: 20px;
+  padding: 30px;
+  max-width: 900px;
+  margin: 0 auto;
 }
 
 .page-header {
   margin-bottom: 20px;
+  text-align: center;
 }
 
 .page-header h2 {
@@ -337,7 +339,7 @@ onMounted(() => {
 }
 
 .house-form-card {
-  max-width: 900px;
+  width: 100%;
 }
 
 .house-form {

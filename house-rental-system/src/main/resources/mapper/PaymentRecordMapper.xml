@@ -18,4 +18,16 @@
         WHERE status = 1 AND DATE_FORMAT(create_time, '%Y-%m') = #{month} AND is_deleted = 0
     </select>
 
+    <!-- 统计所有支付成功的总金额 -->
+    <select id="sumAllPayment" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(amount), 0) FROM biz_payment_record 
+        WHERE status = 1 AND is_deleted = 0
+    </select>
+    
+    <!-- 统计所有支付成功的订单数 -->
+    <select id="countAllPayments" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM biz_payment_record 
+        WHERE status = 1 AND is_deleted = 0
+    </select>
+
 </mapper>

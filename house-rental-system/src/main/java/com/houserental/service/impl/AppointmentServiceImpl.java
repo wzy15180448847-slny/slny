@@ -16,6 +16,8 @@ import com.houserental.service.AppointmentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -27,6 +29,7 @@ import java.util.UUID;
 /**
  * 预约看房服务实现
  */
+@Slf4j
 @Service
 public class AppointmentServiceImpl extends ServiceImpl<AppointmentMapper, Appointment> implements AppointmentService {
 
@@ -78,12 +81,21 @@ public class AppointmentServiceImpl extends ServiceImpl<AppointmentMapper, Appoi
 
     @Override
     public boolean cancelAppointment(Long id, String reason) {
+        log.info("取消预约，ID: {}, 原因: {}", id, reason);
+        
         Appointment appointment = baseMapper.selectById(id);
         if (appointment == null) {
+            log.warn("预约不存在，ID: {}", id);
             return false;
         }
         
         Long currentUserId = SecurityUtils.getCurrentUserId();
+        log.info("当前用户ID: {}, 预约租户ID: {}, 预约房东ID: {}", currentUserId, appointment.getTenantId(), appointment.getLandlordId());
+        
+        if (currentUserId == null) {
+            throw new BusinessException("请先登录");
+        }
+        
         if (!currentUserId.equals(appointment.getTenantId()) && !currentUserId.equals(appointment.getLandlordId())) {
             throw new BusinessException("无权取消他人的预约");
         }
@@ -91,7 +103,9 @@ public class AppointmentServiceImpl extends ServiceImpl<AppointmentMapper, Appoi
         appointment.setStatus(3);
         appointment.setRemark(reason);
         appointment.setUpdateTime(LocalDateTime.now());
-        return baseMapper.updateById(appointment) > 0;
+        boolean success = baseMapper.updateById(appointment) > 0;
+        log.info("取消预约结果: {}", success);
+        return success;
     }
 
     @Override

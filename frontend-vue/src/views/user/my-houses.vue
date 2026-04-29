@@ -178,7 +178,7 @@ const handleCurrentChange = (page) => {
 }
 
 const gotoPublish = () => {
-  router.push('/publish')
+  router.push('/landlord/houses/add')
 }
 
 const viewHouse = (id) => {
@@ -186,7 +186,7 @@ const viewHouse = (id) => {
 }
 
 const editHouse = (id) => {
-  router.push(`/publish?id=${id}`)
+  router.push(`/landlord/houses/edit/${id}`)
 }
 
 const toggleStatus = async (house) => {

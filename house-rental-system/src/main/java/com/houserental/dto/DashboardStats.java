@@ -28,4 +28,12 @@ public class DashboardStats {
     private Long pendingQualificationAuditCount;
 
     private Long pendingComplaintCount;
+
+    private String totalRevenue;
+
+    private Integer totalHouses;
+
+    private Integer totalUsers;
+
+    private Integer totalOrders;
 }

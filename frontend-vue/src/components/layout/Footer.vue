@@ -12,7 +12,7 @@
           <ul>
             <li><router-link to="/">首页</router-link></li>
             <li><router-link to="/search">找房</router-link></li>
-            <li><router-link to="/publish">发布房源</router-link></li>
+            <li><router-link to="/landlord/houses/add">发布房源</router-link></li>
           </ul>
         </div>
         

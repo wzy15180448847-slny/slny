@@ -89,3 +89,61 @@ export function generateBill(id) {
     method: 'post'
   })
 }
+
+export function getLandlordReminders() {
+  return request({
+    url: '/rent-reminder/landlord',
+    method: 'get'
+  })
+}
+
+export function getLandlordReminderSummary() {
+  return request({
+    url: '/rent-reminder/summary',
+    method: 'get'
+  })
+}
+
+export function sendReminder(id) {
+  return request({
+    url: `/rent-reminder/${id}/send`,
+    method: 'post'
+  })
+}
+
+export function sendCollection(id) {
+  return request({
+    url: `/rent-reminder/${id}/collection`,
+    method: 'post'
+  })
+}
+
+export function getLandlordRepairs(params) {
+  return request({
+    url: '/repairs/landlord',
+    method: 'get',
+    params
+  })
+}
+
+export function acceptRepair(id) {
+  return request({
+    url: `/repairs/${id}/accept`,
+    method: 'put'
+  })
+}
+
+export function completeRepair(id) {
+  return request({
+    url: `/repairs/${id}/complete`,
+    method: 'put'
+  })
+}
+
+export function publishHouse(data) {
+  return request({
+    url: '/houses',
+    method: 'post',
+    data
+  })
+}

@@ -15,7 +15,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -102,7 +104,7 @@ public class RentReminderServiceImpl extends ServiceImpl<RentReminderMapper, Ren
     @Override
     public List<RentReminder> getOverdueReminders() {
         return rentReminderMapper.selectList(new QueryWrapper<RentReminder>()
-                .lt("due_date", new Date())
+                .lt("reminder_date", new Date())
                 .ne("status", 2)); // 排除已支付的
     }
 
@@ -121,8 +123,8 @@ public class RentReminderServiceImpl extends ServiceImpl<RentReminderMapper, Ren
             if (nextDueDate != null) {
                 // 检查是否已经存在相同日期的催缴单
                 RentReminder existingReminder = rentReminderMapper.selectOne(new QueryWrapper<RentReminder>()
-                        .eq("lease_agreement_id", leaseAgreement.getId())
-                        .eq("due_date", nextDueDate));
+                        .eq("agreement_id", leaseAgreement.getId())
+                        .eq("reminder_date", nextDueDate));
                 
                 if (existingReminder == null) {
                     // 创建催缴单
@@ -146,8 +148,8 @@ public class RentReminderServiceImpl extends ServiceImpl<RentReminderMapper, Ren
      */
     private Date calculateNextDueDate(LeaseAgreement leaseAgreement) {
         RentReminder lastReminder = rentReminderMapper.selectOne(new QueryWrapper<RentReminder>()
-                .eq("lease_agreement_id", leaseAgreement.getId())
-                .orderByDesc("due_date")
+                .eq("agreement_id", leaseAgreement.getId())
+                .orderByDesc("reminder_date")
                 .last("LIMIT 1"));
 
         java.util.Calendar calendar = java.util.Calendar.getInstance();
@@ -160,5 +162,64 @@ public class RentReminderServiceImpl extends ServiceImpl<RentReminderMapper, Ren
         
         calendar.add(java.util.Calendar.MONTH, 1);
         return calendar.getTime();
+    }
+
+    @Override
+    public List<RentReminder> getRemindersByLandlordId(Long landlordId) {
+        return rentReminderMapper.selectList(new QueryWrapper<RentReminder>()
+                .eq("landlord_id", landlordId)
+                .eq("is_deleted", 0));
+    }
+
+    @Override
+    public List<RentReminder> getPendingRemindersByLandlordId(Long landlordId) {
+        return rentReminderMapper.selectList(new QueryWrapper<RentReminder>()
+                .eq("landlord_id", landlordId)
+                .eq("status", 0)
+                .eq("is_deleted", 0));
+    }
+
+    @Override
+    public List<RentReminder> getOverdueRemindersByLandlordId(Long landlordId) {
+        return rentReminderMapper.selectList(new QueryWrapper<RentReminder>()
+                .eq("landlord_id", landlordId)
+                .eq("status", 3)
+                .eq("is_deleted", 0));
+    }
+
+    @Override
+    public Map<String, Object> getLandlordSummary(Long landlordId) {
+        Map<String, Object> summary = new HashMap<>();
+        
+        BigDecimal totalIncome = rentReminderMapper.selectObjs(new QueryWrapper<RentReminder>()
+                .eq("landlord_id", landlordId)
+                .eq("status", 2)
+                .eq("is_deleted", 0)
+                .select("SUM(rent_amount)"))
+                .stream()
+                .filter(obj -> obj != null)
+                .map(obj -> (BigDecimal) obj)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        
+        BigDecimal pendingAmount = rentReminderMapper.selectObjs(new QueryWrapper<RentReminder>()
+                .eq("landlord_id", landlordId)
+                .eq("status", 0)
+                .eq("is_deleted", 0)
+                .select("SUM(rent_amount)"))
+                .stream()
+                .filter(obj -> obj != null)
+                .map(obj -> (BigDecimal) obj)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        
+        long overdueCount = rentReminderMapper.selectCount(new QueryWrapper<RentReminder>()
+                .eq("landlord_id", landlordId)
+                .eq("status", 3)
+                .eq("is_deleted", 0));
+        
+        summary.put("totalIncome", totalIncome);
+        summary.put("pendingAmount", pendingAmount);
+        summary.put("overdueCount", overdueCount);
+        
+        return summary;
     }
 }

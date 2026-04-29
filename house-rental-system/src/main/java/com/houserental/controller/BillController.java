@@ -20,4 +20,11 @@ public class BillController {
         params.put("tenantId", userId);
         return Result.success(billService.pageBills(params));
     }
+
+    @GetMapping("/landlord")
+    public Result<Object> getLandlordBills(@RequestParam Map<String, Object> params) {
+        Long userId = com.houserental.common.utils.SecurityUtils.getCurrentUserId();
+        params.put("landlordId", userId);
+        return Result.success(billService.pageBills(params));
+    }
 }

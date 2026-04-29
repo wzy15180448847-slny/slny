@@ -15,4 +15,8 @@ public interface RepairService extends IService<Repair> {
     boolean evaluateRepair(Long id, String content, Integer score);
 
     PageResult<Repair> pageRepairs(Map<String, Object> params);
+
+    boolean acceptRepair(Long id);
+
+    boolean completeRepair(Long id);
 }

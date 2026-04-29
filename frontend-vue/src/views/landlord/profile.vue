@@ -69,7 +69,7 @@
             </div>
             <div class="qualification-info">
               <h4>房源资质</h4>
-              <p>已上传 8 套房源</p>
+              <p>已上传 {{ userInfo.houseCount }} 套房源</p>
             </div>
             <el-tag type="success">已完成</el-tag>
           </div>
@@ -120,12 +120,14 @@ import { ElMessage } from 'element-plus'
 import { Camera } from '@element-plus/icons-vue'
 import { updatePassword } from '@/api/auth'
 import { uploadFile, getFileUrl } from '@/api/file'
+import { getMyHouses } from '@/api/landlord'
 
 const userStore = useUserStore()
 const avatarInput = ref(null)
 
 const userInfo = reactive({
-  creditScore: 92
+  creditScore: 100,
+  houseCount: 0
 })
 
 const formData = reactive({
@@ -146,15 +148,37 @@ const passwordForm = reactive({
   confirmPassword: ''
 })
 
-onMounted(() => {
+onMounted(async () => {
   formData.username = userStore.username
   formData.nickname = userStore.nickname
   formData.phone = userStore.userInfo?.phone || ''
   formData.email = userStore.userInfo?.email || ''
   formData.avatar = userStore.avatar || ''
-  formData.idCard = '**** **** **** 5678'
-  formData.registerTime = '2024-01-01 10:00:00'
+  formData.idCard = userStore.userInfo?.idCard ? maskIdCard(userStore.userInfo.idCard) : '**** **** **** ****'
+  formData.registerTime = userStore.userInfo?.createTime ? formatDate(userStore.userInfo.createTime) : '2024-01-01 10:00:00'
+  userInfo.creditScore = userStore.userInfo?.creditScore || 100
+  
+  await loadHouseCount()
 })
+
+const maskIdCard = (idCard) => {
+  if (!idCard || idCard.length < 18) return '**** **** **** ****'
+  return `${idCard.substring(0, 4)} **** **** ${idCard.substring(14)}`
+}
+
+const formatDate = (date) => {
+  if (!date) return ''
+  return date.replace('T', ' ').substring(0, 19)
+}
+
+const loadHouseCount = async () => {
+  try {
+    const data = await getMyHouses()
+    userInfo.houseCount = (data || []).length
+  } catch (error) {
+    console.error('加载房源数量失败:', error)
+  }
+}
 
 const triggerAvatarUpload = () => {
   avatarInput.value.click()

@@ -176,4 +176,16 @@ public class AppointmentController {
         params.put("tenantId", userId);
         return Result.success(appointmentService.pageAppointments(params));
     }
+
+    /**
+     * 获取房东的预约列表
+     * @param params 查询参数
+     * @return 结果
+     */
+    @GetMapping("/landlord")
+    public Result<Object> getLandlordAppointments(@RequestParam Map<String, Object> params) {
+        Long userId = com.houserental.common.utils.SecurityUtils.getCurrentUserId();
+        params.put("landlordId", userId);
+        return Result.success(appointmentService.pageAppointments(params));
+    }
 }

@@ -18,31 +18,33 @@
           </el-table-column>
           <el-table-column prop="status" label="状态">
             <template #default="scope">
-              <el-tag :type="getStatusType(scope.row.status)">{{ getStatusText(scope.row.status) }}</el-tag>
+              <el-tag :type="getStatusType(scope.row.status, scope.row.auditStatus)">{{ getStatusText(scope.row.status, scope.row.auditStatus) }}</el-tag>
             </template>
           </el-table-column>
           <el-table-column prop="viewCount" label="浏览量" />
           <el-table-column prop="appointmentCount" label="预约数" />
           <el-table-column label="操作">
             <template #default="scope">
-              <el-button size="small" @click="viewHouse(scope.row)">查看</el-button>
-              <el-button size="small" @click="editHouse(scope.row)">编辑</el-button>
-              <el-button 
-                v-if="scope.row.status === 'ACTIVE'" 
-                size="small" 
-                type="warning" 
-                @click="toggleHouse(scope.row)"
-              >
-                下架
-              </el-button>
-              <el-button 
-                v-else-if="scope.row.status === 'INACTIVE'" 
-                size="small" 
-                type="success" 
-                @click="toggleHouse(scope.row)"
-              >
-                上架
-              </el-button>
+              <div class="operation-buttons">
+                <el-button size="small" @click="viewHouse(scope.row)">查看</el-button>
+                <el-button size="small" @click="editHouse(scope.row)">编辑</el-button>
+                <el-button 
+                  v-if="scope.row.status === 'ACTIVE'" 
+                  size="small" 
+                  type="warning" 
+                  @click="toggleHouse(scope.row)"
+                >
+                  下架
+                </el-button>
+                <el-button 
+                  v-else-if="scope.row.status === 'INACTIVE'" 
+                  size="small" 
+                  type="success" 
+                  @click="toggleHouse(scope.row)"
+                >
+                  上架
+                </el-button>
+              </div>
             </template>
           </el-table-column>
         </el-table>
@@ -58,9 +60,11 @@
           <el-table-column prop="appointmentCount" label="预约数" />
           <el-table-column label="操作">
             <template #default="scope">
-              <el-button size="small" @click="viewHouse(scope.row)">查看</el-button>
-              <el-button size="small" @click="editHouse(scope.row)">编辑</el-button>
-              <el-button size="small" type="warning" @click="toggleHouse(scope.row)">下架</el-button>
+              <div class="operation-buttons">
+                <el-button size="small" @click="viewHouse(scope.row)">查看</el-button>
+                <el-button size="small" @click="editHouse(scope.row)">编辑</el-button>
+                <el-button size="small" type="warning" @click="toggleHouse(scope.row)">下架</el-button>
+              </div>
             </template>
           </el-table-column>
         </el-table>
@@ -75,8 +79,27 @@
           <el-table-column prop="createTime" label="提交时间" />
           <el-table-column label="操作">
             <template #default="scope">
-              <el-button size="small" @click="viewHouse(scope.row)">查看</el-button>
-              <el-button size="small" @click="editHouse(scope.row)">编辑</el-button>
+              <div class="operation-buttons">
+                <el-button size="small" @click="viewHouse(scope.row)">查看</el-button>
+                <el-button size="small" @click="editHouse(scope.row)">编辑</el-button>
+              </div>
+            </template>
+          </el-table-column>
+        </el-table>
+      </el-tab-pane>
+      <el-tab-pane label="审核未通过" name="rejected">
+        <el-table :data="houses.filter(h => h.status === 'REJECTED')" border>
+          <el-table-column prop="houseName" label="房源名称" />
+          <el-table-column prop="address" label="地址" />
+          <el-table-column prop="rent" label="租金">
+            <template #default="scope">¥{{ scope.row.rent }}/月</template>
+          </el-table-column>
+          <el-table-column label="操作">
+            <template #default="scope">
+              <div class="operation-buttons">
+                <el-button size="small" @click="viewHouse(scope.row)">查看</el-button>
+                <el-button size="small" @click="editHouse(scope.row)">编辑</el-button>
+              </div>
             </template>
           </el-table-column>
         </el-table>
@@ -90,9 +113,11 @@
           </el-table-column>
           <el-table-column label="操作">
             <template #default="scope">
-              <el-button size="small" @click="viewHouse(scope.row)">查看</el-button>
-              <el-button size="small" @click="editHouse(scope.row)">编辑</el-button>
-              <el-button size="small" type="success" @click="toggleHouse(scope.row)">上架</el-button>
+              <div class="operation-buttons">
+                <el-button size="small" @click="viewHouse(scope.row)">查看</el-button>
+                <el-button size="small" @click="editHouse(scope.row)">编辑</el-button>
+                <el-button size="small" type="success" @click="toggleHouse(scope.row)">上架</el-button>
+              </div>
             </template>
           </el-table-column>
         </el-table>
@@ -151,34 +176,98 @@ const houses = ref([])
 const selectedHouse = ref(null)
 const showDetailDialog = ref(false)
 
-const getStatusType = (status) => {
+const getStatusType = (status, auditStatus) => {
+  // 优先处理审核拒绝的情况
+  if (auditStatus === 2 || status === 'REJECTED') {
+    return 'danger'
+  }
   const types = {
     'ACTIVE': 'success',
     'PENDING': 'warning',
     'INACTIVE': 'info',
-    'RENTED': 'primary'
+    'RENTED': 'primary',
+    'REJECTED': 'danger'
   }
   return types[status] || 'default'
 }
 
-const getStatusText = (status) => {
+const getStatusText = (status, auditStatus) => {
+  // 优先处理审核拒绝的情况
+  if (auditStatus === 2 || status === 'REJECTED') {
+    return '审核未通过'
+  }
   const texts = {
     'ACTIVE': '展示中',
     'PENDING': '审核中',
     'INACTIVE': '已下架',
-    'RENTED': '已出租'
+    'RENTED': '已出租',
+    'REJECTED': '审核未通过'
   }
   return texts[status] || status
 }
 
 const loadHouses = async () => {
   try {
-    const { data } = await getMyHouses()
-    houses.value = data || []
+    const data = await getMyHouses()
+    console.log('房源数据:', data)
+    
+    let houseList = []
+    if (data && Array.isArray(data)) {
+      houseList = data
+    } else if (data && data.records && Array.isArray(data.records)) {
+      houseList = data.records
+    }
+    
+    houses.value = houseList.map(house => {
+      // 解析图片数组
+      let images = []
+      if (house.images) {
+        try {
+          images = JSON.parse(house.images)
+        } catch (e) {
+          images = []
+        }
+      }
+      
+      return {
+        ...house,
+        houseName: house.title,
+        rent: house.rentPrice,
+        status: mapStatus(house.status, house.auditStatus),
+        viewCount: house.viewCount || 0,
+        appointmentCount: house.appointmentCount || 0,
+        createTime: formatDate(house.createTime),
+        images: images
+      }
+    })
+    
+    console.log('处理后的房源:', houses.value)
   } catch (error) {
     console.error('加载房源列表失败:', error)
     ElMessage.error('加载房源列表失败')
   }
+}
+
+const mapStatus = (status, auditStatus) => {
+  // 优先看审核状态
+  if (auditStatus === 0) {
+    return 'PENDING' // 待审核
+  }
+  if (auditStatus === 2) {
+    return 'REJECTED' // 审核未通过
+  }
+  // 审核通过后看房源状态
+  const statusMap = {
+    0: 'ACTIVE',   // 展示中
+    1: 'RENTED',   // 已出租
+    2: 'INACTIVE'  // 已下架
+  }
+  return statusMap[status] || 'PENDING'
+}
+
+const formatDate = (date) => {
+  if (!date) return ''
+  return date.replace('T', ' ').substring(0, 16)
 }
 
 const goToAdd = () => {
@@ -225,6 +314,19 @@ onMounted(() => {
   padding: 30px;
   max-width: 1200px;
   margin: 0 auto;
+}
+
+:deep(.el-table .operation-buttons) {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  
+  .el-button {
+    margin: 0 !important;
+    padding: 4px 12px;
+    font-size: 12px;
+    border-radius: 4px;
+  }
 }
 
 .page-header {

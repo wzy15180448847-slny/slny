@@ -19,11 +19,13 @@ public class RentReminder extends BaseEntity {
     /**
      * 催缴编号
      */
+    @TableField("reminder_no")
     private String reminderNo;
 
     /**
      * 租约ID
      */
+    @TableField("agreement_id")
     private Long leaseAgreementId;
 
     /**
@@ -39,11 +41,13 @@ public class RentReminder extends BaseEntity {
     /**
      * 催缴金额
      */
+    @TableField("rent_amount")
     private BigDecimal amount;
 
     /**
      * 应缴日期
      */
+    @TableField("reminder_date")
     private Date dueDate;
 
     /**
@@ -54,17 +58,14 @@ public class RentReminder extends BaseEntity {
     /**
      * 催缴次数
      */
+    @TableField("reminder_count")
     private Integer reminderCount;
 
     /**
      * 最后催缴时间
      */
+    @TableField("last_reminder_time")
     private Date lastReminderTime;
-
-    /**
-     * 催缴备注
-     */
-    private String remark;
 
     /**
      * 租约信息

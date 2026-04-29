@@ -54,6 +54,12 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         Long pendingHouseAuditCount = houseMapper.countPendingAudit();
         Long pendingQualificationAuditCount = agentQualificationMapper.countByStatus(0);
         Long pendingComplaintCount = complaintMapper.selectPendingCount();
+        
+        BigDecimal totalRevenueAmount = paymentRecordMapper.sumAllPayment();
+        String totalRevenue = totalRevenueAmount != null ? totalRevenueAmount.toString() : "0";
+        
+        Integer totalUsers = tenantCount.intValue() + landlordCount.intValue();
+        Integer totalOrders = paymentRecordMapper.countAllPayments();
 
         return DashboardStats.builder()
                 .totalTenantCount(tenantCount)
@@ -65,6 +71,10 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
                 .pendingHouseAuditCount(pendingHouseAuditCount)
                 .pendingQualificationAuditCount(pendingQualificationAuditCount)
                 .pendingComplaintCount(pendingComplaintCount)
+                .totalRevenue(totalRevenue)
+                .totalHouses(houseCount.intValue())
+                .totalUsers(totalUsers)
+                .totalOrders(totalOrders)
                 .build();
     }
 
