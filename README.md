@@ -726,6 +726,8 @@ MIT License - 详见 [LICENSE](LICENSE) 文件
   - 修复了预约提交后信息不显示的问题
   - 修复了数据库字段映射错误（house.getCommunity() → house.getAddress()）
   - 修复了预约状态显示问题，后端将数字状态码转换为字符串（PENDING/CONFIRMED/COMPLETED/CANCELLED/REJECTED）
+  - 添加了 `BusinessException` 类，修复取消预约时报错问题
+  - 添加了查询租客信息逻辑（tenantName、tenantPhone）
 - **钱包功能修复** (house-rental-system/src/main/java/com/houserental/controller/WalletController.java):
   - 修复了钱包充值报错 "Failed to convert value of type java.lang.String to required type java.lang.Long"
   - 后端从 token 中获取用户 ID 而非从请求体获取
@@ -740,6 +742,18 @@ MIT License - 详见 [LICENSE](LICENSE) 文件
 - **API接口修复**:
   - 添加了缺失的 API 函数（getLandlordAppointments、getMyHouses）
   - 修复了 axios 拦截器对 FormData 的处理
+- **房源图片显示修复** (frontend-vue/src/views/landlord/houses.vue):
+  - 修复了房源详情弹窗中图片无法正常显示的问题
+  - 添加了 JSON 字符串解析逻辑处理 images 字段
+- **房源状态显示修复** (frontend-vue/src/views/landlord/index.vue):
+  - 修复了房东首页"最近预约"状态显示错误（显示"已取消"而非"待确认"）
+  - 修正了状态映射逻辑，直接使用后端返回的字符串状态值
+- **房源列表过滤修复** (house-rental-system/src/main/java/com/houserental/service/impl/HouseServiceImpl.java):
+  - 修复了已下架房源展示给租客的问题
+  - 默认只显示上架状态（status=0）的房源
+- **房东预约列表修复** (frontend-vue/src/api/landlord.js):
+  - 修复了房东端预约列表显示为空的问题
+  - API 调用从 `/appointment/page` 改为 `/appointment/landlord`
 
 #### 🎨 界面优化
 - **响应式设计**: 优化了个人中心的响应式布局
