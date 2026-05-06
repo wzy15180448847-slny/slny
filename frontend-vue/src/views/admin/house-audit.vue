@@ -135,10 +135,25 @@ const rentWayMapping = {
  3: '单间'
 };
 const houseTypeMapping = {
+ '1室1厅1卫': '1室1厅1卫',
+ '2室1厅1卫': '2室1厅1卫',
+ '2室2厅1卫': '2室2厅1卫',
+ '3室2厅1卫': '3室2厅1卫',
+ '3室2厅2卫': '3室2厅2卫',
+ '1室1厅': '1室1厅',
+ '2室1厅': '2室1厅',
+ '2室2厅': '2室2厅',
+ '3室1厅': '3室1厅',
+ '3室2厅': '3室2厅',
+ '4室及以上': '4室及以上',
  'ONE_BEDROOM': '一室一厅',
  'TWO_BEDROOM': '两室一厅',
  'THREE_BEDROOM': '三室一厅',
  'FOUR_PLUS_BEDROOM': '四室及以上'
+};
+const formatDate = (date) => {
+  if (!date) return '';
+  return date.replace('T', ' ').substring(0, 16);
 };
 const formatHouse = (house) => {
  return {
@@ -148,10 +163,10 @@ const formatHouse = (house) => {
  landlordName: '房东',
  rent: house.rentPrice,
  area: house.area,
- rooms: houseTypeMapping[house.houseType] || '未知',
+ rooms: houseTypeMapping[house.houseType] || house.houseType || '未知',
  rentWay: rentWayMapping[house.rentWay] || '未知',
- createTime: house.createdTime,
- auditTime: house.auditTime,
+ createTime: formatDate(house.createdTime || house.createTime),
+ auditTime: formatDate(house.auditTime),
  images: house.images ? JSON.parse(house.images) : [],
  description: house.description,
  rejectReason: house.auditRemark,
@@ -195,7 +210,14 @@ const viewDetail = (house) => {
 };
 const approveHouse = async (house) => {
   try {
-    await auditHouse(house.id, { auditStatus: 1, auditRemark: "审核通过" });
+    // 发送多种可能的参数名，确保兼容性
+    await auditHouse(house.id, {
+      auditStatus: 1,
+      audit_status: 1,
+      auditRemark: "审核通过",
+      audit_remark: "审核通过",
+      remark: "审核通过"
+    });
     ElMessage.success('审核通过');
     loadPendingAuditList();
     showDetailDialog.value = false;
@@ -216,7 +238,10 @@ const confirmReject = async () => {
  try {
  await auditHouse(selectedHouse.value.id, {
  auditStatus: 2,
- auditRemark: rejectForm.reason
+ audit_status: 2,
+ auditRemark: rejectForm.reason,
+ audit_remark: rejectForm.reason,
+ remark: rejectForm.reason
  });
  ElMessage.success('已拒绝');
  loadPendingAuditList();

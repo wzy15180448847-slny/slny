@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  # MinIO对象存储
+  minio:
+    image: minio/minio:latest
+    container_name: house-rental-minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - D:/MinIO/data:/data
+    command: server /data --console-address ":9001"
+    restart: unless-stopped
+
+  # Redis缓存 (可选，如果需要的话取消注释)
+  # redis:
+  #   image: redis:6.2
+  #   container_name: house-rental-redis
+  #   ports:
+  #     - "6379:6379"
+  #   restart: unless-stopped

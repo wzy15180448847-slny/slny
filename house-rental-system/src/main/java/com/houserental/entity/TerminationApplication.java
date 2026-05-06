@@ -1,91 +1,244 @@
 package com.houserental.entity;
 
 import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
-import java.util.Date;
+import java.time.LocalDateTime;
 
 /**
  * 解约申请实体类
  */
-@Data
-@EqualsAndHashCode(callSuper = true)
 @TableName("biz_termination_application")
-public class TerminationApplication extends BaseEntity {
+public class TerminationApplication implements Serializable {
 
-    /**
-     * 申请编号
-     */
-    private String applicationNo;
+    private static final long serialVersionUID = 1L;
 
-    /**
-     * 租约ID
-     */
+    @TableId(value = "id", type = com.baomidou.mybatisplus.annotation.IdType.AUTO)
+    @JsonSerialize(using = ToStringSerializer.class)
+    private Long id;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @TableField(value = "create_time")
+    private LocalDateTime createTime;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @TableField(value = "update_time")
+    private LocalDateTime updateTime;
+
+    @TableField(value = "is_deleted")
+    private Integer isDeleted = 0;
+
+    @TableField(value = "agreement_id")
     private Long leaseId;
 
-    /**
-     * 申请人ID
-     */
+    @TableField(value = "applicant_id")
     private Long applicantId;
 
-    /**
-     * 申请人类型（LANDLORD-房东, TENANT-租客）
-     */
+    @TableField(value = "applicant_type")
     private String applicantType;
 
-    /**
-     * 解约原因
-     */
-    private String terminationReason;
+    @TableField(value = "reason")
+    private String reason;
 
-    /**
-     * 申请时间
-     */
-    private Date applyTime;
+    @TableField(value = "compensation")
+    private BigDecimal compensation;
 
-    /**
-     * 状态（0-待处理，1-已同意，2-已拒绝，3-已完成）
-     */
     private Integer status;
 
-    /**
-     * 处理时间
-     */
-    private Date processingTime;
-
-    /**
-     * 处理人ID
-     */
+    @TableField(value = "processor_id")
     private Long processorId;
 
-    /**
-     * 处理意见
-     */
+    @TableField(value = "processing_opinion")
     private String processingOpinion;
 
-    /**
-     * 违约金金额
-     */
-    private BigDecimal penaltyAmount;
-
-    /**
-     * 租约信息
-     */
     @TableField(exist = false)
     private LeaseAgreement lease;
 
-    /**
-     * 申请人信息
-     */
     @TableField(exist = false)
     private User applicant;
 
-    /**
-     * 处理人信息
-     */
     @TableField(exist = false)
     private User processor;
+
+    @TableField(exist = false)
+    private String applicationNo;
+
+    @TableField(exist = false)
+    private String terminationReason;
+
+    @TableField(exist = false)
+    private java.util.Date applyTime;
+
+    @TableField(exist = false)
+    private java.util.Date processingTime;
+
+    @TableField(exist = false)
+    private BigDecimal penaltyAmount;
+
+    // Getters and Setters
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public LocalDateTime getCreateTime() {
+        return createTime;
+    }
+
+    public void setCreateTime(LocalDateTime createTime) {
+        this.createTime = createTime;
+    }
+
+    public LocalDateTime getUpdateTime() {
+        return updateTime;
+    }
+
+    public void setUpdateTime(LocalDateTime updateTime) {
+        this.updateTime = updateTime;
+    }
+
+    public Integer getIsDeleted() {
+        return isDeleted;
+    }
+
+    public void setIsDeleted(Integer isDeleted) {
+        this.isDeleted = isDeleted;
+    }
+
+    public Long getLeaseId() {
+        return leaseId;
+    }
+
+    public void setLeaseId(Long leaseId) {
+        this.leaseId = leaseId;
+    }
+
+    public Long getApplicantId() {
+        return applicantId;
+    }
+
+    public void setApplicantId(Long applicantId) {
+        this.applicantId = applicantId;
+    }
+
+    public String getReason() {
+        return reason;
+    }
+
+    public void setReason(String reason) {
+        this.reason = reason;
+    }
+
+    public BigDecimal getCompensation() {
+        return compensation;
+    }
+
+    public void setCompensation(BigDecimal compensation) {
+        this.compensation = compensation;
+    }
+
+    public Integer getStatus() {
+        return status;
+    }
+
+    public void setStatus(Integer status) {
+        this.status = status;
+    }
+
+    public LeaseAgreement getLease() {
+        return lease;
+    }
+
+    public void setLease(LeaseAgreement lease) {
+        this.lease = lease;
+    }
+
+    public User getApplicant() {
+        return applicant;
+    }
+
+    public void setApplicant(User applicant) {
+        this.applicant = applicant;
+    }
+
+    public User getProcessor() {
+        return processor;
+    }
+
+    public void setProcessor(User processor) {
+        this.processor = processor;
+    }
+
+    public String getApplicationNo() {
+        return applicationNo;
+    }
+
+    public void setApplicationNo(String applicationNo) {
+        this.applicationNo = applicationNo;
+    }
+
+    public String getApplicantType() {
+        return applicantType;
+    }
+
+    public void setApplicantType(String applicantType) {
+        this.applicantType = applicantType;
+    }
+
+    public String getTerminationReason() {
+        return reason;
+    }
+
+    public void setTerminationReason(String terminationReason) {
+        this.reason = terminationReason;
+    }
+
+    public java.util.Date getApplyTime() {
+        return applyTime;
+    }
+
+    public void setApplyTime(java.util.Date applyTime) {
+        this.applyTime = applyTime;
+    }
+
+    public java.util.Date getProcessingTime() {
+        return processingTime;
+    }
+
+    public void setProcessingTime(java.util.Date processingTime) {
+        this.processingTime = processingTime;
+    }
+
+    public Long getProcessorId() {
+        return processorId;
+    }
+
+    public void setProcessorId(Long processorId) {
+        this.processorId = processorId;
+    }
+
+    public String getProcessingOpinion() {
+        return processingOpinion;
+    }
+
+    public void setProcessingOpinion(String processingOpinion) {
+        this.processingOpinion = processingOpinion;
+    }
+
+    public BigDecimal getPenaltyAmount() {
+        return compensation;
+    }
+
+    public void setPenaltyAmount(BigDecimal penaltyAmount) {
+        this.compensation = penaltyAmount;
+    }
 }

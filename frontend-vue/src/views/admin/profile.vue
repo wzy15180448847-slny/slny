@@ -97,11 +97,11 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, watch } from 'vue'
 import { useUserStore } from '@/store/user'
 import { ElMessage } from 'element-plus'
 import { User, Upload } from '@element-plus/icons-vue'
-import { uploadFile } from '@/api/file'
+import { uploadFile, getFileUrl } from '@/api/file'
 import { updatePassword } from '@/api/auth'
 
 const userStore = useUserStore()
@@ -200,10 +200,31 @@ const handleAvatarUpload = async (event) => {
   }
   
   try {
-    const response = await uploadFile(file)
-    if (response.data) {
-      formData.avatar = response.data
-      ElMessage.success('头像上传成功')
+    const fileName = await uploadFile(file)
+    if (fileName) {
+      // 先获取URL临时显示
+      const fileUrl = await getFileUrl(fileName)
+      formData.avatar = fileUrl
+      
+      // 创建更新数据，只保存文件名到数据库
+      const updateData = {
+        nickname: formData.nickname,
+        realName: formData.realName,
+        phone: formData.phone,
+        email: formData.email,
+        avatar: fileName // 存的是文件名，不是URL！
+      }
+      
+      // 调用API更新
+      await userStore.updateProfile(updateData)
+      
+      // 重新获取用户信息（后端会返回新的有效URL）
+      await userStore.getUserInfo()
+      
+      // 重新加载表单数据
+      loadUserInfo()
+      
+      ElMessage.success('头像保存成功')
     }
   } catch (error) {
     console.error('头像上传失败:', error)
@@ -213,20 +234,41 @@ const handleAvatarUpload = async (event) => {
   event.target.value = ''
 }
 
-const saveProfile = async () => {
+const saveProfile = async (message = '保存成功') => {
   try {
     const updateData = {
+      nickname: formData.nickname,
       realName: formData.realName,
       phone: formData.phone,
       email: formData.email
     }
     
-    if (formData.avatar) {
-      updateData.avatar = formData.avatar
+    // 处理头像字段：
+    // 如果有原始用户信息（从store来的），且里面的avatar不是URL格式，说明是文件名，用那个
+    let avatarValue = null
+    const originalUserInfo = userStore.userInfo
+    if (originalUserInfo?.avatar && !originalUserInfo.avatar.startsWith('http')) {
+      // store 里的 avatar 是文件名，用这个来保存
+      avatarValue = originalUserInfo.avatar
+    } else if (formData.avatar && !formData.avatar.startsWith('http')) {
+      // formData 里的 avatar 已经是文件名，直接用
+      avatarValue = formData.avatar
+    }
+    // 如果两个都是URL，就不更新头像字段（避免把过期的URL存进去）
+    
+    if (avatarValue) {
+      updateData.avatar = avatarValue
     }
     
     await userStore.updateProfile(updateData)
-    ElMessage.success('保存成功')
+    
+    // 保存成功后重新获取用户信息，确保store里的avatar是最新的有效URL
+    await userStore.getUserInfo()
+    
+    // 重新加载表单数据
+    loadUserInfo()
+    
+    ElMessage.success(message)
   } catch (error) {
     console.error(error)
     ElMessage.error('保存失败')

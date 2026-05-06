@@ -36,27 +36,33 @@ service.interceptors.request.use(
 
 service.interceptors.response.use(
   (response) => {
-    const res = response.data
+    const contentType = response.headers['content-type'] || response.headers['Content-Type']
+    
+    if (contentType && contentType.includes('application/json')) {
+      const res = response.data
 
-    if (res.code === 200) {
-      return res.data
+      if (res.code === 200) {
+        return res.data
+      }
+
+      if (res.code === 401) {
+        ElMessage.error('登录已过期，请重新登录')
+        const userStore = useUserStore()
+        userStore.resetState()
+        window.location.href = '/login'
+        return Promise.reject(new Error('登录已过期'))
+      }
+
+      if (res.code === 403) {
+        ElMessage.error('没有权限访问')
+        return Promise.reject(new Error('没有权限'))
+      }
+
+      ElMessage.error(res.message || '请求失败')
+      return Promise.reject(new Error(res.message || '请求失败'))
+    } else {
+      return response.data
     }
-
-    if (res.code === 401) {
-      ElMessage.error('登录已过期，请重新登录')
-      const userStore = useUserStore()
-      userStore.resetState()
-      window.location.href = '/login'
-      return Promise.reject(new Error('登录已过期'))
-    }
-
-    if (res.code === 403) {
-      ElMessage.error('没有权限访问')
-      return Promise.reject(new Error('没有权限'))
-    }
-
-    ElMessage.error(res.message || '请求失败')
-    return Promise.reject(new Error(res.message || '请求失败'))
   },
   (error) => {
     console.error('Response error:', error)

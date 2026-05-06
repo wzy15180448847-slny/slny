@@ -4,12 +4,12 @@ import com.houserental.config.MinioConfig;
 import com.houserental.service.FileService;
 import io.minio.*;
 import io.minio.http.Method;
+import javax.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,20 +27,36 @@ public class FileServiceImpl implements FileService {
     private final MinioClient minioClient;
     private final MinioConfig minioConfig;
 
+    @PostConstruct
+    public void init() {
+        try {
+            // 初始化时检查 MinIO 连接并创建桶
+            checkAndCreateBucket();
+            log.info("MinIO 连接成功，存储桶 '{}' 已就绪", minioConfig.getBucketName());
+        } catch (Exception e) {
+            log.warn("MinIO 初始化失败，请检查 MinIO 是否启动: {}", e.getMessage());
+            log.warn("文件上传功能将暂时不可用，直到 MinIO 连接恢复");
+        }
+    }
+
+    private void checkAndCreateBucket() throws Exception {
+        boolean exists = minioClient.bucketExists(BucketExistsArgs.builder()
+                .bucket(minioConfig.getBucketName())
+                .build());
+
+        if (!exists) {
+            minioClient.makeBucket(MakeBucketArgs.builder()
+                    .bucket(minioConfig.getBucketName())
+                    .build());
+            log.info("创建存储桶: {}", minioConfig.getBucketName());
+        }
+    }
+
     @Override
     public String upload(MultipartFile file) {
         try {
-            // 检查存储桶是否存在
-            boolean exists = minioClient.bucketExists(BucketExistsArgs.builder()
-                    .bucket(minioConfig.getBucketName())
-                    .build());
-
-            if (!exists) {
-                // 创建存储桶
-                minioClient.makeBucket(MakeBucketArgs.builder()
-                        .bucket(minioConfig.getBucketName())
-                        .build());
-            }
+            // 确保桶存在
+            checkAndCreateBucket();
 
             // 生成唯一文件名
             String originalFilename = file.getOriginalFilename();
@@ -59,7 +75,7 @@ public class FileServiceImpl implements FileService {
             return fileName;
         } catch (Exception e) {
             log.error("文件上传失败", e);
-            throw new RuntimeException("文件上传失败", e);
+            throw new RuntimeException("文件上传失败: " + e.getMessage() + "，请检查 MinIO 服务是否正常运行", e);
         }
     }
 

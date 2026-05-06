@@ -47,6 +47,7 @@
             <span>系统管理</span>
           </template>
           <el-menu-item index="/admin/credit">信用管理</el-menu-item>
+          <el-menu-item index="/admin/contracts">合同管理</el-menu-item>
           <el-menu-item index="/admin/logs">系统日志</el-menu-item>
           <el-menu-item index="/admin/complaints">投诉仲裁</el-menu-item>
           <el-menu-item index="/admin/profile">个人中心</el-menu-item>

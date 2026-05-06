@@ -229,7 +229,13 @@ public class UserServiceImpl implements UserService {
             existUser.setEmail(user.getEmail());
         }
         if (user.getAvatar() != null) {
-            existUser.setAvatar(user.getAvatar());
+            // 避免把有时效性的预签名URL存到数据库
+            String newAvatar = user.getAvatar();
+            if (!newAvatar.startsWith("http")) {
+                // 如果不是URL，才保存（应该是文件名格式）
+                existUser.setAvatar(newAvatar);
+            }
+            // 如果是URL格式，不更新，保持数据库里原来的
         }
         if (user.getRealName() != null) {
             existUser.setRealName(user.getRealName());

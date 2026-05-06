@@ -74,13 +74,15 @@ public class AdminUserController {
 
     @PutMapping("/{id}/credit")
     public Result<Void> updateCreditScore(@PathVariable Long id, @RequestBody Map<String, Object> request) {
-        Integer scoreChange = (Integer) request.get("score");
+        Integer newScore = (Integer) request.get("score");
         User user = userMapper.selectById(id);
         if (user != null) {
-            int currentScore = user.getCreditScore() != null ? user.getCreditScore() : 0;
-            user.setCreditScore(currentScore + scoreChange);
-            userMapper.updateById(user);
-            return Result.success();
+            if (newScore != null && newScore >= 0 && newScore <= 100) {
+                user.setCreditScore(newScore);
+                userMapper.updateById(user);
+                return Result.success();
+            }
+            return Result.error("信用分必须在0-100之间");
         }
         return Result.error("用户不存在");
     }

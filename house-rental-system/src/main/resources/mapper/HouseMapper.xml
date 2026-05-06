@@ -67,12 +67,12 @@
 
     <!-- 查询推荐房源（按浏览量排序） -->
     <select id="selectRecommendHouses" resultType="com.houserental.entity.House">
-        SELECT * FROM biz_house WHERE is_deleted = 0 AND status = 2 ORDER BY view_count DESC LIMIT #{limit}
+        SELECT * FROM biz_house WHERE is_deleted = 0 AND status = 0 ORDER BY view_count DESC LIMIT #{limit}
     </select>
 
     <!-- 查询最新房源 -->
     <select id="selectLatestHouses" resultType="com.houserental.entity.House">
-        SELECT * FROM biz_house WHERE is_deleted = 0 AND status = 2 ORDER BY create_time DESC LIMIT #{limit}
+        SELECT * FROM biz_house WHERE is_deleted = 0 AND status = 0 ORDER BY create_time DESC LIMIT #{limit}
     </select>
 
     <!-- 增加浏览次数 -->
@@ -96,6 +96,11 @@
     </select>
 
     <!-- 统计各状态的房源数量 -->
+    <select id="countByStatus" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM biz_house WHERE status = #{status} AND is_deleted = #{deleted}
+    </select>
+
+    <!-- 统计各状态的房源数量（带删除标记） -->
     <select id="countByStatusAndDeleted" resultType="java.lang.Long">
         SELECT COUNT(*) FROM biz_house WHERE status = #{status} AND is_deleted = #{deleted}
     </select>
@@ -136,7 +141,7 @@
     <select id="selectAreaStatistics" resultType="java.util.Map">
         SELECT district as name, city, COUNT(*) as count 
         FROM biz_house 
-        WHERE is_deleted = 0 AND status = 2 
+        WHERE is_deleted = 0 AND status = 0 
         GROUP BY city, district 
         ORDER BY count DESC 
         LIMIT 6

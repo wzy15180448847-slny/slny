@@ -10,6 +10,7 @@
         <router-link to="/landlord/houses" class="nav-item">房源管理</router-link>
         <router-link to="/landlord/appointments" class="nav-item">预约处理</router-link>
         <router-link to="/landlord/contracts" class="nav-item">合同管理</router-link>
+        <router-link to="/landlord/terminations" class="nav-item">解约申请</router-link>
         <router-link to="/landlord/bills" class="nav-item">账单管理</router-link>
         <router-link to="/landlord/repairs" class="nav-item">报修处理</router-link>
       </nav>

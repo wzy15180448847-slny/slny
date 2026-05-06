@@ -1,22 +1,9 @@
 import request from '@/utils/request'
 
+// 管理员仪表盘
 export function getDashboardStats() {
   return request({
     url: '/admin/dashboard/stats',
-    method: 'get'
-  })
-}
-
-export function getHouseStatusDistribution() {
-  return request({
-    url: '/admin/dashboard/house-status',
-    method: 'get'
-  })
-}
-
-export function getMonthlyRevenueTrend() {
-  return request({
-    url: '/admin/dashboard/revenue-trend',
     method: 'get'
   })
 }
@@ -35,21 +22,7 @@ export function getRecentLogs() {
   })
 }
 
-export function searchLogs(params) {
-  return request({
-    url: '/admin/dashboard/logs/search',
-    method: 'get',
-    params
-  })
-}
-
-export function getTodayLoginStats() {
-  return request({
-    url: '/admin/dashboard/logs/today-stats',
-    method: 'get'
-  })
-}
-
+// 管理员用户管理
 export function getUsers(params) {
   return request({
     url: '/admin/users',
@@ -73,14 +46,15 @@ export function deleteUser(id) {
   })
 }
 
-export function updateCreditScore(id, data) {
+export function updateCreditScore(id, score) {
   return request({
     url: `/admin/users/${id}/credit`,
     method: 'put',
-    data
+    data: { score }
   })
 }
 
+// 管理员投诉仲裁
 export function getComplaints(params) {
   return request({
     url: '/admin/complaints',
@@ -89,10 +63,42 @@ export function getComplaints(params) {
   })
 }
 
-export function arbitrateComplaint(id, data) {
+export function arbitrateComplaint(id, status, processResult) {
   return request({
     url: `/admin/complaints/${id}/arbitrate`,
     method: 'put',
-    data
+    data: { status, processResult }
+  })
+}
+
+// 合同管理
+export function getAdminContracts(params) {
+  return request({
+    url: '/lease/admin',
+    method: 'get',
+    params
+  })
+}
+
+export function exportContract(id) {
+  return request({
+    url: `/lease/export/${id}`,
+    method: 'get',
+    responseType: 'blob'
+  })
+}
+
+export function searchLogs(params) {
+  return request({
+    url: '/admin/dashboard/logs/search',
+    method: 'get',
+    params
+  })
+}
+
+export function getTodayLoginStats() {
+  return request({
+    url: '/admin/dashboard/logs/today-stats',
+    method: 'get'
   })
 }

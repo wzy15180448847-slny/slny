@@ -176,6 +176,8 @@ app:
     secret-key: ${APP_MINIO_SECRET_KEY:minioadmin}
     bucket-name: ${APP_MINIO_BUCKET_NAME:house-rental}
     secure: ${APP_MINIO_SECURE:false}
+    path: ${APP_MINIO_PATH:D:/MinIO}
+    data-path: ${APP_MINIO_DATA_PATH:./data/minio}
 
   # Elasticsearch配置
   elasticsearch:

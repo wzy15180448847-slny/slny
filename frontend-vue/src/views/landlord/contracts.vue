@@ -16,42 +16,53 @@
             <el-table-column prop="startDate" label="开始日期" width="120" />
             <el-table-column prop="endDate" label="结束日期" width="120" />
             <el-table-column prop="rent" label="月租金" width="100" />
-            <el-table-column prop="status" label="状态" width="100">
+            <el-table-column prop="status" label="状态" width="140">
               <template #default="scope">
-                <el-tag :type="getStatusType(scope.row.status)" class="status-tag">
+                <el-tag :type="getStatusType(scope.row.status, scope.row.originalStatus)" class="status-tag">
                   {{ getStatusText(scope.row.status) }}
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column label="操作" width="220">
+            <el-table-column label="操作" width="320">
               <template #default="scope">
-                <el-button size="small" class="btn-preview" @click="previewContract(scope.row)">预览合同</el-button>
-                <el-button 
-                  v-if="scope.row.status === 'PENDING'" 
-                  size="small" 
-                  type="primary" 
-                  class="btn-send"
-                  @click="sendContract(scope.row)"
-                >
-                  发送合同
-                </el-button>
-                <el-button 
-                  v-if="scope.row.status === 'ACTIVE'" 
-                  size="small" 
-                  type="warning" 
-                  class="btn-bill"
-                  @click="generateBill(scope.row)"
-                >
-                  生成账单
-                </el-button>
-                <el-button 
-                  v-if="scope.row.status === 'ACTIVE'" 
-                  size="small" 
-                  class="btn-export"
-                  @click="exportContract(scope.row)"
-                >
-                  导出Word
-                </el-button>
+                <div class="action-buttons">
+                  <el-button size="small" class="btn-preview" @click="previewContract(scope.row)">预览</el-button>
+                  <el-button 
+                    v-if="!scope.row.landlordSigned && scope.row.originalStatus !== 2" 
+                    size="small" 
+                    type="primary" 
+                    class="btn-send"
+                    @click="sendContract(scope.row)"
+                  >
+                    发送
+                  </el-button>
+                  <el-button 
+                    v-if="!scope.row.landlordSigned && scope.row.originalStatus !== 2" 
+                    size="small" 
+                    type="success" 
+                    class="btn-sign"
+                    @click="signContract(scope.row)"
+                  >
+                    签署
+                  </el-button>
+                  <el-button 
+                    v-if="scope.row.originalStatus === 2" 
+                    size="small" 
+                    type="warning" 
+                    class="btn-bill"
+                    @click="generateBill(scope.row)"
+                  >
+                    账单
+                  </el-button>
+                  <el-button 
+                    v-if="scope.row.originalStatus === 2" 
+                    size="small" 
+                    class="btn-export"
+                    @click="exportContract(scope.row)"
+                  >
+                    导出
+                  </el-button>
+                </div>
               </template>
             </el-table-column>
           </el-table>
@@ -60,43 +71,46 @@
           </div>
         </el-tab-pane>
         <el-tab-pane label="待签署" name="pending">
-          <el-table :data="contracts.filter(c => c.status === 'PENDING')" border class="contract-table">
+          <el-table :data="contracts.filter(c => !c.landlordSigned && c.originalStatus !== 2)" border class="contract-table">
             <el-table-column prop="houseName" label="房源名称" min-width="120" />
             <el-table-column prop="address" label="地址" min-width="180" />
             <el-table-column prop="contractNo" label="合同编号" min-width="150" />
             <el-table-column prop="tenantName" label="租客" min-width="100" />
             <el-table-column prop="startDate" label="开始日期" width="120" />
             <el-table-column prop="endDate" label="结束日期" width="120" />
-            <el-table-column prop="rent" label="月租金" width="100" />
-            <el-table-column label="操作" width="200">
+            <el-table-column label="操作" width="320">
               <template #default="scope">
-                <el-button size="small" class="btn-preview" @click="previewContract(scope.row)">预览合同</el-button>
-                <el-button size="small" type="primary" class="btn-send" @click="sendContract(scope.row)">发送合同</el-button>
+                <div class="action-buttons">
+                  <el-button size="small" class="btn-preview" @click="previewContract(scope.row)">预览</el-button>
+                  <el-button size="small" type="primary" class="btn-send" @click="sendContract(scope.row)">发送</el-button>
+                  <el-button size="small" type="success" class="btn-sign" @click="signContract(scope.row)">签署</el-button>
+                </div>
               </template>
             </el-table-column>
           </el-table>
-          <div v-if="contracts.filter(c => c.status === 'PENDING').length === 0" class="empty-state">
+          <div v-if="contracts.filter(c => !c.landlordSigned && c.originalStatus !== 2).length === 0" class="empty-state">
             <el-empty description="暂无待签署合同" />
           </div>
         </el-tab-pane>
         <el-tab-pane label="生效中" name="active">
-          <el-table :data="contracts.filter(c => c.status === 'ACTIVE')" border class="contract-table">
+          <el-table :data="contracts.filter(c => c.originalStatus === 2)" border class="contract-table">
             <el-table-column prop="houseName" label="房源名称" min-width="120" />
             <el-table-column prop="address" label="地址" min-width="180" />
             <el-table-column prop="contractNo" label="合同编号" min-width="150" />
             <el-table-column prop="tenantName" label="租客" min-width="100" />
             <el-table-column prop="startDate" label="开始日期" width="120" />
             <el-table-column prop="endDate" label="结束日期" width="120" />
-            <el-table-column prop="rent" label="月租金" width="100" />
-            <el-table-column label="操作" width="220">
+            <el-table-column label="操作" width="320">
               <template #default="scope">
-                <el-button size="small" class="btn-preview" @click="previewContract(scope.row)">预览合同</el-button>
-                <el-button size="small" type="warning" class="btn-bill" @click="generateBill(scope.row)">生成账单</el-button>
-                <el-button size="small" class="btn-export" @click="exportContract(scope.row)">导出Word</el-button>
+                <div class="action-buttons">
+                  <el-button size="small" class="btn-preview" @click="previewContract(scope.row)">预览</el-button>
+                  <el-button size="small" type="warning" class="btn-bill" @click="generateBill(scope.row)">账单</el-button>
+                  <el-button size="small" class="btn-export" @click="exportContract(scope.row)">导出</el-button>
+                </div>
               </template>
             </el-table-column>
           </el-table>
-          <div v-if="contracts.filter(c => c.status === 'ACTIVE').length === 0" class="empty-state">
+          <div v-if="contracts.filter(c => c.originalStatus === 2).length === 0" class="empty-state">
             <el-empty description="暂无生效中合同" />
           </div>
         </el-tab-pane>
@@ -149,8 +163,27 @@
       </div>
       <template #footer>
         <el-button @click="showPreviewDialog = false">关闭</el-button>
-        <el-button v-if="selectedContract?.status === 'PENDING'" type="primary" @click="sendContract(selectedContract)">发送给租客</el-button>
-        <el-button v-if="selectedContract?.status === 'ACTIVE'" @click="exportContract(selectedContract)">导出Word</el-button>
+        <el-button v-if="!selectedContract?.landlordSigned && selectedContract?.originalStatus !== 2" type="primary" @click="sendContract(selectedContract)">发送给租客</el-button>
+        <el-button v-if="!selectedContract?.landlordSigned && selectedContract?.originalStatus !== 2" type="success" @click="signContract(selectedContract)">签署合同</el-button>
+        <el-button v-if="selectedContract?.originalStatus === 2" @click="exportContract(selectedContract)">导出Word</el-button>
+      </template>
+    </el-dialog>
+    
+    <el-dialog title="电子签名" v-model="showSignDialog" width="450px" class="sign-dialog">
+      <div class="sign-content">
+        <div class="sign-info">
+          <p class="sign-title">请确认签署以下合同:</p>
+          <p class="contract-name">{{ selectedContract?.houseName }}</p>
+          <p class="contract-no">合同编号: {{ selectedContract?.contractNo }}</p>
+        </div>
+        <div class="sign-area">
+          <canvas ref="signCanvas" class="sign-canvas" @mousedown="startSign" @mousemove="drawing" @mouseup="endSign"></canvas>
+          <p class="sign-hint">请在上方区域签名</p>
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="showSignDialog = false">取消</el-button>
+        <el-button type="primary" @click="confirmSign">确认签署</el-button>
       </template>
     </el-dialog>
   </div>
@@ -161,6 +194,7 @@ import { ref, onMounted } from 'vue'
 import { useUserStore } from '@/store/user'
 import { ElMessage, ElEmpty } from 'element-plus'
 import { getLandlordContracts, sendContract as sendContractApi, exportContract as apiExportContract, generateBill as apiGenerateBill } from '@/api/landlord'
+import { signContract as signContractApi } from '@/api/contracts'
 
 const userStore = useUserStore()
 const activeTab = ref('all')
@@ -169,25 +203,21 @@ const contracts = ref([])
 
 const selectedContract = ref(null)
 const showPreviewDialog = ref(false)
+const showSignDialog = ref(false)
+const signCanvas = ref(null)
+const isDrawing = ref(false)
 
-const getStatusType = (status) => {
-  const types = {
-    'PENDING': 'warning',
-    'ACTIVE': 'success',
-    'EXPIRED': 'info',
-    'TERMINATED': 'danger'
+const getStatusType = (status, originalStatus) => {
+  // 如果已经生效，显示success
+  if (originalStatus === 2) {
+    return 'success'
   }
-  return types[status] || 'default'
+  // 其他情况显示warning
+  return 'warning'
 }
 
 const getStatusText = (status) => {
-  const texts = {
-    'PENDING': '待签署',
-    'ACTIVE': '生效中',
-    'EXPIRED': '已到期',
-    'TERMINATED': '已终止'
-  }
-  return texts[status] || status
+  return status || '未知'
 }
 
 const previewContract = (contract) => {
@@ -198,18 +228,51 @@ const previewContract = (contract) => {
 const loadContracts = async () => {
   try {
     const data = await getLandlordContracts()
-    contracts.value = (data?.records || []).map(lease => ({
-      id: lease.id,
-      contractNo: lease.leaseNo || '',
-      houseName: lease.house?.title || '未知房源',
-      tenantName: lease.tenant?.nickname || lease.tenant?.username || '未知租客',
-      address: lease.house?.address || '',
-      startDate: lease.startDate ? formatDate(lease.startDate) : '',
-      endDate: lease.endDate ? formatDate(lease.endDate) : '',
-      rent: lease.rentPrice ? '¥' + lease.rentPrice.toString() : '¥0',
-      deposit: lease.deposit ? lease.deposit.toString() : '0',
-      status: mapStatus(lease.status)
-    }))
+    contracts.value = (data?.records || []).map(lease => {
+      // 判断签署状态
+      const signatures = lease.signatures || []
+      const tenantSignature = signatures.find(s => s.userType === 'TENANT')
+      const landlordSignature = signatures.find(s => s.userType === 'LANDLORD')
+      const tenantSigned = tenantSignature?.status === 1
+      const landlordSigned = landlordSignature?.status === 1
+      
+      let displayStatus = mapStatus(lease.status)
+      
+      // 如果已经生效，直接显示生效中文
+      if (lease.status === 2) {
+        displayStatus = '已生效'
+      } else if (lease.status === 3) {
+        displayStatus = '已到期'
+      } else if (lease.status === 4 || lease.status === 5) {
+        displayStatus = '已终止'
+      } else {
+        // 其他状态根据签署情况显示
+        if (landlordSigned && !tenantSigned) {
+          displayStatus = '等待租客签署'
+        } else if (!landlordSigned && tenantSigned) {
+          displayStatus = '等待您签署'
+        } else if (!landlordSigned && !tenantSigned) {
+          displayStatus = '待签署'
+        }
+      }
+      
+      return {
+        id: lease.id,
+        contractNo: lease.leaseNo || '',
+        houseName: lease.house?.title || '未知房源',
+        tenantName: lease.tenant?.nickname || lease.tenant?.username || '未知租客',
+        address: lease.house?.address || '',
+        startDate: lease.startDate ? formatDate(lease.startDate) : '',
+        endDate: lease.endDate ? formatDate(lease.endDate) : '',
+        rent: lease.rentPrice ? '¥' + lease.rentPrice.toString() : '¥0',
+        deposit: lease.deposit ? lease.deposit.toString() : '0',
+        status: displayStatus,
+        originalStatus: lease.status,
+        tenantSigned,
+        landlordSigned,
+        signatures
+      }
+    })
   } catch (error) {
     console.error('加载合同列表失败:', error)
     ElMessage.error('加载合同列表失败')
@@ -262,7 +325,7 @@ const exportContract = async (contract) => {
   try {
     const response = await apiExportContract(contract.id)
     
-    const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' })
+    const blob = new Blob([response], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' })
     const downloadUrl = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = downloadUrl
@@ -276,6 +339,69 @@ const exportContract = async (contract) => {
   } catch (error) {
     console.error('导出合同失败:', error)
     ElMessage.error('导出合同失败')
+  }
+}
+
+const signContract = (contract) => {
+  selectedContract.value = contract
+  showPreviewDialog.value = false
+  showSignDialog.value = true
+}
+
+const startSign = (e) => {
+  isDrawing.value = true
+  const canvas = signCanvas.value
+  const ctx = canvas.getContext('2d')
+  ctx.beginPath()
+  ctx.moveTo(e.offsetX, e.offsetY)
+  ctx.strokeStyle = '#333'
+  ctx.lineWidth = 2
+}
+
+const drawing = (e) => {
+  if (!isDrawing.value) return
+  const canvas = signCanvas.value
+  const ctx = canvas.getContext('2d')
+  ctx.lineTo(e.offsetX, e.offsetY)
+  ctx.stroke()
+}
+
+const endSign = () => {
+  isDrawing.value = false
+}
+
+const confirmSign = async () => {
+  const canvas = signCanvas.value
+  if (!canvas) {
+    ElMessage.error('请先签名')
+    return
+  }
+  
+  const signatureBase64 = canvas.toDataURL('image/png')
+  
+  try {
+    await signContractApi(selectedContract.value.id, {
+      signatureData: signatureBase64
+    })
+    
+    ElMessage.success('合同签署成功')
+    showSignDialog.value = false
+    
+    canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height)
+    
+    // 先立即更新本地状态为"等待对方签署"
+    const index = contracts.value.findIndex(c => c.id === selectedContract.value.id)
+    if (index !== -1) {
+      contracts.value[index].landlordSigned = true
+      contracts.value[index].status = '等待租客签署'
+    }
+    
+    // 延迟刷新确保后端数据已更新
+    await new Promise(resolve => setTimeout(resolve, 500))
+    await loadContracts()
+  } catch (error) {
+    console.error('签署失败:', error)
+    ElMessage.error('签署失败: ' + (error.response?.data?.message || error.message))
   }
 }
 
@@ -413,11 +539,18 @@ onMounted(() => {
   font-weight: 500;
 }
 
+.action-buttons {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
 .btn-preview {
-  margin-right: 8px;
   background: #f3f4f6;
   color: #4b5563;
   border: none;
+  border-radius: 6px;
   
   &:hover {
     background: #e5e7eb;
@@ -426,9 +559,9 @@ onMounted(() => {
 }
 
 .btn-send {
-  margin-right: 8px;
   background: $primary-color;
   border: none;
+  border-radius: 6px;
   
   &:hover {
     background: darken($primary-color, 10%);
@@ -436,9 +569,9 @@ onMounted(() => {
 }
 
 .btn-bill {
-  margin-right: 8px;
   background: #f59e0b;
   border: none;
+  border-radius: 6px;
   
   &:hover {
     background: #d97706;
@@ -448,6 +581,7 @@ onMounted(() => {
 .btn-export {
   background: #6366f1;
   border: none;
+  border-radius: 6px;
   
   &:hover {
     background: #4f46e5;
@@ -537,6 +671,81 @@ onMounted(() => {
           margin: 8px 0;
         }
       }
+    }
+  }
+}
+
+.sign-dialog {
+  :deep(.el-dialog__header) {
+    background: linear-gradient(135deg, $primary-color 0%, darken($primary-color, 10%) 100%);
+    border-radius: 12px 12px 0 0;
+    
+    .el-dialog__title {
+      color: #fff;
+      font-size: 18px;
+      font-weight: 600;
+    }
+    
+    .el-dialog__close {
+      color: rgba(255, 255, 255, 0.8);
+      
+      &:hover {
+        color: #fff;
+      }
+    }
+  }
+  
+  :deep(.el-dialog__body) {
+    padding: 24px;
+  }
+}
+
+.sign-content {
+  .sign-info {
+    text-align: center;
+    margin-bottom: 24px;
+    
+    .sign-title {
+      font-size: 14px;
+      color: #6b7280;
+      margin: 0 0 12px 0;
+    }
+    
+    .contract-name {
+      font-size: 20px;
+      font-weight: 600;
+      color: #1f2937;
+      margin: 0 0 8px 0;
+    }
+    
+    .contract-no {
+      font-size: 13px;
+      color: #9ca3af;
+      margin: 0;
+    }
+  }
+  
+  .sign-area {
+    text-align: center;
+    
+    .sign-canvas {
+      width: 100%;
+      height: 160px;
+      border: 2px dashed #d1d5db;
+      border-radius: 12px;
+      cursor: crosshair;
+      background: #fafafa;
+      transition: border-color 0.3s ease;
+      
+      &:hover {
+        border-color: $primary-color;
+      }
+    }
+    
+    .sign-hint {
+      font-size: 13px;
+      color: #9ca3af;
+      margin: 12px 0 0 0;
     }
   }
 }

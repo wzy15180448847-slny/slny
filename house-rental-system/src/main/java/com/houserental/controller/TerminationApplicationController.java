@@ -13,7 +13,7 @@ import java.util.Map;
  * 解约申请控制器
  */
 @RestController
-@RequestMapping("/api/termination")
+@RequestMapping("/termination")
 public class TerminationApplicationController {
 
     @Autowired
@@ -85,5 +85,17 @@ public class TerminationApplicationController {
     @GetMapping("/{id}")
     public Result<TerminationApplication> getApplicationById(@PathVariable Long id) {
         return Result.success(terminationApplicationService.getApplicationById(id));
+    }
+
+    /**
+     * 获取房东的解约申请列表
+     * @param params 查询参数
+     * @return 结果
+     */
+    @GetMapping("/landlord")
+    public Result<Object> getLandlordApplications(@RequestParam Map<String, Object> params) {
+        Long userId = com.houserental.common.utils.SecurityUtils.getCurrentUserId();
+        params.put("landlordId", userId);
+        return Result.success(terminationApplicationService.pageApplications(params));
     }
 }

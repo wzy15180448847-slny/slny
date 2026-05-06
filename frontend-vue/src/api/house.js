@@ -121,10 +121,12 @@ export function getRejectedHouses(params) {
 }
 
 export function auditHouse(id, data) {
+  // 同时支持 query params 和 request body，向后端发送兼容格式
   return request({
     url: `/houses/${id}/audit`,
     method: 'post',
-    params: data
+    params: data,
+    data
   })
 }
 

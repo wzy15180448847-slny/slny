@@ -1,123 +1,281 @@
 package com.houserental.entity;
 
 import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 /**
  * 租约实体类
  */
-@Data
-@EqualsAndHashCode(callSuper = true)
 @TableName("biz_lease_agreement")
-public class LeaseAgreement extends BaseEntity {
+public class LeaseAgreement implements Serializable {
 
-    /**
-     * 租约编号
-     */
-    @TableField(value = "agreement_no", exist = true)
+    private static final long serialVersionUID = 1L;
+
+    @TableId(value = "id", type = com.baomidou.mybatisplus.annotation.IdType.AUTO)
+    @JsonSerialize(using = ToStringSerializer.class)
+    private Long id;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @TableField(value = "create_time")
+    private LocalDateTime createTime;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @TableField(value = "update_time")
+    private LocalDateTime updateTime;
+
+    @TableField(value = "is_deleted")
+    private Integer isDeleted = 0;
+
+    @TableField(value = "contract_no")
     private String leaseNo;
 
-    /**
-     * 房源ID
-     */
     private Long houseId;
 
-    /**
-     * 租客ID
-     */
     private Long tenantId;
 
-    /**
-     * 房东ID
-     */
     private Long landlordId;
 
-    /**
-     * 起租日期
-     */
     private Date startDate;
 
-    /**
-     * 到期日期
-     */
     private Date endDate;
 
-    /**
-     * 租金（元/月）
-     */
+    @TableField(value = "rent_price")
     private BigDecimal rentPrice;
 
-    /**
-     * 押金（元）
-     */
     private BigDecimal deposit;
 
-    /**
-     * 付款方式（1-月付，2-季付，3-半年付，4-年付）
-     */
     private Integer paymentWay;
 
-    /**
-     * 状态（0-待签署，1-已签署，2-已生效，3-已到期，4-已解约，5-已终止）
-     */
     private Integer status;
 
-    /**
-     * 签署日期
-     */
-    private Date signingDate;
-
-    /**
-     * 生效日期
-     */
-    private Date effectiveDate;
-
-    /**
-     * 终止日期
-     */
-    private Date terminationDate;
-
-    /**
-     * 违约金规则
-     */
-    private String penaltyRule;
-
-    /**
-     * 合同内容
-     */
-    private String agreementContent;
-
-    /**
-     * 合同文件URL
-     */
     private String contractUrl;
 
-    /**
-     * 房源信息
-     */
+    @TableField(value = "signing_date")
+    private Date signingDate;
+
+    @TableField(value = "effective_date")
+    private Date effectiveDate;
+
+    @TableField(value = "penalty_rule")
+    private String penaltyRule;
+
+    @TableField(exist = false)
+    private String agreementContent;
+
+    @TableField(value = "termination_date")
+    private Date terminationDate;
+
     @TableField(exist = false)
     private House house;
 
-    /**
-     * 租客信息
-     */
     @TableField(exist = false)
     private User tenant;
 
-    /**
-     * 房东信息
-     */
     @TableField(exist = false)
     private User landlord;
 
-    /**
-     * 电子签章列表
-     */
     @TableField(exist = false)
     private java.util.List<ElectronicSignature> signatures;
+
+    // Getters and Setters
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public LocalDateTime getCreateTime() {
+        return createTime;
+    }
+
+    public void setCreateTime(LocalDateTime createTime) {
+        this.createTime = createTime;
+    }
+
+    public LocalDateTime getUpdateTime() {
+        return updateTime;
+    }
+
+    public void setUpdateTime(LocalDateTime updateTime) {
+        this.updateTime = updateTime;
+    }
+
+    public Integer getIsDeleted() {
+        return isDeleted;
+    }
+
+    public void setIsDeleted(Integer isDeleted) {
+        this.isDeleted = isDeleted;
+    }
+
+    public String getLeaseNo() {
+        return leaseNo;
+    }
+
+    public void setLeaseNo(String leaseNo) {
+        this.leaseNo = leaseNo;
+    }
+
+    public Long getHouseId() {
+        return houseId;
+    }
+
+    public void setHouseId(Long houseId) {
+        this.houseId = houseId;
+    }
+
+    public Long getTenantId() {
+        return tenantId;
+    }
+
+    public void setTenantId(Long tenantId) {
+        this.tenantId = tenantId;
+    }
+
+    public Long getLandlordId() {
+        return landlordId;
+    }
+
+    public void setLandlordId(Long landlordId) {
+        this.landlordId = landlordId;
+    }
+
+    public Date getStartDate() {
+        return startDate;
+    }
+
+    public void setStartDate(Date startDate) {
+        this.startDate = startDate;
+    }
+
+    public Date getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(Date endDate) {
+        this.endDate = endDate;
+    }
+
+    public BigDecimal getRentPrice() {
+        return rentPrice;
+    }
+
+    public void setRentPrice(BigDecimal rentPrice) {
+        this.rentPrice = rentPrice;
+    }
+
+    public BigDecimal getDeposit() {
+        return deposit;
+    }
+
+    public void setDeposit(BigDecimal deposit) {
+        this.deposit = deposit;
+    }
+
+    public Integer getStatus() {
+        return status;
+    }
+
+    public void setStatus(Integer status) {
+        this.status = status;
+    }
+
+    public String getContractUrl() {
+        return contractUrl;
+    }
+
+    public void setContractUrl(String contractUrl) {
+        this.contractUrl = contractUrl;
+    }
+
+    public Integer getPaymentWay() {
+        return paymentWay;
+    }
+
+    public void setPaymentWay(Integer paymentWay) {
+        this.paymentWay = paymentWay;
+    }
+
+    public Date getSigningDate() {
+        return signingDate;
+    }
+
+    public void setSigningDate(Date signingDate) {
+        this.signingDate = signingDate;
+    }
+
+    public Date getEffectiveDate() {
+        return effectiveDate;
+    }
+
+    public void setEffectiveDate(Date effectiveDate) {
+        this.effectiveDate = effectiveDate;
+    }
+
+    public String getPenaltyRule() {
+        return penaltyRule;
+    }
+
+    public void setPenaltyRule(String penaltyRule) {
+        this.penaltyRule = penaltyRule;
+    }
+
+    public String getAgreementContent() {
+        return agreementContent;
+    }
+
+    public void setAgreementContent(String agreementContent) {
+        this.agreementContent = agreementContent;
+    }
+
+    public Date getTerminationDate() {
+        return terminationDate;
+    }
+
+    public void setTerminationDate(Date terminationDate) {
+        this.terminationDate = terminationDate;
+    }
+
+    public House getHouse() {
+        return house;
+    }
+
+    public void setHouse(House house) {
+        this.house = house;
+    }
+
+    public User getTenant() {
+        return tenant;
+    }
+
+    public void setTenant(User tenant) {
+        this.tenant = tenant;
+    }
+
+    public User getLandlord() {
+        return landlord;
+    }
+
+    public void setLandlord(User landlord) {
+        this.landlord = landlord;
+    }
+
+    public java.util.List<ElectronicSignature> getSignatures() {
+        return signatures;
+    }
+
+    public void setSignatures(java.util.List<ElectronicSignature> signatures) {
+        this.signatures = signatures;
+    }
 }

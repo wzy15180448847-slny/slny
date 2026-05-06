@@ -77,6 +77,7 @@ public class SecurityConfig {
                 .requestMatchers(new AntPathRequestMatcher("/wallet/**")).permitAll()
                 .requestMatchers(new AntPathRequestMatcher("/payment/**")).permitAll()
                 .requestMatchers(new AntPathRequestMatcher("/uploads/**")).permitAll()
+                .requestMatchers(new AntPathRequestMatcher("/files/**")).permitAll()
                 // 允许匿名访问静态资源
                 .requestMatchers(new AntPathRequestMatcher("/**/*.html")).permitAll()
                 .requestMatchers(new AntPathRequestMatcher("/**/*.css")).permitAll()

@@ -12,6 +12,8 @@ import com.houserental.mapper.UserMapper;
 import com.houserental.service.UserService;
 import com.houserental.service.VerifyCodeService;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,9 +28,11 @@ import java.util.HashSet;
 @RequiredArgsConstructor
 public class AuthController {
 
+    private static final Logger log = LoggerFactory.getLogger(AuthController.class);
     private final UserService userService;
     private final UserMapper userMapper;
     private final VerifyCodeService verifyCodeService;
+    private final com.houserental.service.FileService fileService;
 
     @PostMapping("/register")
     public Result<User> register(@Validated @RequestBody RegisterRequest request) {
@@ -65,6 +69,18 @@ public class AuthController {
         User user = userService.getById(userId);
         java.util.List<String> roles = userMapper.selectRolesByUserId(userId);
         java.util.List<String> permissions = userMapper.selectPermissionsByUserId(userId);
+        
+        // 如果有头像文件名，转换为可访问的URL
+        String avatarUrl = user.getAvatar();
+        if (avatarUrl != null && !avatarUrl.isEmpty() && !avatarUrl.startsWith("http")) {
+            try {
+                avatarUrl = fileService.getFileUrl(avatarUrl);
+            } catch (Exception e) {
+                // 获取URL失败时，保留原文件名
+                log.warn("获取头像URL失败: {}", e.getMessage());
+            }
+        }
+        
         UserContext userContext = UserContext.builder()
                 .userId(user.getId())
                 .username(user.getUsername())
@@ -72,7 +88,7 @@ public class AuthController {
                 .realName(user.getRealName())
                 .phone(user.getPhone())
                 .email(user.getEmail())
-                .avatar(user.getAvatar())
+                .avatar(avatarUrl)
                 .userType(user.getUserType())
                 .status(user.getStatus())
                 .gender(user.getGender())
@@ -98,6 +114,18 @@ public class AuthController {
         User updatedUser = userService.update(user);
         java.util.List<String> roles = userMapper.selectRolesByUserId(userId);
         java.util.List<String> permissions = userMapper.selectPermissionsByUserId(userId);
+        
+        // 如果有头像文件名，转换为可访问的URL
+        String avatarUrl = updatedUser.getAvatar();
+        if (avatarUrl != null && !avatarUrl.isEmpty() && !avatarUrl.startsWith("http")) {
+            try {
+                avatarUrl = fileService.getFileUrl(avatarUrl);
+            } catch (Exception e) {
+                // 获取URL失败时，保留原文件名
+                log.warn("获取头像URL失败: {}", e.getMessage());
+            }
+        }
+        
         UserContext userContext = UserContext.builder()
                 .userId(updatedUser.getId())
                 .username(updatedUser.getUsername())
@@ -105,7 +133,7 @@ public class AuthController {
                 .realName(updatedUser.getRealName())
                 .phone(updatedUser.getPhone())
                 .email(updatedUser.getEmail())
-                .avatar(updatedUser.getAvatar())
+                .avatar(avatarUrl)
                 .userType(updatedUser.getUserType())
                 .status(updatedUser.getStatus())
                 .gender(updatedUser.getGender())

@@ -6,6 +6,8 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.houserental.entity.LeaseAgreement;
 import com.houserental.entity.TerminationApplication;
 import com.houserental.entity.User;
+import com.houserental.entity.House;
+import com.houserental.mapper.HouseMapper;
 import com.houserental.mapper.LeaseAgreementMapper;
 import com.houserental.mapper.TerminationApplicationMapper;
 import com.houserental.mapper.UserMapper;
@@ -36,6 +38,9 @@ public class TerminationApplicationServiceImpl extends ServiceImpl<TerminationAp
     private UserMapper userMapper;
 
     @Autowired
+    private HouseMapper houseMapper;
+
+    @Autowired
     private LeaseAgreementService leaseAgreementService;
 
     @Override
@@ -52,8 +57,6 @@ public class TerminationApplicationServiceImpl extends ServiceImpl<TerminationAp
             throw new BusinessException("无权对他人合同申请解约");
         }
 
-        application.setApplicationNo("TERM" + UUID.randomUUID().toString().replace("-", "").substring(0, 10).toUpperCase());
-        application.setApplyTime(new java.util.Date());
         application.setCreateTime(LocalDateTime.now());
         application.setUpdateTime(LocalDateTime.now());
         baseMapper.insert(application);
@@ -69,9 +72,7 @@ public class TerminationApplicationServiceImpl extends ServiceImpl<TerminationAp
         }
 
         application.setStatus(status);
-        application.setProcessingTime(new java.util.Date());
-        application.setProcessingOpinion(processingOpinion);
-        application.setPenaltyAmount(penaltyAmount);
+        application.setCompensation(penaltyAmount);
         application.setUpdateTime(LocalDateTime.now());
         baseMapper.updateById(application);
 
@@ -108,7 +109,10 @@ public class TerminationApplicationServiceImpl extends ServiceImpl<TerminationAp
 
     @Override
     public PageResult<TerminationApplication> pageApplications(Map<String, Object> params) {
-        Page<TerminationApplication> page = new Page<>(Long.parseLong(params.get("page").toString()), Long.parseLong(params.get("size").toString()));
+        // 设置默认分页参数
+        long pageNum = params.containsKey("page") ? Long.parseLong(params.get("page").toString()) : 1;
+        long pageSize = params.containsKey("size") ? Long.parseLong(params.get("size").toString()) : 10;
+        Page<TerminationApplication> page = new Page<>(pageNum, pageSize);
         QueryWrapper<TerminationApplication> wrapper = new QueryWrapper<>();
 
         // 添加查询条件
@@ -118,16 +122,35 @@ public class TerminationApplicationServiceImpl extends ServiceImpl<TerminationAp
         if (params.containsKey("applicantId")) {
             wrapper.eq("applicant_id", params.get("applicantId"));
         }
+        if (params.containsKey("processorId")) {
+            wrapper.eq("processor_id", params.get("processorId"));
+        }
         if (params.containsKey("status")) {
             wrapper.eq("status", params.get("status"));
         }
 
         // 分页查询
         baseMapper.selectPage(page, wrapper);
+        
+        // 如果是房东查询，过滤出属于该房东的解约申请
+        if (params.containsKey("landlordId")) {
+            Long landlordId = Long.parseLong(params.get("landlordId").toString());
+            if (page.getRecords() != null && !page.getRecords().isEmpty()) {
+                page.getRecords().removeIf(app -> {
+                    if (app == null || app.getLeaseId() == null) {
+                        return true;
+                    }
+                    LeaseAgreement lease = leaseAgreementMapper.selectById(app.getLeaseId());
+                    return lease == null || lease.getLandlordId() == null || !landlordId.equals(lease.getLandlordId());
+                });
+            }
+        }
 
         // 填充关联数据
-        for (TerminationApplication application : page.getRecords()) {
-            fillApplicationDetails(application);
+        if (page.getRecords() != null && !page.getRecords().isEmpty()) {
+            for (TerminationApplication application : page.getRecords()) {
+                fillApplicationDetails(application);
+            }
         }
 
         return PageResult.build(page.getCurrent(), page.getSize(), page.getTotal(), page.getRecords());
@@ -146,17 +169,19 @@ public class TerminationApplicationServiceImpl extends ServiceImpl<TerminationAp
         // 填充租约信息
         if (application.getLeaseId() != null) {
             LeaseAgreement lease = leaseAgreementMapper.selectById(application.getLeaseId());
-            application.setLease(lease);
+            if (lease != null) {
+                // 填充房源信息
+                if (lease.getHouseId() != null) {
+                    House house = houseMapper.selectById(lease.getHouseId());
+                    lease.setHouse(house);
+                }
+                application.setLease(lease);
+            }
         }
         // 填充申请人信息
         if (application.getApplicantId() != null) {
             User applicant = userMapper.selectById(application.getApplicantId());
             application.setApplicant(applicant);
-        }
-        // 填充处理人信息
-        if (application.getProcessorId() != null) {
-            User processor = userMapper.selectById(application.getProcessorId());
-            application.setProcessor(processor);
         }
     }
 }

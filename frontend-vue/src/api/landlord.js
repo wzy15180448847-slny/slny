@@ -41,7 +41,7 @@ export function rejectAppointment(id, reason) {
   return request({
     url: `/appointment/reject/${id}`,
     method: 'put',
-    params: { reason }
+    params: reason
   })
 }
 
@@ -62,7 +62,7 @@ export function createContract(data) {
 
 export function getLandlordContracts(params) {
   return request({
-    url: '/lease/page',
+    url: '/lease/landlord',
     method: 'get',
     params
   })
@@ -145,5 +145,21 @@ export function publishHouse(data) {
     url: '/houses',
     method: 'post',
     data
+  })
+}
+
+export function getLandlordTerminations(params) {
+  return request({
+    url: '/termination/landlord',
+    method: 'get',
+    params
+  })
+}
+
+export function processTermination(id, status, processingOpinion, penaltyAmount) {
+  return request({
+    url: `/termination/process/${id}`,
+    method: 'put',
+    params: { status, processingOpinion, penaltyAmount }
   })
 }

@@ -12,6 +12,7 @@ export const useUserStore = defineStore('user', {
 
   getters: {
     isLoggedIn: (state) => !!state.token,
+    id: (state) => state.userInfo?.id || null,
     username: (state) => state.userInfo?.username || '',
     nickname: (state) => state.userInfo?.nickname || '',
     userType: (state) => state.userInfo?.userType || '',
@@ -109,6 +110,6 @@ export const useUserStore = defineStore('user', {
   persist: {
     key: 'user-store',
     storage: localStorage,
-    paths: ['token', 'userInfo']
+    paths: ['token']  // ⚠️ 只持久化token，不要持久化userInfo！
   }
 })

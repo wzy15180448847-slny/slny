@@ -158,6 +158,12 @@ const routes = [
         name: 'LandlordRepairs',
         component: () => import('@/views/landlord/repairs.vue'),
         meta: { title: '报修处理', requiresAuth: true, roles: ['LANDLORD'] }
+      },
+      {
+        path: 'terminations',
+        name: 'LandlordTerminations',
+        component: () => import('@/views/landlord/terminations.vue'),
+        meta: { title: '解约申请处理', requiresAuth: true, roles: ['LANDLORD'] }
       }
     ]
   },
@@ -220,6 +226,12 @@ const routes = [
         name: 'AdminLogs',
         component: () => import('@/views/admin/logs.vue'),
         meta: { title: '系统日志', requiresAuth: true, roles: ['ADMIN'] }
+      },
+      {
+        path: 'contracts',
+        name: 'AdminContracts',
+        component: () => import('@/views/admin/contracts.vue'),
+        meta: { title: '合同管理', requiresAuth: true, roles: ['ADMIN'] }
       },
       {
         path: 'complaints',

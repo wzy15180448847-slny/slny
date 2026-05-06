@@ -22,8 +22,7 @@ public class PasswordUpdateRunner implements CommandLineRunner {
         String userPassword = encoder.encode("123456");
         
         jdbcTemplate.update("UPDATE sys_user SET password = ?, login_fail_count = 0, version = 0 WHERE username = 'admin'", adminPassword);
-        jdbcTemplate.update("UPDATE sys_user SET password = ?, login_fail_count = 0, version = 0 WHERE username IN ('landlord1', 'tenant1', 'agent1')", userPassword);
-        jdbcTemplate.update("UPDATE sys_user SET password = ?, login_fail_count = 0, version = 0 WHERE username IN ('landlord2', 'landlord3', 'landlord4', 'landlord5', 'tenant2', 'tenant3', 'tenant4', 'tenant5', 'tenant6', 'tenant7', 'tenant8', 'tenant9')", userPassword);
+        jdbcTemplate.update("UPDATE sys_user SET password = ?, login_fail_count = 0, version = 0 WHERE username IN ('landlord0', 'landlord1', 'tenant0', 'tenant1')", userPassword);
         
         System.out.println("========================================");
         System.out.println("密码已自动更新为正确的BCrypt格式！");

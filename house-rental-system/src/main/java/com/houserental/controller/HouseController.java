@@ -5,12 +5,18 @@ import com.houserental.common.result.Result;
 import com.houserental.common.utils.SecurityUtils;
 import com.houserental.dto.HouseQueryRequest;
 import com.houserental.entity.House;
+import com.houserental.entity.User;
 import com.houserental.service.HouseService;
+import com.houserental.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 房源控制器
@@ -21,6 +27,7 @@ import java.util.List;
 public class HouseController {
 
     private final HouseService houseService;
+    private final UserService userService;
 
     @PostMapping
     public Result<House> publish(@RequestBody House house) {
@@ -165,9 +172,38 @@ public class HouseController {
     }
 
     @GetMapping
-    public Result<List<House>> getAll() {
+    public Result<List<Map<String, Object>>> getAll() {
         List<House> houses = houseService.list();
-        return Result.success(houses);
+        List<Map<String, Object>> result = houses.stream().map(house -> {
+            Map<String, Object> map = new HashMap<>();
+            BeanUtils.copyProperties(house, map);
+            // 字段名映射
+            map.put("houseName", house.getTitle());
+            map.put("title", house.getTitle());
+            map.put("rent", house.getRentPrice());
+            map.put("rentPrice", house.getRentPrice());
+            // 确保面积字段正确转换
+            map.put("area", house.getArea() != null ? house.getArea().doubleValue() : 0);
+            // 显式添加地址字段
+            map.put("address", house.getAddress());
+            map.put("province", house.getProvince());
+            map.put("city", house.getCity());
+            map.put("district", house.getDistrict());
+            map.put("street", house.getStreet());
+            // 显式添加户型字段
+            map.put("houseType", house.getHouseType());
+            // 显式添加创建时间字段
+            map.put("create_time", house.getCreateTime());
+            map.put("createTime", house.getCreateTime());
+            User landlord = userService.getById(house.getLandlordId());
+            if (landlord != null) {
+                map.put("landlordName", landlord.getRealName() != null ? landlord.getRealName() : landlord.getUsername());
+            } else {
+                map.put("landlordName", "未知");
+            }
+            return map;
+        }).collect(Collectors.toList());
+        return Result.success(result);
     }
 
     /**

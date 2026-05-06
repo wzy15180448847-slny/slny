@@ -128,25 +128,45 @@ const loadHouses = async () => {
   try {
     const data = await getAllHouses()
     const houseTypeMapping = {
+      '1室1厅1卫': '1室1厅1卫',
+      '2室1厅1卫': '2室1厅1卫',
+      '2室2厅1卫': '2室2厅1卫',
+      '3室2厅1卫': '3室2厅1卫',
+      '3室2厅2卫': '3室2厅2卫',
       'ONE_BEDROOM': '一室一厅',
       'TWO_BEDROOM': '两室一厅',
       'THREE_BEDROOM': '三室一厅',
       'FOUR_PLUS_BEDROOM': '四室及以上'
     }
-    houses.value = data.map(house => ({
-      id: house.id,
-      houseName: house.title || '未命名',
-      address: house.address,
-      landlordName: house.landlordName || '未知',
-      rent: house.rentPrice,
-      area: house.area,
-      rooms: houseTypeMapping[house.houseType] || house.houseType || '未知',
-      status: house.status === 0 ? 'ACTIVE' : house.status === 1 ? 'RENTED' : house.status === 2 ? 'INACTIVE' : 'PENDING',
-      viewCount: house.viewCount || 0,
-      createTime: formatDate(house.createTime),
-      images: house.images ? JSON.parse(house.images) : [],
-      tags: house.tags ? JSON.parse(house.tags) : []
-    }))
+    houses.value = data.map(house => {
+      const addrParts = []
+      if (house.province) addrParts.push(house.province)
+      if (house.city) addrParts.push(house.city)
+      if (house.district) addrParts.push(house.district)
+      if (house.street) addrParts.push(house.street)
+      const fullAddress = house.address || addrParts.join('') || '暂无地址'
+      
+      let statusStr = 'PENDING'
+      const statusVal = parseInt(house.status) || 0
+      if (statusVal === 0) statusStr = 'ACTIVE'
+      else if (statusVal === 1) statusStr = 'RENTED'
+      else if (statusVal === 2) statusStr = 'INACTIVE'
+      
+      return {
+        id: house.id,
+        houseName: house.title || house.houseName || '未命名',
+        address: fullAddress,
+        landlordName: house.landlordName || '未知',
+        rent: house.rentPrice || house.rent || house.rent_price || 0,
+        area: house.area !== null && house.area !== undefined ? Number(house.area) : 0,
+        rooms: houseTypeMapping[house.houseType] || house.houseType || '未知',
+        status: statusStr,
+        viewCount: house.viewCount || house.view_count || 0,
+        createTime: formatDate(house.createTime || house.create_time || house.createTimeStr),
+        images: house.images ? JSON.parse(house.images) : [],
+        tags: house.tags ? JSON.parse(house.tags) : []
+      }
+    })
   } catch (error) {
     console.error('加载房源列表失败:', error)
     ElMessage.error('加载房源列表失败')

@@ -242,12 +242,19 @@ CREATE TABLE biz_lease_agreement (
 -- 11. biz_electronic_signature (电子签章表)
 CREATE TABLE biz_electronic_signature (
     id BIGINT(20) PRIMARY KEY AUTO_INCREMENT COMMENT '签章ID',
+    signature_no VARCHAR(32) UNIQUE NOT NULL COMMENT '签章编号',
     agreement_id BIGINT(20) NOT NULL COMMENT '合同ID',
     user_id BIGINT(20) NOT NULL COMMENT '签署用户ID',
-    signature_hash VARCHAR(255) NOT NULL COMMENT '签章哈希值',
-    sign_time DATETIME NOT NULL COMMENT '签署时间',
+    user_type VARCHAR(20) COMMENT '用户类型: LANDLORD-房东, TENANT-租客',
+    signature_data TEXT COMMENT '签章数据(Base64)',
+    sign_time DATETIME COMMENT '签署时间',
+    status TINYINT(1) DEFAULT 0 COMMENT '状态: 0-待签章, 1-已签章',
     is_deleted TINYINT(1) DEFAULT 0 COMMENT '逻辑删除',
     create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    create_by BIGINT(20) COMMENT '创建人',
+    update_by BIGINT(20) COMMENT '更新人',
+    version INT(11) DEFAULT 0 COMMENT '乐观锁版本号',
     FOREIGN KEY (agreement_id) REFERENCES biz_lease_agreement(id),
     FOREIGN KEY (user_id) REFERENCES sys_user(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='电子签章表';
@@ -257,9 +264,12 @@ CREATE TABLE biz_termination_application (
     id BIGINT(20) PRIMARY KEY AUTO_INCREMENT COMMENT '解约申请ID',
     agreement_id BIGINT(20) NOT NULL COMMENT '合同ID',
     applicant_id BIGINT(20) NOT NULL COMMENT '申请人ID',
+    applicant_type VARCHAR(20) COMMENT '申请人类型: LANDLORD-房东, TENANT-租客',
     reason VARCHAR(500) COMMENT '解约原因',
     compensation DECIMAL(15,2) COMMENT '违约金',
     status TINYINT(1) DEFAULT 0 COMMENT '状态: 0-待处理, 1-同意, 2-拒绝',
+    processor_id BIGINT(20) COMMENT '处理人ID',
+    processing_opinion VARCHAR(500) COMMENT '处理意见',
     is_deleted TINYINT(1) DEFAULT 0 COMMENT '逻辑删除',
     create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '申请时间',
     update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '处理时间',
@@ -384,6 +394,10 @@ CREATE TABLE biz_audit_log (
     audit_result TINYINT(1) COMMENT '审核结果: 0-待审核, 1-通过, 2-驳回',
     is_deleted TINYINT(1) DEFAULT 0 COMMENT '逻辑删除',
     create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '审核时间',
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    create_by BIGINT(20) COMMENT '创建人',
+    update_by BIGINT(20) COMMENT '更新人',
+    version INT(11) DEFAULT 0 COMMENT '乐观锁版本号',
     FOREIGN KEY (house_id) REFERENCES biz_house(id),
     FOREIGN KEY (auditor_id) REFERENCES sys_user(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='审核日志表';
@@ -406,20 +420,46 @@ CREATE TABLE biz_message_record (
 -- 22. biz_rent_reminder (租金提醒表)
 CREATE TABLE biz_rent_reminder (
     id BIGINT(20) PRIMARY KEY AUTO_INCREMENT COMMENT '提醒ID',
+    reminder_no VARCHAR(32) UNIQUE NOT NULL COMMENT '提醒编号',
     agreement_id BIGINT(20) NOT NULL COMMENT '合同ID',
     tenant_id BIGINT(20) NOT NULL COMMENT '租客ID',
     landlord_id BIGINT(20) NOT NULL COMMENT '房东ID',
-    reminder_date DATE NOT NULL COMMENT '提醒日期',
     rent_amount DECIMAL(15,2) NOT NULL COMMENT '租金金额',
-    status TINYINT(1) DEFAULT 0 COMMENT '状态: 0-待提醒, 1-已提醒, 2-已支付',
-    reminder_type TINYINT(1) COMMENT '提醒类型: 1-短信, 2-邮件, 3-站内通知',
+    reminder_date DATE NOT NULL COMMENT '提醒日期',
+    status TINYINT(1) DEFAULT 0 COMMENT '状态: 0-待处理, 1-已通知, 2-已支付, 3-已逾期',
+    reminder_count INT(11) DEFAULT 0 COMMENT '催缴次数',
+    last_reminder_time DATETIME COMMENT '最后催缴时间',
     is_deleted TINYINT(1) DEFAULT 0 COMMENT '逻辑删除',
     create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    create_by BIGINT(20) COMMENT '创建人',
+    update_by BIGINT(20) COMMENT '更新人',
+    version INT(11) DEFAULT 0 COMMENT '乐观锁版本号',
     FOREIGN KEY (agreement_id) REFERENCES biz_lease_agreement(id),
     FOREIGN KEY (tenant_id) REFERENCES sys_user(id),
     FOREIGN KEY (landlord_id) REFERENCES sys_user(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='租金提醒表';
+
+-- 23. biz_repair (报修表)
+CREATE TABLE biz_repair (
+    id BIGINT(20) PRIMARY KEY AUTO_INCREMENT COMMENT '报修ID',
+    repair_no VARCHAR(32) UNIQUE NOT NULL COMMENT '报修编号',
+    house_id BIGINT(20) NOT NULL COMMENT '房源ID',
+    tenant_id BIGINT(20) NOT NULL COMMENT '租客ID',
+    landlord_id BIGINT(20) NOT NULL COMMENT '房东ID',
+    repair_type VARCHAR(50) COMMENT '报修类型',
+    description TEXT COMMENT '问题描述',
+    status TINYINT(1) DEFAULT 0 COMMENT '状态: 0-待处理, 1-处理中, 2-已完成',
+    is_deleted TINYINT(1) DEFAULT 0 COMMENT '逻辑删除',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    create_by BIGINT(20) COMMENT '创建人',
+    update_by BIGINT(20) COMMENT '更新人',
+    version INT(11) DEFAULT 0 COMMENT '乐观锁版本号',
+    FOREIGN KEY (house_id) REFERENCES biz_house(id),
+    FOREIGN KEY (tenant_id) REFERENCES sys_user(id),
+    FOREIGN KEY (landlord_id) REFERENCES sys_user(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='报修表';
 
 -- 23. biz_penalty_rule (处罚规则表)
 CREATE TABLE biz_penalty_rule (
@@ -490,11 +530,63 @@ INSERT INTO sys_role_permission (role_id, permission_id) VALUES
 (2, 8), (2, 9), (2, 10), (2, 11), (2, 12),
 (3, 13), (3, 14), (3, 15), (3, 16), (3, 17);
 
--- 初始化测试用户数据
+-- 初始化测试用户数据 (密码: 123456)
 INSERT INTO sys_user (username, password, real_name, user_type, phone, status) VALUES 
-('landlord0', '$2a$10$N9qo8uLOickgx2ZMRZoMye.IjzqAKL9xL5jvMFVdNJHvGCgTq/VEq', '房东张', 'LANDLORD', '13800138001', 1),
-('landlord1', '$2a$10$N9qo8uLOickgx2ZMRZoMye.IjzqAKL9xL5jvMFVdNJHvGCgTq/VEq', '房东李', 'LANDLORD', '13800138002', 1),
-('tenant0', '$2a$10$N9qo8uLOickgx2ZMRZoMye.IjzqAKL9xL5jvMFVdNJHvGCgTq/VEq', '租客王', 'TENANT', '13900139001', 1),
+('landlord0', '$2a$10$gXvW2sBzX4T3H7K9L8M0N1O2P3Q4R5S6T7U8V9W0X1Y2Z3', '房东张', 'LANDLORD', '13800138001', 1),
+('landlord1', '$2a$10$gXvW2sBzX4T3H7K9L8M0N1O2P3Q4R5S6T7U8V9W0X1Y2Z3', '房东李', 'LANDLORD', '13800138002', 1),
+('tenant0', '$2a$10$gXvW2sBzX4T3H7K9L8M0N1O2P3Q4R5S6T7U8V9W0X1Y2Z3', '租客王', 'TENANT', '13900139001', 1),
 ('tenant1', '$2a$10$N9qo8uLOickgx2ZMRZoMye.IjzqAKL9xL5jvMFVdNJHvGCgTq/VEq', '租客赵', 'TENANT', '13900139002', 1);
 
 INSERT INTO sys_user_role (user_id, role_id) VALUES (2, 2), (3, 2), (4, 3), (5, 3);
+
+-- 初始化测试房源数据
+INSERT INTO biz_house (landlord_id, house_no, title, address, house_type, area, rent_price, deposit_month, payment_way, house_status, audit_status) VALUES 
+(2, 'HS001', '阳光小区精装两居', '北京市朝阳区望京街道阳光小区3号楼201室', '2室1厅', 85.50, 4500.00, 2, 2, 0, 1),
+(2, 'HS002', '世纪城舒适三居', '北京市海淀区世纪城远大园一区5号楼302室', '3室2厅', 120.00, 6800.00, 2, 2, 0, 1),
+(3, 'HS003', '三里屯温馨一居', '北京市朝阳区三里屯SOHO公寓A座1508室', '1室1厅', 55.00, 3800.00, 1, 1, 0, 1),
+(3, 'HS004', '国贸精装公寓', '北京市朝阳区国贸CBD万达广场B座2201室', '2室2厅', 95.00, 8500.00, 2, 3, 0, 1),
+(2, 'HS005', '中关村科技园区', '北京市海淀区中关村软件园二期8号楼403室', '1室0厅', 40.00, 3200.00, 1, 1, 0, 1);
+
+-- 初始化测试合同数据
+INSERT INTO biz_lease_agreement (contract_no, house_id, tenant_id, landlord_id, start_date, end_date, rent_price, deposit, payment_way, status) VALUES 
+('HT20240101001', 1, 4, 2, '2024-01-01', '2025-01-01', 4500.00, 9000.00, 2, 2),
+('HT20240215002', 2, 5, 2, '2024-02-15', '2025-02-15', 6800.00, 13600.00, 2, 2),
+('HT20240301003', 3, 4, 3, '2024-03-01', '2025-03-01', 3800.00, 3800.00, 1, 1),
+('HT20240401004', 4, 5, 3, '2024-04-01', '2025-04-01', 8500.00, 17000.00, 3, 1),
+('HT20240501005', 5, 4, 2, '2024-05-01', '2025-05-01', 3200.00, 3200.00, 1, 0);
+
+-- 初始化测试电子签章记录
+INSERT INTO biz_electronic_signature (signature_no, agreement_id, user_id, user_type, status) VALUES 
+('SIG0000000001', 1, 4, 'TENANT', 1),
+('SIG0000000002', 1, 2, 'LANDLORD', 1),
+('SIG0000000003', 2, 5, 'TENANT', 1),
+('SIG0000000004', 2, 2, 'LANDLORD', 1),
+('SIG0000000005', 3, 4, 'TENANT', 1),
+('SIG0000000006', 3, 3, 'LANDLORD', 0),
+('SIG0000000007', 4, 5, 'TENANT', 0),
+('SIG0000000008', 4, 3, 'LANDLORD', 1),
+('SIG0000000009', 5, 4, 'TENANT', 0),
+('SIG0000000010', 5, 2, 'LANDLORD', 0);
+
+-- 初始化测试解约申请数据
+INSERT INTO biz_termination_application (agreement_id, applicant_id, applicant_type, reason, compensation, status, processor_id, processing_opinion, create_time) VALUES 
+(1, 4, 'TENANT', '工作调动，需要搬离北京', 4500.00, 0, NULL, NULL, '2024-11-15 10:30:00'),
+(2, 5, 'TENANT', '家庭原因，需要回老家发展', 6800.00, 1, 2, '同意解约，违约金已确认', '2024-11-10 14:20:00'),
+(3, 4, 'TENANT', '对周边环境不满意，想换房', 1900.00, 2, 3, '不同意解约，合同未到期', '2024-11-05 09:15:00'),
+(1, 2, 'LANDLORD', '租客长期拖欠租金', 9000.00, 0, NULL, NULL, '2024-11-18 16:45:00'),
+(2, 2, 'LANDLORD', '房屋需要装修翻新', 3400.00, 1, 5, '同意解约，双方协商一致', '2024-11-08 11:30:00');
+
+-- 初始化测试预约数据
+INSERT INTO biz_appointment (appointment_no, house_id, tenant_id, landlord_id, appointment_time, status) VALUES 
+('APT20241120001', 1, 5, 2, '2024-11-20 14:00:00', 0),
+('APT20241121002', 2, 4, 2, '2024-11-21 10:00:00', 1),
+('APT20241119003', 3, 5, 3, '2024-11-19 15:30:00', 2),
+('APT20241118004', 4, 4, 3, '2024-11-18 09:00:00', 4),
+('APT20241122005', 5, 5, 2, '2024-11-22 16:00:00', 0);
+
+-- 初始化测试钱包数据
+INSERT INTO biz_user_wallet (user_id, balance) VALUES 
+(4, 15000.00),
+(5, 8000.00),
+(2, 50000.00),
+(3, 35000.00);

@@ -34,15 +34,33 @@ public class LeaseAgreementController {
     /**
      * 签署租约
      * @param id 租约ID
-     * @param userId 用户ID
-     * @param userType 用户类型
-     * @param signatureData 签章数据
+     * @param request 签署请求
      * @return 结果
      */
     @PutMapping("/sign/{id}")
-    public Result<Void> signLease(@PathVariable Long id, @RequestParam Long userId, @RequestParam String userType, @RequestParam String signatureData) {
-        boolean success = leaseAgreementService.signLease(id, userId, userType, signatureData);
+    public Result<Void> signLease(@PathVariable Long id, @RequestBody SignRequest request) {
+        // 从 SecurityContext 自动获取当前登录用户信息
+        Long userId = com.houserental.common.utils.SecurityUtils.getCurrentUserId();
+        System.out.println("签署合同 - 合同ID: " + id + ", 用户ID: " + userId);
+        // userType 传 null，让 Service 根据合同自动判断
+        boolean success = leaseAgreementService.signLease(id, userId, null, request.getSignatureData());
         return success ? Result.success() : Result.error("签署租约失败");
+    }
+    
+    /**
+     * 签署请求DTO
+     */
+    public static class SignRequest {
+        private Long userId;
+        private String userType;
+        private String signatureData;
+        
+        public Long getUserId() { return userId; }
+        public void setUserId(Long userId) { this.userId = userId; }
+        public String getUserType() { return userType; }
+        public void setUserType(String userType) { this.userType = userType; }
+        public String getSignatureData() { return signatureData; }
+        public void setSignatureData(String signatureData) { this.signatureData = signatureData; }
     }
 
     /**
@@ -121,7 +139,7 @@ public class LeaseAgreementController {
     }
 
     /**
-     * 获取当前用户的合同列表
+     * 获取当前用户的合同列表（租客）
      * @param params 查询参数
      * @return 结果
      */
@@ -129,6 +147,28 @@ public class LeaseAgreementController {
     public Result<Object> getMyContracts(@RequestParam Map<String, Object> params) {
         Long userId = com.houserental.common.utils.SecurityUtils.getCurrentUserId();
         params.put("tenantId", userId);
+        return Result.success(leaseAgreementService.pageLeases(params));
+    }
+    
+    /**
+     * 获取房东的合同列表
+     * @param params 查询参数
+     * @return 结果
+     */
+    @GetMapping("/landlord")
+    public Result<Object> getLandlordContracts(@RequestParam Map<String, Object> params) {
+        Long userId = com.houserental.common.utils.SecurityUtils.getCurrentUserId();
+        params.put("landlordId", userId);
+        return Result.success(leaseAgreementService.pageLeases(params));
+    }
+
+    /**
+     * 获取管理员的所有合同列表（只读）
+     * @param params 查询参数
+     * @return 结果
+     */
+    @GetMapping("/admin")
+    public Result<Object> getAdminContracts(@RequestParam Map<String, Object> params) {
         return Result.success(leaseAgreementService.pageLeases(params));
     }
 }

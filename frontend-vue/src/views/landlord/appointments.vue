@@ -140,25 +140,39 @@ const rejectForm = reactive({
 })
 
 const getStatusType = (status) => {
+  if (!status) return 'default'
+  const s = String(status).trim().toUpperCase()
   const types = {
+    '0': 'warning',
+    '1': 'success',
+    '2': 'info',
+    '3': 'danger',
+    '4': 'danger',
     'PENDING': 'warning',
     'CONFIRMED': 'success',
     'COMPLETED': 'info',
     'CANCELLED': 'danger',
     'REJECTED': 'danger'
   }
-  return types[status] || 'default'
+  return types[s] || 'default'
 }
 
 const getStatusText = (status) => {
+  if (!status) return '未知'
+  const s = String(status).trim().toUpperCase()
   const texts = {
+    '0': '待确认',
+    '1': '已安排',
+    '2': '已完成',
+    '3': '已取消',
+    '4': '已拒绝',
     'PENDING': '待确认',
     'CONFIRMED': '已安排',
     'COMPLETED': '已完成',
     'CANCELLED': '已取消',
     'REJECTED': '已拒绝'
   }
-  return texts[status] || status
+  return texts[s] || status
 }
 
 const loadAppointments = async () => {

@@ -1,78 +1,98 @@
 package com.houserental.entity;
 
 import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
+
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
  * 用户投诉实体
  */
 @TableName("biz_complaint")
-public class Complaint extends BaseEntity {
+public class Complaint implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    /**
-     * 投诉人ID
-     */
-    @TableField(value = "from_user_id", exist = true)
+    @TableId(value = "id", type = com.baomidou.mybatisplus.annotation.IdType.AUTO)
+    @JsonSerialize(using = ToStringSerializer.class)
+    private Long id;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @TableField(value = "create_time")
+    private LocalDateTime createTime;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @TableField(value = "update_time")
+    private LocalDateTime updateTime;
+
+    @TableField(value = "is_deleted")
+    private Integer isDeleted = 0;
+
+    @TableField(value = "from_user_id")
     private Long complainantId;
 
-    /**
-     * 被投诉人ID
-     */
-    @TableField(value = "target_id", exist = true)
+    @TableField(value = "target_id")
     private Long respondentId;
 
-    /**
-     * 投诉类型（1-房源问题，2-服务问题，3-合同问题，4-其他）
-     */
-    @TableField(value = "type", exist = true)
+    @TableField(value = "type")
     private Integer complaintType;
 
-    /**
-     * 投诉标题
-     */
-    @TableField(value = "title", exist = false)
+    @TableField(exist = false)
     private String title;
 
-    /**
-     * 投诉内容
-     */
-    @TableField(value = "content", exist = true)
+    @TableField(value = "content")
     private String content;
 
-    /**
-     * 投诉证据（JSON格式存储，多张图片URL）
-     */
-    @TableField(value = "images", exist = true)
+    @TableField(value = "images")
     private String evidence;
 
-    /**
-     * 处理状态（0-待处理，1-处理中，2-已处理，3-已驳回）
-     */
-    @TableField(value = "status", exist = true)
+    @TableField(value = "status")
     private Integer status = 0;
 
-    /**
-     * 处理结果
-     */
-    @TableField(value = "handle_result", exist = true)
+    @TableField(value = "handle_result")
     private String processResult;
 
-    /**
-     * 处理人ID
-     */
-    @TableField(value = "processor_id", exist = false)
-    private Long processorId;
-
-    /**
-     * 处理时间
-     */
-    @TableField(value = "process_time", exist = false)
+    @TableField(exist = false)
     private LocalDateTime processTime;
 
     // Getters and Setters
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public LocalDateTime getCreateTime() {
+        return createTime;
+    }
+
+    public void setCreateTime(LocalDateTime createTime) {
+        this.createTime = createTime;
+    }
+
+    public LocalDateTime getUpdateTime() {
+        return updateTime;
+    }
+
+    public void setUpdateTime(LocalDateTime updateTime) {
+        this.updateTime = updateTime;
+    }
+
+    public Integer getIsDeleted() {
+        return isDeleted;
+    }
+
+    public void setIsDeleted(Integer isDeleted) {
+        this.isDeleted = isDeleted;
+    }
+
     public Long getComplainantId() {
         return complainantId;
     }
@@ -135,14 +155,6 @@ public class Complaint extends BaseEntity {
 
     public void setProcessResult(String processResult) {
         this.processResult = processResult;
-    }
-
-    public Long getProcessorId() {
-        return processorId;
-    }
-
-    public void setProcessorId(Long processorId) {
-        this.processorId = processorId;
     }
 
     public LocalDateTime getProcessTime() {

@@ -59,9 +59,9 @@ public abstract class BaseEntity implements Serializable {
     private Integer isDeleted = 0;
 
     /**
-     * 备注
+     * 备注（非数据库字段）
      */
-    @TableField(value = "remark")
+    @TableField(exist = false)
     private String remark;
 
     /**

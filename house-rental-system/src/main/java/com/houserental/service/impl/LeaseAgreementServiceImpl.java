@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.deepoove.poi.XWPFTemplate;
+import org.apache.poi.xwpf.usermodel.*;
 import com.houserental.entity.ElectronicSignature;
 import com.houserental.entity.House;
 import com.houserental.entity.LeaseAgreement;
@@ -20,7 +21,6 @@ import com.houserental.service.LeaseAgreementService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -100,7 +100,7 @@ public class LeaseAgreementServiceImpl extends ServiceImpl<LeaseAgreementMapper,
         // 创建租客签章记录
         ElectronicSignature tenantSignature = new ElectronicSignature();
         tenantSignature.setSignatureNo("SIG" + UUID.randomUUID().toString().replace("-", "").substring(0, 10).toUpperCase());
-        tenantSignature.setLeaseId(lease.getId());
+        tenantSignature.setAgreementId(lease.getId());
         tenantSignature.setUserId(lease.getTenantId());
         tenantSignature.setUserType("TENANT");
         tenantSignature.setStatus(0); // 待签署
@@ -111,7 +111,7 @@ public class LeaseAgreementServiceImpl extends ServiceImpl<LeaseAgreementMapper,
         // 创建房东签章记录
         ElectronicSignature landlordSignature = new ElectronicSignature();
         landlordSignature.setSignatureNo("SIG" + UUID.randomUUID().toString().replace("-", "").substring(0, 10).toUpperCase());
-        landlordSignature.setLeaseId(lease.getId());
+        landlordSignature.setAgreementId(lease.getId());
         landlordSignature.setUserId(lease.getLandlordId());
         landlordSignature.setUserType("LANDLORD");
         landlordSignature.setStatus(0); // 待签署
@@ -123,11 +123,29 @@ public class LeaseAgreementServiceImpl extends ServiceImpl<LeaseAgreementMapper,
     @Override
     @Transactional
     public boolean signLease(Long id, Long userId, String userType, String signatureData) {
+        log.info("开始签署合同 leaseId={}, userId={}, userType={}", id, userId, userType);
+        
         QueryWrapper<LeaseAgreement> lockWrapper = new QueryWrapper<>();
         lockWrapper.eq("id", id).last("FOR UPDATE");
         LeaseAgreement lease = baseMapper.selectOne(lockWrapper);
         if (lease == null) {
+            log.error("合同不存在 leaseId={}", id);
             return false;
+        }
+        log.info("找到合同 leaseId={}, 当前状态={}", id, lease.getStatus());
+
+        // 如果没有传 userType，通过合同自动判断
+        if (userType == null || userType.isEmpty()) {
+            if (userId.equals(lease.getTenantId())) {
+                userType = "TENANT";
+                log.info("自动判断用户类型: TENANT (租客)");
+            } else if (userId.equals(lease.getLandlordId())) {
+                userType = "LANDLORD";
+                log.info("自动判断用户类型: LANDLORD (房东)");
+            } else {
+                log.error("用户{}不是合同相关方，无法签署", userId);
+                return false;
+            }
         }
 
         QueryWrapper<ElectronicSignature> wrapper = new QueryWrapper<>();
@@ -135,24 +153,43 @@ public class LeaseAgreementServiceImpl extends ServiceImpl<LeaseAgreementMapper,
         wrapper.eq("user_id", userId);
         wrapper.eq("user_type", userType);
         ElectronicSignature signature = electronicSignatureMapper.selectOne(wrapper);
+        log.info("找到签名记录: {}", signature);
+        
         if (signature != null && signature.getStatus() == 0) {
             signature.setSignatureData(signatureData);
             signature.setSigningTime(new java.util.Date());
             signature.setStatus(1);
             signature.setUpdateTime(LocalDateTime.now());
             electronicSignatureMapper.updateById(signature);
+            log.info("{} 完成合同签署 leaseId={}", userType, id);
         } else {
-            log.warn("签章已完成或不存在 leaseId={}, userId={}, userType={}", id, userId, userType);
+            log.warn("签章已完成或不存在 leaseId={}, userId={}, userType={}, signatureStatus={}", 
+                     id, userId, userType, signature != null ? signature.getStatus() : null);
             return true;
         }
 
         QueryWrapper<ElectronicSignature> checkWrapper = new QueryWrapper<>();
-        checkWrapper.eq("lease_id", id);
-        checkWrapper.eq("status", 0);
-        long count = electronicSignatureMapper.selectCount(checkWrapper);
-        if (count == 0) {
-            lease.setStatus(1);
+        checkWrapper.eq("agreement_id", id);
+        List<ElectronicSignature> allSignatures = electronicSignatureMapper.selectList(checkWrapper);
+        
+        boolean landlordSigned = false;
+        boolean tenantSigned = false;
+        
+        for (ElectronicSignature s : allSignatures) {
+            if (s.getStatus() == 1) {
+                if ("LANDLORD".equals(s.getUserType())) {
+                    landlordSigned = true;
+                } else if ("TENANT".equals(s.getUserType())) {
+                    tenantSigned = true;
+                }
+            }
+        }
+        
+        // 只有房东和租客都签署了，合同才生效
+        if (landlordSigned && tenantSigned) {
+            lease.setStatus(2); // 状态改为生效中
             lease.setSigningDate(new java.util.Date());
+            lease.setEffectiveDate(new java.util.Date());
             lease.setUpdateTime(LocalDateTime.now());
             
             String contractUrl = generateContract(lease);
@@ -161,13 +198,56 @@ public class LeaseAgreementServiceImpl extends ServiceImpl<LeaseAgreementMapper,
             }
             
             baseMapper.updateById(lease);
-            log.info("租约签署完成并生成合同 leaseId={}, contractUrl={}", id, contractUrl);
+            log.info("合同双方已完成签署，合同生效 leaseId={}, contractUrl={}", id, contractUrl);
         }
 
         return true;
     }
 
     private String generateContract(LeaseAgreement lease) {
+        try {
+            byte[] content = generateContractBytes(lease);
+            if (content == null) {
+                return null;
+            }
+            
+            String filename = "contract_" + lease.getLeaseNo() + ".docx";
+            
+            MultipartFile multipartFile = new MultipartFile() {
+                @Override
+                public String getName() { return "file"; }
+                @Override
+                public String getOriginalFilename() { return filename; }
+                @Override
+                public String getContentType() { return "application/vnd.openxmlformats-officedocument.wordprocessingml.document"; }
+                @Override
+                public boolean isEmpty() { return content.length == 0; }
+                @Override
+                public long getSize() { return content.length; }
+                @Override
+                public byte[] getBytes() { return content; }
+                @Override
+                public InputStream getInputStream() { return new ByteArrayInputStream(content); }
+                @Override
+                public void transferTo(java.io.File dest) {
+                    try (java.io.FileOutputStream fos = new java.io.FileOutputStream(dest)) {
+                        fos.write(content);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            };
+            
+            String url = fileService.upload(multipartFile);
+            log.info("合同文件上传成功: {}", url);
+            return url;
+        } catch (Exception e) {
+            log.error("生成合同失败, leaseId={}, error={}", lease.getId(), e.getMessage(), e);
+            return null;
+        }
+    }
+
+    private byte[] generateContractBytes(LeaseAgreement lease) {
         try {
             fillLeaseDetails(lease);
             
@@ -220,50 +300,130 @@ public class LeaseAgreementServiceImpl extends ServiceImpl<LeaseAgreementMapper,
             }
             data.put("paymentWay", paymentWayStr);
 
-            ClassPathResource resource = new ClassPathResource("templates/contract_template.docx");
-            if (!resource.exists()) {
-                log.warn("合同模板文件不存在");
-                return null;
-            }
-            
-            try (InputStream inputStream = resource.getInputStream();
-                 ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+            try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+                XWPFDocument document = new XWPFDocument();
                 
-                XWPFTemplate template = XWPFTemplate.compile(inputStream).render(data);
-                template.write(outputStream);
-                template.close();
+                XWPFParagraph titleParagraph = document.createParagraph();
+                titleParagraph.setAlignment(ParagraphAlignment.CENTER);
+                XWPFRun titleRun = titleParagraph.createRun();
+                titleRun.setText("房屋租赁合同");
+                titleRun.setBold(true);
+                titleRun.setFontSize(18);
                 
-                byte[] content = outputStream.toByteArray();
-                String filename = "contract_" + lease.getLeaseNo() + ".docx";
+                document.createParagraph().createRun().setText("合同编号：" + lease.getLeaseNo());
                 
-                MultipartFile multipartFile = new MultipartFile() {
-                    @Override
-                    public String getName() { return "file"; }
-                    @Override
-                    public String getOriginalFilename() { return filename; }
-                    @Override
-                    public String getContentType() { return "application/vnd.openxmlformats-officedocument.wordprocessingml.document"; }
-                    @Override
-                    public boolean isEmpty() { return content.length == 0; }
-                    @Override
-                    public long getSize() { return content.length; }
-                    @Override
-                    public byte[] getBytes() { return content; }
-                    @Override
-                    public InputStream getInputStream() { return new ByteArrayInputStream(content); }
-                    @Override
-                    public void transferTo(java.io.File dest) {
-                        try (java.io.FileOutputStream fos = new java.io.FileOutputStream(dest)) {
-                            fos.write(content);
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
-                };
+                XWPFParagraph dateParagraph = document.createParagraph();
+                dateParagraph.setAlignment(ParagraphAlignment.RIGHT);
+                dateParagraph.createRun().setText("签订日期：" + data.get("signingDate"));
                 
-                String url = fileService.upload(multipartFile);
-                log.info("合同文件上传成功: {}", url);
-                return url;
+                document.createParagraph().createRun().setText("\n");
+                
+                XWPFParagraph partyParagraph = document.createParagraph();
+                XWPFRun partyRun = partyParagraph.createRun();
+                partyRun.setText("甲方（房东）：" + data.get("landlordName"));
+                partyParagraph.createRun().setText("\n");
+                partyParagraph.createRun().setText("身份证号：" + data.get("landlordIdCard"));
+                partyParagraph.createRun().setText("\n");
+                partyParagraph.createRun().setText("联系电话：" + data.get("landlordPhone"));
+                
+                document.createParagraph().createRun().setText("\n");
+                
+                XWPFParagraph tenantParagraph = document.createParagraph();
+                tenantParagraph.createRun().setText("乙方（租客）：" + data.get("tenantName"));
+                tenantParagraph.createRun().setText("\n");
+                tenantParagraph.createRun().setText("身份证号：" + data.get("tenantIdCard"));
+                tenantParagraph.createRun().setText("\n");
+                tenantParagraph.createRun().setText("联系电话：" + data.get("tenantPhone"));
+                
+                document.createParagraph().createRun().setText("\n");
+                
+                XWPFParagraph introParagraph = document.createParagraph();
+                introParagraph.createRun().setText("根据《中华人民共和国合同法》及相关法律法规，甲乙双方在平等、自愿、公平、诚实信用的基础上，就房屋租赁事宜达成如下协议：");
+                
+                document.createParagraph().createRun().setText("\n");
+                
+                XWPFParagraph clause1 = document.createParagraph();
+                XWPFRun clause1Run = clause1.createRun();
+                clause1Run.setBold(true);
+                clause1Run.setText("第一条 房屋基本情况");
+                clause1.createRun().setText("\n");
+                clause1.createRun().setText("房屋坐落于：" + data.get("houseAddress"));
+                clause1.createRun().setText("\n");
+                clause1.createRun().setText("房屋类型：" + data.get("houseType"));
+                clause1.createRun().setText("\n");
+                clause1.createRun().setText("建筑面积：" + data.get("area") + "平方米");
+                
+                document.createParagraph().createRun().setText("\n");
+                
+                XWPFParagraph clause2 = document.createParagraph();
+                XWPFRun clause2Run = clause2.createRun();
+                clause2Run.setBold(true);
+                clause2Run.setText("第二条 租赁期限");
+                clause2.createRun().setText("\n");
+                clause2.createRun().setText("租赁期限自" + data.get("startDate") + "至" + data.get("endDate") + "。");
+                
+                document.createParagraph().createRun().setText("\n");
+                
+                XWPFParagraph clause3 = document.createParagraph();
+                XWPFRun clause3Run = clause3.createRun();
+                clause3Run.setBold(true);
+                clause3Run.setText("第三条 租金及支付方式");
+                clause3.createRun().setText("\n");
+                clause3.createRun().setText("1. 月租金：人民币" + data.get("rentPrice") + "元");
+                clause3.createRun().setText("\n");
+                clause3.createRun().setText("2. 押金：人民币" + data.get("deposit") + "元");
+                clause3.createRun().setText("\n");
+                clause3.createRun().setText("3. 支付方式：" + data.get("paymentWay"));
+                
+                document.createParagraph().createRun().setText("\n");
+                
+                XWPFParagraph clause4 = document.createParagraph();
+                XWPFRun clause4Run = clause4.createRun();
+                clause4Run.setBold(true);
+                clause4Run.setText("第四条 双方权利义务");
+                clause4.createRun().setText("\n");
+                clause4.createRun().setText("（内容省略...）");
+                
+                document.createParagraph().createRun().setText("\n");
+                
+                XWPFParagraph clause5 = document.createParagraph();
+                XWPFRun clause5Run = clause5.createRun();
+                clause5Run.setBold(true);
+                clause5Run.setText("第五条 违约责任");
+                clause5.createRun().setText("\n");
+                clause5.createRun().setText("（内容省略...）");
+                
+                document.createParagraph().createRun().setText("\n");
+                
+                XWPFParagraph clause6 = document.createParagraph();
+                XWPFRun clause6Run = clause6.createRun();
+                clause6Run.setBold(true);
+                clause6Run.setText("第六条 其他约定");
+                clause6.createRun().setText("\n");
+                clause6.createRun().setText("（内容省略...）");
+                
+                document.createParagraph().createRun().setText("\n\n\n");
+                
+                XWPFParagraph signatureParagraph = document.createParagraph();
+                signatureParagraph.setAlignment(ParagraphAlignment.LEFT);
+                signatureParagraph.createRun().setText("甲方签字：________________________");
+                
+                document.createParagraph().createRun().setText("\n");
+                
+                XWPFParagraph tenantSignatureParagraph = document.createParagraph();
+                tenantSignatureParagraph.setAlignment(ParagraphAlignment.LEFT);
+                tenantSignatureParagraph.createRun().setText("乙方签字：________________________");
+                
+                document.createParagraph().createRun().setText("\n");
+                
+                XWPFParagraph dateSignParagraph = document.createParagraph();
+                dateSignParagraph.setAlignment(ParagraphAlignment.LEFT);
+                dateSignParagraph.createRun().setText("日期：" + data.get("signingDate"));
+                
+                document.write(outputStream);
+                document.close();
+                
+                return outputStream.toByteArray();
             }
             
         } catch (Exception e) {
@@ -379,17 +539,50 @@ public class LeaseAgreementServiceImpl extends ServiceImpl<LeaseAgreementMapper,
         }
         // 填充电子签章信息
         QueryWrapper<ElectronicSignature> wrapper = new QueryWrapper<>();
-        wrapper.eq("lease_id", lease.getId());
+        wrapper.eq("agreement_id", lease.getId());
         List<ElectronicSignature> signatures = electronicSignatureMapper.selectList(wrapper);
         lease.setSignatures(signatures);
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean sendContract(Long id) {
         LeaseAgreement lease = baseMapper.selectById(id);
         if (lease == null) {
             return false;
         }
+        
+        // 检查是否已存在签名记录
+        QueryWrapper<ElectronicSignature> checkWrapper = new QueryWrapper<>();
+        checkWrapper.eq("agreement_id", id);
+        long existingCount = electronicSignatureMapper.selectCount(checkWrapper);
+        
+        if (existingCount == 0) {
+            // 为房东创建签名记录
+            ElectronicSignature landlordSignature = new ElectronicSignature();
+            landlordSignature.setSignatureNo("SIG" + UUID.randomUUID().toString().replace("-", "").substring(0, 10).toUpperCase());
+            landlordSignature.setAgreementId(id);
+            landlordSignature.setUserId(lease.getLandlordId());
+            landlordSignature.setUserType("LANDLORD");
+            landlordSignature.setStatus(0);
+            landlordSignature.setCreateTime(LocalDateTime.now());
+            landlordSignature.setUpdateTime(LocalDateTime.now());
+            electronicSignatureMapper.insert(landlordSignature);
+            
+            // 为租客创建签名记录
+            ElectronicSignature tenantSignature = new ElectronicSignature();
+            tenantSignature.setSignatureNo("SIG" + UUID.randomUUID().toString().replace("-", "").substring(0, 10).toUpperCase());
+            tenantSignature.setAgreementId(id);
+            tenantSignature.setUserId(lease.getTenantId());
+            tenantSignature.setUserType("TENANT");
+            tenantSignature.setStatus(0);
+            tenantSignature.setCreateTime(LocalDateTime.now());
+            tenantSignature.setUpdateTime(LocalDateTime.now());
+            electronicSignatureMapper.insert(tenantSignature);
+            
+            log.info("已为合同创建双方签名记录 leaseId={}", id);
+        }
+        
         lease.setStatus(1);
         lease.setUpdateTime(LocalDateTime.now());
         return baseMapper.updateById(lease) > 0;
@@ -403,24 +596,54 @@ public class LeaseAgreementServiceImpl extends ServiceImpl<LeaseAgreementMapper,
             return;
         }
         
-        String fileUrl = generateContract(lease);
-        if (fileUrl == null) {
+        byte[] contractContent = generateContractBytes(lease);
+        if (contractContent == null) {
             response.sendError(500, "合同生成失败");
             return;
         }
         
         response.setContentType("application/vnd.openxmlformats-officedocument.wordprocessingml.document");
-        response.setHeader("Content-Disposition", "attachment; filename=\"contract_" + lease.getLeaseNo() + ".docx\"");
+        String fileName = "contract_" + lease.getLeaseNo() + ".docx";
+        String encodedFileName = java.net.URLEncoder.encode(fileName, "UTF-8").replace("+", "%20");
+        response.setHeader("Content-Disposition", "attachment; filename=\"" + encodedFileName + "\"; filename*=UTF-8''" + encodedFileName);
+        response.setContentLength(contractContent.length);
+        response.setCharacterEncoding("UTF-8");
         
-        java.net.URL url = new java.net.URL(fileUrl);
-        try (java.io.InputStream is = url.openStream();
-             java.io.OutputStream os = response.getOutputStream()) {
-            byte[] buffer = new byte[8192];
-            int bytesRead;
-            while ((bytesRead = is.read(buffer)) != -1) {
-                os.write(buffer, 0, bytesRead);
-            }
+        try (java.io.OutputStream os = response.getOutputStream()) {
+            os.write(contractContent);
+            os.flush();
         }
+        
+        String filename = "contract_" + lease.getLeaseNo() + ".docx";
+        MultipartFile multipartFile = new MultipartFile() {
+            @Override
+            public String getName() { return "file"; }
+            @Override
+            public String getOriginalFilename() { return filename; }
+            @Override
+            public String getContentType() { return "application/vnd.openxmlformats-officedocument.wordprocessingml.document"; }
+            @Override
+            public boolean isEmpty() { return contractContent.length == 0; }
+            @Override
+            public long getSize() { return contractContent.length; }
+            @Override
+            public byte[] getBytes() { return contractContent; }
+            @Override
+            public InputStream getInputStream() { return new ByteArrayInputStream(contractContent); }
+            @Override
+            public void transferTo(java.io.File dest) {
+                try (java.io.FileOutputStream fos = new java.io.FileOutputStream(dest)) {
+                    fos.write(contractContent);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        };
+        
+        String url = fileService.upload(multipartFile);
+        log.info("合同文件上传成功: {}", url);
+        lease.setContractUrl(url);
+        baseMapper.updateById(lease);
     }
 
     @Override

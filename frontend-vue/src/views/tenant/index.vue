@@ -75,7 +75,7 @@
         <el-table :data="recentAppointments" border>
           <el-table-column prop="houseName" label="房源名称" />
           <el-table-column prop="date" label="预约时间" />
-          <el-table-column prop="status" label="状态">
+          <el-table-column label="状态">
             <template #default="scope">
               <el-tag :type="getStatusType(scope.row.status)">
                 {{ getStatusText(scope.row.status) }}
@@ -131,20 +131,24 @@ const loadData = async () => {
       getMyContracts()
     ])
     
-    recentAppointments.value = (appointmentsRes.records || []).map(app => ({
-      id: app.id,
-      houseName: app.houseName || app.house && app.house.title || '未知房源',
-      date: app.date || formatDateTime(app.appointmentTime),
-      status: app.status
-    }))
+    console.log('预约数据:', appointmentsRes)
+    recentAppointments.value = (appointmentsRes.records || []).map(app => {
+      console.log('单个预约:', app, '状态:', app.status, '转换后:', getStatusText(app.status))
+      return {
+        id: app.id,
+        houseName: app.houseName || app.house && app.house.title || '未知房源',
+        date: app.date || formatDateTime(app.appointmentTime),
+        status: app.status
+      }
+    })
     
     recentContracts.value = (contractsRes.records || []).map(contract => ({
-      id: contract.id,
-      houseName: contract.house && contract.house.title || '未知房源',
-      startDate: formatDate(contract.startDate),
-      endDate: formatDate(contract.endDate),
-      status: contract.status === 0 ? 'PENDING' : contract.status === 1 ? 'ACTIVE' : contract.status === 2 ? 'EXPIRED' : 'TERMINATED'
-    }))
+        id: contract.id,
+        houseName: contract.house && contract.house.title || '未知房源',
+        startDate: formatDate(contract.startDate),
+        endDate: formatDate(contract.endDate),
+        status: contract.status === 0 ? 'PENDING' : contract.status === 1 ? 'PENDING' : contract.status === 2 ? 'ACTIVE' : contract.status === 3 ? 'EXPIRED' : 'TERMINATED'
+      }))
     
     stats.contracts = recentContracts.value.length
   } catch (error) {
@@ -167,25 +171,39 @@ const goTo = (path) => {
 }
 
 const getStatusType = (status) => {
+  if (!status) return 'default'
+  const s = String(status).trim().toUpperCase()
   const types = {
+    '0': 'warning',
+    '1': 'success',
+    '2': 'info',
+    '3': 'danger',
+    '4': 'danger',
     'PENDING': 'warning',
     'CONFIRMED': 'success',
     'COMPLETED': 'info',
     'CANCELLED': 'danger',
     'REJECTED': 'danger'
   }
-  return types[status] || 'default'
+  return types[s] || 'default'
 }
 
 const getStatusText = (status) => {
+  if (!status) return '未知'
+  const s = String(status).trim().toUpperCase()
   const texts = {
+    '0': '待确认',
+    '1': '已安排',
+    '2': '已完成',
+    '3': '已取消',
+    '4': '已拒绝',
     'PENDING': '待确认',
     'CONFIRMED': '已安排',
     'COMPLETED': '已完成',
     'CANCELLED': '已取消',
     'REJECTED': '已拒绝'
   }
-  return texts[status] || status
+  return texts[s] || status
 }
 
 const getContractStatusType = (status) => {
@@ -206,6 +224,27 @@ const getContractStatusText = (status) => {
     'TERMINATED': '已终止'
   }
   return texts[status] || status
+}
+
+const mapAppointmentStatus = (status) => {
+  const statusMap = {
+    0: '待确认',
+    1: '已安排',
+    2: '已完成',
+    3: '已取消',
+    4: '已拒绝',
+    '0': '待确认',
+    '1': '已安排',
+    '2': '已完成',
+    '3': '已取消',
+    '4': '已拒绝',
+    'PENDING': '待确认',
+    'CONFIRMED': '已安排',
+    'COMPLETED': '已完成',
+    'CANCELLED': '已取消',
+    'REJECTED': '已拒绝'
+  }
+  return statusMap[status] || status
 }
 
 onMounted(() => {

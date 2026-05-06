@@ -34,23 +34,35 @@
           <el-tag :type="getTypeTag(scope.row.userType)">{{ getTypeText(scope.row.userType) }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="creditScore" label="信用分" />
-      <el-table-column prop="status" label="状态">
+      <el-table-column prop="creditScore" label="信用分" width="120">
+        <template #default="scope">
+          <el-tag :type="getCreditScoreTag(scope.row.creditScore)">
+            {{ scope.row.creditScore }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column prop="status" label="状态" width="100">
         <template #default="scope">
           <el-tag :type="scope.row.status === 1 ? 'success' : 'danger'">
             {{ scope.row.status === 1 ? '正常' : '禁用' }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="createTime" label="注册时间" />
-      <el-table-column label="操作">
+      <el-table-column prop="createTime" label="注册时间" width="180" />
+      <el-table-column label="操作" width="300">
         <template #default="scope">
           <div class="action-buttons">
-            <el-button size="small" @click="viewDetail(scope.row)">查看</el-button>
+            <el-button size="small" @click="viewDetail(scope.row)">查看详情</el-button>
+            <el-button 
+              size="small" 
+              type="warning" 
+              @click="openCreditDialog(scope.row)"
+            >
+              调整信用分
+            </el-button>
             <el-button 
               v-if="scope.row.status === 1" 
               size="small" 
-              type="warning" 
               @click="toggleStatus(scope.row)"
             >
               禁用
@@ -105,7 +117,7 @@
         </div>
         <div class="detail-row">
           <span class="detail-label">信用分</span>
-          <span class="detail-value">{{ selectedUser.creditScore }}</span>
+          <el-tag :type="getCreditScoreTag(selectedUser.creditScore)">{{ selectedUser.creditScore }}</el-tag>
         </div>
         <div class="detail-row">
           <span class="detail-label">状态</span>
@@ -119,13 +131,49 @@
         </div>
       </div>
     </el-dialog>
+    
+    <el-dialog title="调整信用分" v-model="showCreditDialog" width="400px">
+      <div v-if="selectedUser" class="credit-form">
+        <div class="current-credit">
+          <span>当前信用分：</span>
+          <el-tag :type="getCreditScoreTag(selectedUser.creditScore)" size="large">
+            {{ selectedUser.creditScore }}
+          </el-tag>
+        </div>
+        <el-form :model="creditForm" label-width="80px" style="margin-top: 20px;">
+          <el-form-item label="新信用分">
+            <el-input-number 
+              v-model="creditForm.newScore" 
+              :min="0" 
+              :max="100" 
+              :step="5"
+              :precision="0"
+              style="width: 100%;"
+              controls-position="right"
+            />
+          </el-form-item>
+          <el-form-item label="调整原因">
+            <el-input 
+              v-model="creditForm.reason" 
+              type="textarea" 
+              :rows="3"
+              placeholder="请输入调整原因"
+            />
+          </el-form-item>
+        </el-form>
+      </div>
+      <template #footer>
+        <el-button @click="showCreditDialog = false">取消</el-button>
+        <el-button type="primary" @click="submitCreditScore" :loading="creditLoading">确认调整</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getUsers, updateUserStatus, deleteUser as deleteUserApi } from '@/api/admin'
+import { getUsers, updateUserStatus, deleteUser as deleteUserApi, updateCreditScore } from '@/api/admin'
 
 const searchForm = reactive({
   username: '',
@@ -136,6 +184,13 @@ const searchForm = reactive({
 const users = ref([])
 const selectedUser = ref(null)
 const showDetailDialog = ref(false)
+const showCreditDialog = ref(false)
+const creditLoading = ref(false)
+
+const creditForm = reactive({
+  newScore: 100,
+  reason: ''
+})
 
 const pagination = reactive({
   current: 1,
@@ -159,6 +214,13 @@ const getTypeText = (type) => {
     'TENANT': '租客'
   }
   return texts[type] || type
+}
+
+const getCreditScoreTag = (score) => {
+  if (score >= 90) return 'success'
+  if (score >= 80) return ''
+  if (score >= 60) return 'warning'
+  return 'danger'
 }
 
 const search = () => {
@@ -235,14 +297,53 @@ const deleteUser = async (user) => {
   }
 }
 
+const openCreditDialog = (user) => {
+  selectedUser.value = user
+  creditForm.newScore = user.creditScore
+  creditForm.reason = ''
+  showCreditDialog.value = true
+}
+
+const submitCreditScore = async () => {
+  try {
+    if (!creditForm.reason.trim()) {
+      ElMessage.warning('请输入调整原因')
+      return
+    }
+    
+    if (creditForm.newScore === selectedUser.value.creditScore) {
+      ElMessage.warning('信用分未发生变化')
+      return
+    }
+    
+    creditLoading.value = true
+    await updateCreditScore(selectedUser.value.id, creditForm.newScore)
+    
+    // 更新列表中的信用分
+    const userInList = users.value.find(u => u.id === selectedUser.value.id)
+    if (userInList) {
+      userInList.creditScore = creditForm.newScore
+    }
+    
+    // 更新详情对话框中的信用分
+    selectedUser.value.creditScore = creditForm.newScore
+    
+    ElMessage.success('信用分调整成功')
+    showCreditDialog.value = false
+  } catch (error) {
+    console.error('调整信用分失败:', error)
+    ElMessage.error('调整信用分失败')
+  } finally {
+    creditLoading.value = false
+  }
+}
+
 onMounted(() => {
   loadUsers()
 })
 </script>
 
 <style lang="scss" scoped>
-@import '@/styles/variables.scss';
-
 .admin-users {
   padding: 20px;
 }
@@ -252,7 +353,7 @@ onMounted(() => {
   
   h1 {
     font-size: 22px;
-    color: $text-primary;
+    color: #303133;
     margin: 0;
   }
 }
@@ -296,22 +397,42 @@ onMounted(() => {
     display: flex;
     justify-content: space-between;
     padding: 12px 0;
-    border-bottom: 1px solid $border-color-base;
+    border-bottom: 1px solid #dcdfe6;
     
     &:last-child {
       border-bottom: none;
     }
     
     .detail-label {
-      color: $text-secondary;
+      color: #909399;
       font-size: 14px;
     }
     
     .detail-value {
-      color: $text-primary;
+      color: #303133;
       font-size: 14px;
       font-weight: 500;
     }
+  }
+}
+
+.credit-form {
+  .current-credit {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 15px;
+    background: #f5f7fa;
+    border-radius: 8px;
+    font-size: 15px;
+    
+    span:first-child {
+      color: #606266;
+    }
+  }
+  
+  :deep(.el-input-number) {
+    width: 100%;
   }
 }
 </style>

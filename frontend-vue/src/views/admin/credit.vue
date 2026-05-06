@@ -280,9 +280,14 @@ const confirmAdjust = async () => {
   
   try {
     const scoreChange = parseInt(adjustForm.score)
-    await updateCreditScore(selectedUser.value.id, { score: scoreChange })
+    const newScore = selectedUser.value.creditScore + scoreChange
     
-    selectedUser.value.creditScore += scoreChange
+    // 确保分数在 0-100 之间
+    const finalScore = Math.max(0, Math.min(100, newScore))
+    
+    await updateCreditScore(selectedUser.value.id, finalScore)
+    
+    selectedUser.value.creditScore = finalScore
     selectedUser.value.creditHistory.unshift({
       time: new Date().toLocaleString(),
       change: scoreChange,
@@ -291,7 +296,7 @@ const confirmAdjust = async () => {
     
     const userIndex = users.value.findIndex(u => u.id === selectedUser.value.id)
     if (userIndex !== -1) {
-      users.value[userIndex].creditScore = selectedUser.value.creditScore
+      users.value[userIndex].creditScore = finalScore
     }
     
     calculateDistribution()

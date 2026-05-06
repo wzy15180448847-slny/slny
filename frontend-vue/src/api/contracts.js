@@ -8,11 +8,11 @@ export function getMyContracts(params) {
   })
 }
 
-export function signContract(id, userId, userType, signatureData) {
+export function signContract(id, data) {
   return request({
     url: `/lease/sign/${id}`,
     method: 'put',
-    params: { userId, userType, signatureData }
+    data: data
   })
 }
 
@@ -36,5 +36,13 @@ export function createContract(data) {
     url: '/lease',
     method: 'post',
     data
+  })
+}
+
+export function exportContract(id) {
+  return request({
+    url: `/lease/export/${id}`,
+    method: 'get',
+    responseType: 'blob'
   })
 }
