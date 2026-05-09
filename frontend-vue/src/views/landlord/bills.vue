@@ -47,10 +47,10 @@
           </el-table-column>
           <el-table-column prop="amount" label="金额">
             <template #default="scope">
-              <span :class="scope.row.status === 'UNPAID' ? 'unpaid-amount' : ''">¥{{ scope.row.amount }}</span>
+              <span :class="scope.row.status === 1 ? 'unpaid-amount' : ''">¥{{ scope.row.amount }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="dueDate" label="到期日期" />
+          <el-table-column prop="dueDate" label="创建日期" />
           <el-table-column prop="status" label="状态">
             <template #default="scope">
               <el-tag :type="getStatusType(scope.row.status)">{{ getStatusText(scope.row.status) }}</el-tag>
@@ -58,8 +58,6 @@
           </el-table-column>
           <el-table-column label="操作">
             <template #default="scope">
-              <el-button v-if="scope.row.status === 'UNPAID'" size="small" type="warning" @click="sendReminder(scope.row)">发送提醒</el-button>
-              <el-button v-if="scope.row.status === 'OVERDUE'" size="small" type="danger" @click="sendCollection(scope.row)">催收通知</el-button>
               <el-button size="small" @click="viewBill(scope.row)">详情</el-button>
             </template>
           </el-table-column>
@@ -69,7 +67,7 @@
         </div>
       </el-tab-pane>
       <el-tab-pane label="待收款" name="unpaid">
-        <el-table :data="bills.filter(b => b.status === 'UNPAID')" border>
+        <el-table :data="bills.filter(b => b.status === 1)" border>
           <el-table-column prop="billNo" label="账单编号" />
           <el-table-column prop="houseName" label="房源" />
           <el-table-column prop="tenantName" label="租客" />
@@ -78,40 +76,36 @@
               <span class="unpaid-amount">¥{{ scope.row.amount }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="dueDate" label="到期日期" />
+          <el-table-column prop="dueDate" label="创建日期" />
           <el-table-column label="操作">
             <template #default="scope">
-              <el-button size="small" type="warning" @click="sendReminder(scope.row)">发送提醒</el-button>
               <el-button size="small" @click="viewBill(scope.row)">详情</el-button>
             </template>
           </el-table-column>
         </el-table>
-        <div v-if="bills.filter(b => b.status === 'UNPAID').length === 0" class="empty-state">
+        <div v-if="bills.filter(b => b.status === 1).length === 0" class="empty-state">
           <el-empty description="暂无待收款账单" />
         </div>
       </el-tab-pane>
-      <el-tab-pane label="逾期" name="overdue">
-        <el-table :data="bills.filter(b => b.status === 'OVERDUE')" border>
+      <el-tab-pane label="已收款" name="paid">
+        <el-table :data="bills.filter(b => b.status === 2)" border>
           <el-table-column prop="billNo" label="账单编号" />
           <el-table-column prop="houseName" label="房源" />
           <el-table-column prop="tenantName" label="租客" />
           <el-table-column prop="amount" label="金额">
             <template #default="scope">
-              <span class="overdue-amount">¥{{ scope.row.amount }}</span>
+              <span>¥{{ scope.row.amount }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="daysOverdue" label="逾期天数">
-            <template #default="scope">{{ scope.row.daysOverdue }}天</template>
-          </el-table-column>
+          <el-table-column prop="dueDate" label="创建日期" />
           <el-table-column label="操作">
             <template #default="scope">
-              <el-button size="small" type="danger" @click="sendCollection(scope.row)">催收通知</el-button>
               <el-button size="small" @click="viewBill(scope.row)">详情</el-button>
             </template>
           </el-table-column>
         </el-table>
-        <div v-if="bills.filter(b => b.status === 'OVERDUE').length === 0" class="empty-state">
-          <el-empty description="暂无逾期账单" />
+        <div v-if="bills.filter(b => b.status === 2).length === 0" class="empty-state">
+          <el-empty description="暂无已收款账单" />
         </div>
       </el-tab-pane>
     </el-tabs>
@@ -139,7 +133,7 @@
           <span class="total-amount">¥{{ selectedBill.amount }}</span>
         </div>
         <div class="detail-row">
-          <span class="detail-label">到期日期</span>
+          <span class="detail-label">创建日期</span>
           <span class="detail-value">{{ selectedBill.dueDate }}</span>
         </div>
         <div class="detail-row">
@@ -157,7 +151,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElEmpty } from 'element-plus'
-import { getLandlordReminders, getLandlordReminderSummary, sendReminder as apiSendReminder, sendCollection as apiSendCollection } from '@/api/landlord'
+import { getLandlordBills } from '@/api/landlord'
 
 const activeTab = ref('all')
 
@@ -174,50 +168,38 @@ const showDetailDialog = ref(false)
 
 const getTypeTag = (type) => {
   const types = {
-    'RENT': 'primary',
-    'WATER': 'info',
-    'ELECTRIC': 'warning',
-    'GAS': 'success'
+    1: 'primary',
+    2: 'info',
+    3: 'warning'
   }
   return types[type] || 'default'
 }
 
 const getTypeText = (type) => {
   const texts = {
-    'RENT': '租金',
-    'WATER': '水费',
-    'ELECTRIC': '电费',
-    'GAS': '燃气费'
+    1: '租金',
+    2: '押金',
+    3: '违约金'
   }
   return texts[type] || type
 }
 
 const getStatusType = (status) => {
   const types = {
-    'UNPAID': 'warning',
-    'PAID': 'success',
-    'OVERDUE': 'danger'
+    1: 'warning',
+    2: 'success',
+    3: 'danger'
   }
   return types[status] || 'default'
 }
 
 const getStatusText = (status) => {
   const texts = {
-    'UNPAID': '待支付',
-    'PAID': '已支付',
-    'OVERDUE': '已逾期'
+    1: '待支付',
+    2: '已支付',
+    3: '已取消'
   }
   return texts[status] || status
-}
-
-const mapStatus = (status) => {
-  const statusMap = {
-    0: 'UNPAID',
-    1: 'NOTIFIED',
-    2: 'PAID',
-    3: 'OVERDUE'
-  }
-  return statusMap[status] || 'UNPAID'
 }
 
 const formatDate = (dateStr) => {
@@ -226,65 +208,35 @@ const formatDate = (dateStr) => {
   return date.toLocaleDateString('zh-CN')
 }
 
-const calculateDaysOverdue = (dueDateStr) => {
-  if (!dueDateStr) return null
-  const dueDate = new Date(dueDateStr)
-  const today = new Date()
-  const diffTime = today.getTime() - dueDate.getTime()
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-  return diffDays > 0 ? diffDays : null
-}
-
 const loadBills = async () => {
   try {
-    const data = await getLandlordReminders()
-    bills.value = (data || []).map(reminder => ({
-      id: reminder.id,
-      billNo: reminder.reminderNo || '',
-      houseName: reminder.remark?.split(' - ')[1] || '未知房源',
-      tenantName: '租户' + reminder.tenantId,
-      type: 'RENT',
-      amount: reminder.amount?.toString() || '0',
-      dueDate: reminder.dueDate ? formatDate(reminder.dueDate) : '',
-      status: mapStatus(reminder.status),
-      daysOverdue: calculateDaysOverdue(reminder.dueDate)
+    const response = await getLandlordBills()
+    const data = response?.records || response || []
+    bills.value = data.map(bill => ({
+      id: bill.id,
+      billNo: 'B' + bill.id,
+      houseName: '房源' + bill.houseId,
+      tenantName: '租户' + bill.tenantId,
+      type: bill.billType,
+      amount: bill.amount?.toString() || '0',
+      dueDate: bill.createTime ? formatDate(bill.createTime) : '',
+      status: bill.status,
+      daysOverdue: null
     }))
-    loadSummary()
+    updateSummary()
   } catch (error) {
     console.error('加载账单失败:', error)
     ElMessage.error('加载账单失败')
   }
 }
 
-const loadSummary = async () => {
-  try {
-    const data = await getLandlordReminderSummary()
-    summary.totalIncome = data?.totalIncome?.toString() || '0'
-    summary.pendingAmount = data?.pendingAmount?.toString() || '0'
-    summary.overdueCount = data?.overdueCount || 0
-  } catch (error) {
-    console.error('加载统计失败:', error)
-  }
-}
-
-const sendReminder = async (bill) => {
-  try {
-    await apiSendReminder(bill.id)
-    ElMessage.success('提醒通知已发送')
-    loadBills()
-  } catch (error) {
-    ElMessage.error('发送失败')
-  }
-}
-
-const sendCollection = async (bill) => {
-  try {
-    await apiSendCollection(bill.id)
-    ElMessage.success('催收通知已发送')
-    loadBills()
-  } catch (error) {
-    ElMessage.error('发送失败')
-  }
+const updateSummary = () => {
+  const paidBills = bills.value.filter(b => b.status === 2)
+  const unpaidBills = bills.value.filter(b => b.status === 1)
+  
+  summary.totalIncome = paidBills.reduce((sum, b) => sum + parseFloat(b.amount), 0).toFixed(2)
+  summary.pendingAmount = unpaidBills.reduce((sum, b) => sum + parseFloat(b.amount), 0).toFixed(2)
+  summary.overdueCount = 0
 }
 
 const viewBill = (bill) => {

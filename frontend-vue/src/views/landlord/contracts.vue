@@ -50,6 +50,7 @@
                     size="small" 
                     type="warning" 
                     class="btn-bill"
+                    :loading="isGeneratingBill"
                     @click="generateBill(scope.row)"
                   >
                     账单
@@ -104,7 +105,7 @@
               <template #default="scope">
                 <div class="action-buttons">
                   <el-button size="small" class="btn-preview" @click="previewContract(scope.row)">预览</el-button>
-                  <el-button size="small" type="warning" class="btn-bill" @click="generateBill(scope.row)">账单</el-button>
+                  <el-button size="small" type="warning" class="btn-bill" :loading="isGeneratingBill" @click="generateBill(scope.row)">账单</el-button>
                   <el-button size="small" class="btn-export" @click="exportContract(scope.row)">导出</el-button>
                 </div>
               </template>
@@ -206,6 +207,8 @@ const showPreviewDialog = ref(false)
 const showSignDialog = ref(false)
 const signCanvas = ref(null)
 const isDrawing = ref(false)
+const isGeneratingBill = ref(false) // 防止重复生成账单
+const lastErrorTime = ref(0) // 记录最后一次错误提示时间
 
 const getStatusType = (status, originalStatus) => {
   // 如果已经生效，显示success
@@ -311,13 +314,31 @@ const sendContract = async (contract) => {
 }
 
 const generateBill = async (contract) => {
+  // 防止重复点击
+  if (isGeneratingBill.value) {
+    return
+  }
+  
   try {
+    isGeneratingBill.value = true
+    
     await apiGenerateBill(contract.id)
     ElMessage.success('账单已生成')
-    await loadContracts()
+    // 跳转到账单页面或者刷新账单列表
+    // 这里我们可以直接提示用户去账单页面查看
   } catch (error) {
     console.error('生成账单失败:', error)
-    ElMessage.error('生成账单失败')
+    
+    // 防止错误提示重复弹出（1秒内只显示一次）
+    const now = Date.now()
+    if (now - lastErrorTime.value > 1000) {
+      lastErrorTime.value = now
+      // 显示后端返回的具体错误信息
+      const errorMsg = error?.response?.data?.message || error?.message || '生成账单失败'
+      ElMessage.error(errorMsg)
+    }
+  } finally {
+    isGeneratingBill.value = false
   }
 }
 

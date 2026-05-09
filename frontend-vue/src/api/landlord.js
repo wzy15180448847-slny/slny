@@ -163,3 +163,11 @@ export function processTermination(id, status, processingOpinion, penaltyAmount)
     params: { status, processingOpinion, penaltyAmount }
   })
 }
+
+export function getLandlordBills(params) {
+  return request({
+    url: '/bill/landlord',
+    method: 'get',
+    params
+  })
+}

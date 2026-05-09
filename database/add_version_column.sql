@@ -1,0 +1,1 @@
+ALTER TABLE biz_bill ADD COLUMN version INT(11) DEFAULT 0;

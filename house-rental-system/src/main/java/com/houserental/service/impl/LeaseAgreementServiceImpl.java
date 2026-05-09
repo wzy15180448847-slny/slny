@@ -653,6 +653,21 @@ public class LeaseAgreementServiceImpl extends ServiceImpl<LeaseAgreementMapper,
             return false;
         }
         
+        // 检查该合同本月是否已经生成过账单
+        LocalDateTime now = LocalDateTime.now();
+        int year = now.getYear();
+        int month = now.getMonthValue();
+        
+        QueryWrapper<com.houserental.entity.Bill> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("lease_id", id);
+        queryWrapper.apply("YEAR(create_time) = {0}", year);
+        queryWrapper.apply("MONTH(create_time) = {0}", month);
+        
+        long count = billMapper.selectCount(queryWrapper);
+        if (count > 0) {
+            throw new com.houserental.common.exception.BusinessException("该合同本月已生成过账单");
+        }
+        
         com.houserental.entity.Bill bill = new com.houserental.entity.Bill();
         bill.setLeaseId(id);
         bill.setHouseId(lease.getHouseId());
