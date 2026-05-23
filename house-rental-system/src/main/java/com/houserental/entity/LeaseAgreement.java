@@ -44,8 +44,10 @@ public class LeaseAgreement implements Serializable {
 
     private Long landlordId;
 
+    @JsonFormat(pattern = "yyyy-MM-dd", timezone = "GMT+8", shape = JsonFormat.Shape.STRING)
     private Date startDate;
 
+    @JsonFormat(pattern = "yyyy-MM-dd", timezone = "GMT+8", shape = JsonFormat.Shape.STRING)
     private Date endDate;
 
     @TableField(value = "rent_price")
@@ -59,9 +61,11 @@ public class LeaseAgreement implements Serializable {
 
     private String contractUrl;
 
+    @JsonFormat(pattern = "yyyy-MM-dd", timezone = "GMT+8")
     @TableField(value = "signing_date")
     private Date signingDate;
 
+    @JsonFormat(pattern = "yyyy-MM-dd", timezone = "GMT+8")
     @TableField(value = "effective_date")
     private Date effectiveDate;
 
@@ -71,6 +75,7 @@ public class LeaseAgreement implements Serializable {
     @TableField(exist = false)
     private String agreementContent;
 
+    @JsonFormat(pattern = "yyyy-MM-dd", timezone = "GMT+8")
     @TableField(value = "termination_date")
     private Date terminationDate;
 

@@ -154,6 +154,9 @@ public class AppointmentServiceImpl extends ServiceImpl<AppointmentMapper, Appoi
         for (Appointment appointment : page.getRecords()) {
             Map<String, Object> item = new HashMap<>();
             item.put("id", appointment.getId());
+            item.put("houseId", appointment.getHouseId());
+            item.put("tenantId", appointment.getTenantId());
+            item.put("landlordId", appointment.getLandlordId());
             
             if (appointment.getHouseId() != null) {
                 House house = houseMapper.selectById(appointment.getHouseId());

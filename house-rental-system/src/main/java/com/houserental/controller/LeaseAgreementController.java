@@ -27,6 +27,10 @@ public class LeaseAgreementController {
      */
     @PostMapping
     public Result<Long> createLease(@RequestBody LeaseAgreement lease) {
+        // 自动设置当前登录用户为房东
+        Long currentUserId = com.houserental.common.utils.SecurityUtils.getCurrentUserId();
+        lease.setLandlordId(currentUserId);
+        lease.setStatus(0); // 初始状态为草稿/待签署
         Long id = leaseAgreementService.createLease(lease);
         return Result.success(id);
     }

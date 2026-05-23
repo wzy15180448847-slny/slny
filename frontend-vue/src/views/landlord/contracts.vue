@@ -3,6 +3,10 @@
     <div class="page-header">
       <h1>合同管理</h1>
       <p class="header-desc">管理您的租赁合同</p>
+      <el-button type="primary" @click="showCreateDialog = true">
+        <el-icon><Plus /></el-icon>
+        创建合同
+      </el-button>
     </div>
     
     <el-card class="contract-card">
@@ -187,17 +191,95 @@
         <el-button type="primary" @click="confirmSign">确认签署</el-button>
       </template>
     </el-dialog>
+    
+    <el-dialog title="创建租赁合同" v-model="showCreateDialog" width="600px" class="create-contract-dialog">
+      <el-form :model="createForm" label-width="100px">
+        <el-form-item label="选择房源" required>
+          <el-select v-model="createForm.houseId" placeholder="请选择房源" style="width: 100%" @change="handleHouseChange">
+            <el-option 
+              v-for="house in availableHouses" 
+              :key="house.id" 
+              :label="house.houseName + ' - ' + house.address"
+              :value="house.id"
+            />
+          </el-select>
+          <p class="form-tip">可租房源: {{ availableHouses.length }} 个 | 当前选择: {{ createForm.houseId || '未选择' }}</p>
+        </el-form-item>
+        <el-form-item label="选择租客" required>
+          <el-radio-group v-model="tenantSelectMode" style="margin-bottom: 10px" size="small">
+            <el-radio-button :value="select">从预约中选择</el-radio-button>
+            <el-radio-button :value="input">手动输入ID</el-radio-button>
+          </el-radio-group>
+          
+          <el-select 
+            v-if="tenantSelectMode === select" 
+            v-model="createForm.tenantId" 
+            placeholder="请选择租客" 
+            style="width: 100%" 
+            :disabled="!createForm.houseId"
+          >
+            <el-option 
+              v-for="tenant in availableTenants" 
+              :key="tenant.id" 
+              :label="tenant.name + ' - ' + tenant.phone"
+              :value="tenant.id"
+            />
+          </el-select>
+          
+          <el-input-number 
+            v-else 
+            v-model="createForm.tenantId" 
+            :min="1" 
+            placeholder="请输入租客ID" 
+            style="width: 100%" 
+          />
+          
+          <p class="form-tip" v-if="!createForm.houseId">请先选择房源</p>
+          <p class="form-tip" v-else-if="tenantSelectMode === select && availableTenants.length === 0">暂无预约该房源的租客，可选择手动输入模式</p>
+          <p class="form-tip" v-else-if="tenantSelectMode === select">可选择租客: {{ availableTenants.length }} 个</p>
+          <p class="form-tip" v-else>请输入租客的用户ID</p>
+        </el-form-item>
+        <el-form-item label="月租金" required>
+          <el-input-number v-model="createForm.rentPrice" :min="0" :precision="2" style="width: 100%" placeholder="请输入月租金" />
+        </el-form-item>
+        <el-form-item label="押金" required>
+          <el-input-number v-model="createForm.deposit" :min="0" :precision="2" style="width: 100%" placeholder="请输入押金" />
+        </el-form-item>
+        <el-form-item label="支付方式" required>
+          <el-select v-model="createForm.paymentWay" placeholder="请选择支付方式" style="width: 100%">
+            <el-option label="月付" :value="1" />
+            <el-option label="季付" :value="2" />
+            <el-option label="半年付" :value="3" />
+            <el-option label="年付" :value="4" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="开始日期" required>
+          <el-date-picker v-model="createForm.startDate" type="date" placeholder="请选择开始日期" style="width: 100%" />
+        </el-form-item>
+        <el-form-item label="结束日期" required>
+          <el-date-picker v-model="createForm.endDate" type="date" placeholder="请选择结束日期" style="width: 100%" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showCreateDialog = false">取消</el-button>
+        <el-button type="primary" :loading="isCreating" @click="createContract">创建合同</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/store/user'
 import { ElMessage, ElEmpty } from 'element-plus'
-import { getLandlordContracts, sendContract as sendContractApi, exportContract as apiExportContract, generateBill as apiGenerateBill } from '@/api/landlord'
+import { Plus } from '@element-plus/icons-vue'
+import { getLandlordContracts, sendContract as sendContractApi, exportContract as apiExportContract, generateBill as apiGenerateBill, createContract as createContractApi, getMyHouses, getLandlordAppointments } from '@/api/landlord'
 import { signContract as signContractApi } from '@/api/contracts'
 
 const userStore = useUserStore()
+const router = useRouter()
+const route = useRoute()
 const activeTab = ref('all')
 
 const contracts = ref([])
@@ -209,6 +291,27 @@ const signCanvas = ref(null)
 const isDrawing = ref(false)
 const isGeneratingBill = ref(false) // 防止重复生成账单
 const lastErrorTime = ref(0) // 记录最后一次错误提示时间
+
+// 创建合同相关
+const showCreateDialog = ref(false)
+const isCreating = ref(false)
+const availableHouses = ref([])
+const availableTenants = ref([])
+
+// 租客选择模式
+const select = 'select'
+const input = 'input'
+const tenantSelectMode = ref(select)
+
+const createForm = ref({
+  houseId: null,
+  tenantId: null,
+  rentPrice: null,
+  deposit: null,
+  paymentWay: 1,
+  startDate: null,
+  endDate: null
+})
 
 const getStatusType = (status, originalStatus) => {
   // 如果已经生效，显示success
@@ -226,6 +329,183 @@ const getStatusText = (status) => {
 const previewContract = (contract) => {
   selectedContract.value = contract
   showPreviewDialog.value = true
+}
+
+const loadAvailableHouses = async () => {
+  try {
+    const data = await getMyHouses()
+    console.log('房源数据:', data)
+    
+    let houseList = []
+    if (data && Array.isArray(data)) {
+      houseList = data
+    } else if (data && data.records && Array.isArray(data.records)) {
+      houseList = data.records
+    }
+    
+    // 处理房源数据并只显示已发布的房源
+    availableHouses.value = houseList
+      .filter(house => {
+        // 显示审核通过且未出租/未下架的房源
+        const auditPass = house.auditStatus === 1
+        const isActive = house.status === 0 || house.status === 'ACTIVE'
+        return auditPass && isActive
+      })
+      .map(house => ({
+        ...house,
+        houseName: house.title,
+        rent: house.rentPrice
+      }))
+    
+    console.log('处理后的可租房源:', availableHouses.value)
+  } catch (error) {
+    console.error('加载房源列表失败:', error)
+  }
+}
+
+const handleHouseChange = async (houseId) => {
+  console.log('选择了房源:', houseId)
+  console.log('当前createForm:', createForm.value)
+  
+  const selectedHouse = availableHouses.value.find(h => h.id === houseId)
+  if (selectedHouse) {
+    createForm.value.rentPrice = selectedHouse.rent || 0
+    // 默认押金为一个月租金
+    createForm.value.deposit = selectedHouse.rent || 0
+    // 清空之前选择的租客
+    createForm.value.tenantId = null
+    console.log('设置后的createForm:', createForm.value)
+    // 加载预约该房源的租客
+    await loadAvailableTenants(houseId)
+  }
+}
+
+const loadAvailableTenants = async (houseId) => {
+  try {
+    console.log('开始加载租客，房源ID:', houseId)
+    const data = await getLandlordAppointments()
+    console.log('完整预约数据:', data)
+    
+    // 处理预约数据
+    let appointments = []
+    if (data && Array.isArray(data)) {
+      appointments = data
+    } else if (data && data.records && Array.isArray(data.records)) {
+      appointments = data.records
+    }
+    
+    console.log('处理后的预约列表:', appointments)
+    console.log('筛选条件 - 房源ID:', houseId)
+    
+    // 筛选出该房源的预约，并提取租客信息
+    const houseAppointments = appointments.filter(apt => {
+      const match = apt.houseId == houseId
+      console.log(`预约房源ID: ${apt.houseId}, 目标房源: ${houseId}, 是否匹配: ${match}`)
+      return match
+    })
+    console.log('该房源的预约:', houseAppointments)
+    
+    // 提取租客信息，去重
+    const tenantMap = new Map()
+    houseAppointments.forEach(apt => {
+      console.log('处理单个预约:', apt)
+      if (apt.tenantId && !tenantMap.has(apt.tenantId)) {
+        const tenantName = apt.tenantName || apt.contactName || apt.tenant?.nickname || apt.tenant?.username || '未知租客'
+        const tenantPhone = apt.tenantPhone || apt.contactPhone || apt.tenant?.phone || ''
+        const tenantInfo = {
+          id: apt.tenantId,
+          name: tenantName,
+          phone: tenantPhone,
+          displayText: tenantName + (tenantPhone ? ' - ' + tenantPhone : '')
+        }
+        tenantMap.set(apt.tenantId, tenantInfo)
+        console.log('提取到租客:', tenantInfo)
+      }
+    })
+    
+    availableTenants.value = Array.from(tenantMap.values())
+    console.log('最终可用租客:', availableTenants.value)
+  } catch (error) {
+    console.error('加载预约租客失败:', error)
+    availableTenants.value = []
+  }
+}
+
+const resetCreateForm = () => {
+  createForm.value = {
+    houseId: null,
+    tenantId: null,
+    rentPrice: null,
+    deposit: null,
+    paymentWay: 1,
+    startDate: null,
+    endDate: null
+  }
+  availableTenants.value = []
+  tenantSelectMode.value = select
+}
+
+const createContract = async () => {
+  // 验证必填字段
+  if (!createForm.value.houseId) {
+    ElMessage.error('请选择房源')
+    return
+  }
+  if (!createForm.value.tenantId) {
+    ElMessage.error('请输入租客ID')
+    return
+  }
+  if (!createForm.value.rentPrice) {
+    ElMessage.error('请输入月租金')
+    return
+  }
+  if (!createForm.value.deposit) {
+    ElMessage.error('请输入押金')
+    return
+  }
+  if (!createForm.value.startDate) {
+    ElMessage.error('请选择开始日期')
+    return
+  }
+  if (!createForm.value.endDate) {
+    ElMessage.error('请选择结束日期')
+    return
+  }
+  
+  try {
+    isCreating.value = true
+    
+    // 格式化日期为 yyyy-MM-dd 格式
+    const formatDate = (date) => {
+      if (!date) return ''
+      const d = new Date(date)
+      const year = d.getFullYear()
+      const month = String(d.getMonth() + 1).padStart(2, '0')
+      const day = String(d.getDate()).padStart(2, '0')
+      return `${year}-${month}-${day}`
+    }
+    
+    const contractData = {
+      houseId: createForm.value.houseId,
+      tenantId: createForm.value.tenantId,
+      rentPrice: createForm.value.rentPrice,
+      deposit: createForm.value.deposit,
+      paymentWay: createForm.value.paymentWay,
+      startDate: formatDate(createForm.value.startDate),
+      endDate: formatDate(createForm.value.endDate)
+    }
+    
+    await createContractApi(contractData)
+    ElMessage.success('合同创建成功')
+    showCreateDialog.value = false
+    resetCreateForm()
+    await loadContracts()
+  } catch (error) {
+    console.error('创建合同失败:', error)
+    ElMessage.error(error?.response?.data?.message || '创建合同失败')
+  } finally {
+    isCreating.value = false
+  }
 }
 
 const loadContracts = async () => {
@@ -298,6 +578,42 @@ const formatDate = (dateStr) => {
   if (!dateStr) return ''
   const date = new Date(dateStr)
   return date.toLocaleDateString('zh-CN')
+}
+
+// 从预约页面自动初始化合同创建
+const initFromAppointment = async () => {
+  const { houseId, tenantId, houseName, tenantName, tenantPhone } = route.query
+  
+  if (houseId && tenantId) {
+    // 等待房源加载完成
+    await loadAvailableHouses()
+    
+    // 初始化表单
+    showCreateDialog.value = true
+    
+    // 设置房源和租客
+    createForm.value.houseId = Number(houseId)
+    createForm.value.tenantId = Number(tenantId)
+    
+    // 如果有租客信息，添加到可用租客列表
+    if (tenantName || tenantPhone) {
+      availableTenants.value = [{
+        id: Number(tenantId),
+        name: tenantName || '未知租客',
+        phone: tenantPhone || ''
+      }]
+    }
+    
+    // 加载房源租金信息
+    if (createForm.value.houseId) {
+      await handleHouseChange(createForm.value.houseId)
+    }
+    
+    // 清除路由查询参数
+    router.replace({ query: {} })
+    
+    ElMessage.success('已自动填充预约信息，请完善合同详情')
+  }
 }
 
 const sendContract = async (contract) => {
@@ -426,8 +742,19 @@ const confirmSign = async () => {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
   loadContracts()
+  await loadAvailableHouses()
+  await initFromAppointment()
+})
+
+// 监听创建对话框打开
+watch(showCreateDialog, (newVal) => {
+  if (newVal && !createForm.value.houseId) {
+    // 只有在没有预填充数据时才重置
+    resetCreateForm()
+    loadAvailableHouses()
+  }
 })
 </script>
 
@@ -444,6 +771,9 @@ onMounted(() => {
 
 .page-header {
   margin-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   
   h1 {
     font-size: 28px;
@@ -457,6 +787,12 @@ onMounted(() => {
     color: #6b7280;
     margin: 0;
   }
+}
+
+.form-tip {
+  margin: 4px 0 0 0;
+  font-size: 12px;
+  color: #9ca3af;
 }
 
 .contract-card {

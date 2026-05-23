@@ -21,12 +21,10 @@
 | 基础框架 | Spring Boot | 2.7.18 | 企业级 Java 开发框架 |
 | 安全框架 | Spring Security | 5.8.8 | 安全认证与权限控制 |
 | JWT | jjwt | 0.11.5 | JSON Web Token 生成与验证 |
-| 数据持久层 | Spring Data JPA | 2.7.x | ORM 框架 |
-| 数据持久层 | MyBatis Plus | 3.5.x | SQL 映射框架 |
+| 数据持久层 | MyBatis Plus | 3.5.5 | SQL 映射框架 |
 | 数据库 | MySQL | 8.0+ | 关系型数据库 |
-| 连接池 | Druid | 1.2.x | 数据库连接池 |
-| 工具类 | Hutool | 5.8.x | Java 工具库 |
-| 对象映射 | MapStruct | 1.5.x | 对象转换工具 |
+| 连接池 | Druid | 1.2.20 | 数据库连接池 |
+| 工具类 | Hutool | 5.8.23 | Java 工具库 |
 
 ### 前端技术栈
 
@@ -35,7 +33,7 @@
 | 框架 | Vue | 3.4.x | 渐进式 JavaScript 框架 |
 | 状态管理 | Pinia | 2.1.x | Vue 官方状态管理库 |
 | 路由 | Vue Router | 4.2.x | Vue 路由管理器 |
-| UI组件 | Element Plus | 2.5.x | Vue 3 组件库 |
+| UI 组件 | Element Plus | 2.6.1 | Vue 3 组件库 |
 | 构建工具 | Vite | 5.0.x | 下一代前端构建工具 |
 | 图标 | Element Plus Icons | 2.3.x | Element Plus 图标库 |
 | HTTP客户端 | Axios | 1.6.x | HTTP 请求库 |
@@ -62,7 +60,6 @@ slny/                              # 项目根目录
 │   │       │   │   ├── impl/                     # 服务实现类
 │   │       │   │   ├── UserService.java          # 用户服务接口
 │   │       │   │   └── HouseService.java         # 房源服务接口
-│   │       │   ├── repository/       # 数据访问层 (JPA)
 │   │       │   ├── mapper/           # 数据访问层 (MyBatis)
 │   │       │   ├── entity/           # 数据库实体类
 │   │       │   │   ├── User.java                 # 用户实体
@@ -304,15 +301,15 @@ slny/                              # 项目根目录
 | 表名 | 说明 | 主键 | 主要字段 |
 |------|------|------|----------|
 | biz_appointment | 预约表 | id | house_id, user_id, status, appointment_time |
-| biz_lease | 租约表 | id | house_id, tenant_id, landlord_id, start_date, end_date |
-| biz_payment | 支付记录表 | id | lease_id, amount, pay_type, status |
+| biz_lease_agreement | 租约表 | id | house_id, tenant_id, landlord_id, start_date, end_date |
+| biz_payment_record | 支付记录表 | id | lease_id, amount, pay_type, status |
 
 #### 售后相关表
 
 | 表名 | 说明 | 主键 | 主要字段 |
 |------|------|------|----------|
-| biz_maintenance | 维修申请表 | id | house_id, user_id, status, description |
-| biz_review | 评价表 | id | house_id, user_id, score, comment |
+| biz_repair | 报修表 | id | house_id, user_id, status, description |
+| biz_evaluation | 评价表 | id | house_id, user_id, score, comment |
 | biz_complaint | 投诉表 | id | complainant_id, defendant_id, status, content |
 
 ## 快速开始
@@ -525,10 +522,9 @@ GET /houses?page=1&size=10&keyword=阳光&minPrice=2000&maxPrice=5000
 - **动态权限分配**: 支持角色和权限的动态配置
 
 ### 安全防护
-- **SQL注入防护**: 使用参数化查询
-- **XSS攻击防护**: 前端数据过滤
-- **CSRF防护**: Token 验证机制
-- **接口限流**: 防止恶意请求
+- **SQL 注入防护**: 使用参数化查询
+- **XSS 攻击防护**: 前端数据过滤
+- **CSRF 防护**: Token 验证机制
 
 ## 开发规范
 

@@ -92,7 +92,7 @@
       <template #footer>
         <el-button @click="showDetailDialog = false">关闭</el-button>
         <el-button 
-          v-if="selectedAppointment?.status === 'CONFIRMED'" 
+          v-if="canCreateContract" 
           type="primary" 
           @click="createContract"
         >
@@ -116,7 +116,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { 
@@ -174,6 +174,12 @@ const getStatusText = (status) => {
   }
   return texts[s] || status
 }
+
+const canCreateContract = computed(() => {
+  if (!selectedAppointment.value) return false
+  const status = String(selectedAppointment.value.status).trim().toUpperCase()
+  return status === 'CONFIRMED' || status === 'COMPLETED' || status === '1' || status === '2'
+})
 
 const loadAppointments = async () => {
   try {
@@ -238,19 +244,19 @@ const completeAppointment = async (appointment) => {
   }
 }
 
-const createContract = async () => {
-  try {
-    await createContractApi({
+const createContract = () => {
+  // 跳转到合同管理页面，并传递预约信息
+  router.push({
+    path: '/landlord/contracts',
+    query: {
       houseId: selectedAppointment.value.houseId,
-      tenantId: selectedAppointment.value.tenantId
-    })
-    ElMessage.success('合同已发起')
-    showDetailDialog.value = false
-    await loadAppointments()
-  } catch (error) {
-    console.error('发起合同失败:', error)
-    ElMessage.error('发起合同失败')
-  }
+      tenantId: selectedAppointment.value.tenantId,
+      houseName: selectedAppointment.value.houseName,
+      tenantName: selectedAppointment.value.tenantName,
+      tenantPhone: selectedAppointment.value.tenantPhone
+    }
+  })
+  showDetailDialog.value = false
 }
 
 onMounted(() => {
