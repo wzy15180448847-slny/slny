@@ -105,7 +105,8 @@
             <el-radio-group v-model="registerForm.userType">
               <el-radio-button label="TENANT">租客</el-radio-button>
               <el-radio-button label="LANDLORD">房东</el-radio-button>
-              <el-radio-button label="AGENT">经纪人</el-radio-button>
+              <!-- 经纪人角色暂时禁用，等待资质审核功能完善 -->
+              <!-- <el-radio-button label="AGENT">经纪人</el-radio-button> -->
             </el-radio-group>
           </el-form-item>
           

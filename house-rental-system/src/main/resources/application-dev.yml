@@ -37,12 +37,7 @@ spring:
     username: your-email@qq.com
     password: your-email-password
 
-# 日志配置（开发环境开启DEBUG级别）
-logging:
-  level:
-    root: INFO
-    com.houserental: DEBUG
-    org.springframework.web: DEBUG
+# 日志配置已移至 logback-spring.xml
 
 # 自定义配置
 app:

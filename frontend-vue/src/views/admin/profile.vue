@@ -127,8 +127,8 @@ const getUserTypeText = (type) => {
   const types = {
     'ADMIN': '管理员',
     'LANDLORD': '房东',
-    'TENANT': '租客',
-    'AGENT': '中介'
+    'TENANT': '租客'
+    // 'AGENT': '中介' - 暂时禁用
   }
   return types[type] || type || '-'
 }

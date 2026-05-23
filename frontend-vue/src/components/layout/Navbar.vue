@@ -94,7 +94,8 @@ const router = useRouter()
 const userStore = useUserStore()
 
 const canPublish = computed(() => {
-  return ['LANDLORD', 'AGENT'].includes(userStore.userType)
+  // 暂时只允许房东发布房源，中介角色已禁用
+  return userStore.userType === 'LANDLORD'
 })
 
 const isAdmin = computed(() => {
