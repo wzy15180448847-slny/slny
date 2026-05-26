@@ -46,11 +46,24 @@ public class FileController {
     }
 
     /**
-     * 获取文件访问URL
+     * 获取文件访问 URL
      */
     @GetMapping("/url")
     public Result<String> getFileUrl(@RequestParam("fileName") String fileName) {
         String url = fileService.getFileUrl(fileName);
         return Result.success(url);
+    }
+
+    /**
+     * 设置 bucket 为公开读取（临时调试接口）
+     */
+    @PostMapping("/set-public")
+    public Result<String> setBucketPublic() {
+        try {
+            fileService.setBucketPublic();
+            return Result.success("Bucket 已设置为公开读取");
+        } catch (Exception e) {
+            return Result.error("设置失败：" + e.getMessage());
+        }
     }
 }

@@ -57,11 +57,45 @@ public class MinioStartupRunner implements CommandLineRunner {
                 }
             }));
 
-            Thread.sleep(3000);
+            // 等待 MinIO 完全启动
+            Thread.sleep(5000);
+            
+            // 设置 bucket 为公开读取
+            setBucketPolicy();
 
         } catch (Exception e) {
             log.error("Failed to start MinIO server", e);
             log.warn("File upload functionality may not work properly");
+        }
+    }
+
+    private void setBucketPolicy() {
+        try {
+            io.minio.MinioClient client = io.minio.MinioClient.builder()
+                    .endpoint("http://localhost:9000")
+                    .credentials("minioadmin", "minioadmin")
+                    .build();
+
+            String policyJson = "{\n" +
+                    "  \"Version\": \"2012-10-17\",\n" +
+                    "  \"Statement\": [\n" +
+                    "    {\n" +
+                    "      \"Effect\": \"Allow\",\n" +
+                    "      \"Principal\": {\"AWS\": [\"*\"]},\n" +
+                    "      \"Action\": [\"s3:GetObject\"],\n" +
+                    "      \"Resource\": [\"arn:aws:s3:::house-rental/*\"]\n" +
+                    "    }\n" +
+                    "  ]\n" +
+                    "}";
+
+            client.setBucketPolicy(io.minio.SetBucketPolicyArgs.builder()
+                    .bucket("house-rental")
+                    .config(policyJson)
+                    .build());
+
+            log.info("✅ Bucket 'house-rental' 已设置为公开读取");
+        } catch (Exception e) {
+            log.error("设置 Bucket 公开失败：{}", e.getMessage());
         }
     }
 }

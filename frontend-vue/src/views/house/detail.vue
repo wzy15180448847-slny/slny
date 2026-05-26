@@ -60,8 +60,8 @@
           
           <div class="basic-info">
             <div class="info-item">
-              <span class="label">房型</span>
-              <span class="value">{{ house.houseType }}</span>
+              <span class="label">户型</span>
+              <span class="value">{{ house.rooms || house.houseType || '未知' }}</span>
             </div>
             <div class="info-item">
               <span class="label">面积</span>
@@ -69,7 +69,7 @@
             </div>
             <div class="info-item">
               <span class="label">朝向</span>
-              <span class="value">{{ orientationText }}</span>
+              <span class="value">{{ house.direction || orientationText }}</span>
             </div>
             <div class="info-item">
               <span class="label">楼层</span>
@@ -79,10 +79,10 @@
               <span class="label">装修</span>
               <span class="value">{{ getDecorationText(house.decoration) }}</span>
             </div>
-            <div class="info-item">
+            <!-- <div class="info-item">
               <span class="label">电梯</span>
               <span class="value">{{ house.hasElevator ? '有' : '无' }}</span>
-            </div>
+            </div> -->
           </div>
           
           <div class="location">

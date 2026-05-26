@@ -25,7 +25,12 @@ public interface FileService {
     void delete(String fileName);
 
     /**
-     * 获取文件访问URL
+     * 获取文件访问 URL
      */
     String getFileUrl(String fileName);
+
+    /**
+     * 设置 bucket 为公开读取
+     */
+    void setBucketPublic() throws Exception;
 }

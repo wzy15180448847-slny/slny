@@ -93,10 +93,13 @@
           </el-form-item>
           <el-form-item label="房源图片">
             <el-upload
-              action="#"
-              :auto-upload="false"
+              action="/api/files/upload"
+              :auto-upload="true"
               :file-list="houseForm.images"
+              :on-success="handleImageUpload"
+              :before-upload="beforeImageUpload"
               list-type="picture-card"
+              :limit="9"
             >
               <el-icon><Plus /></el-icon>
             </el-upload>
@@ -201,6 +204,33 @@ const nextStep = () => {
   if (currentStep.value < 2) {
     currentStep.value++
   }
+}
+
+const handleImageUpload = (response, file) => {
+  console.log('图片上传成功:', response, file)
+  if (response.code === 200 || response.success) {
+    const imageUrl = response.data || response.url
+    if (imageUrl) {
+      ElMessage.success('图片上传成功')
+    }
+  } else {
+    ElMessage.error(response.message || '图片上传失败')
+  }
+}
+
+const beforeImageUpload = (file) => {
+  const isImage = file.type.startsWith('image/')
+  const isLt5M = file.size / 1024 / 1024 < 5
+
+  if (!isImage) {
+    ElMessage.error('请上传图片格式')
+    return false
+  }
+  if (!isLt5M) {
+    ElMessage.error('图片大小不能超过 5MB')
+    return false
+  }
+  return true
 }
 
 const submitHouse = async () => {

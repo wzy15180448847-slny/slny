@@ -323,6 +323,7 @@ slny/                              # 项目根目录
 | MySQL | 8.0+ | 关系型数据库 |
 | Node.js | 18+ | JavaScript 运行环境 |
 | npm | 9+ | 前端包管理器 |
+| MinIO | 最新版 | 对象存储服务（可选，用于文件存储） |
 
 ### 数据库初始化
 
@@ -411,7 +412,82 @@ npm install
 npm run dev
 ```
 
-启动成功后访问: http://localhost:3000
+启动成功后访问：http://localhost:3000
+
+### 启动 MinIO 对象存储
+
+MinIO 用于文件存储（如房源图片、合同文档等）。
+
+#### Windows 系统
+
+1. **下载 MinIO**
+   ```bash
+   # 访问官方下载地址
+   https://dl.min.io/server/minio/release/windows-amd64/minio.exe
+   
+   # 或使用 PowerShell 下载
+   Invoke-WebRequest -Uri "https://dl.min.io/server/minio/release/windows-amd64/minio.exe" -OutFile "D:\MinIO\minio.exe"
+   ```
+
+2. **创建数据目录**
+   ```bash
+   mkdir D:\MinIO\data
+   ```
+
+3. **启动 MinIO 服务**
+   ```bash
+   # 命令行启动
+   D:\MinIO\minio.exe server D:\MinIO\data --console-address ":9001"
+   ```
+
+4. **访问 MinIO 控制台**
+   - API 地址：http://localhost:9000
+   - 控制台地址：http://localhost:9001
+   - 默认账号：minioadmin / minioadmin
+
+#### Linux/Mac 系统
+
+```bash
+# 下载 MinIO
+wget https://dl.min.io/server/minio/release/linux-amd64/minio
+chmod +x minio
+
+# 创建数据目录
+mkdir -p ~/minio/data
+
+# 启动 MinIO
+./minio server ~/minio/data --console-address ":9001"
+```
+
+#### 配置说明
+
+后端配置文件 `house-rental-system/src/main/resources/application-dev.yml` 中的 MinIO 配置：
+
+```yaml
+app:
+  minio:
+    url: http://localhost:9000
+    access-key: minioadmin
+    secret-key: minioadmin
+    bucket-name: house-rental
+    secure: false
+```
+
+**环境变量方式配置**（推荐）：
+
+```bash
+# Windows (PowerShell)
+$env:APP_MINIO_URL="http://localhost:9000"
+$env:APP_MINIO_ACCESS_KEY="minioadmin"
+$env:APP_MINIO_SECRET_KEY="minioadmin"
+$env:APP_MINIO_BUCKET_NAME="house-rental"
+
+# Linux/Mac
+export APP_MINIO_URL=http://localhost:9000
+export APP_MINIO_ACCESS_KEY=minioadmin
+export APP_MINIO_SECRET_KEY=minioadmin
+export APP_MINIO_BUCKET_NAME=house-rental
+```
 
 ### 默认测试账号
 

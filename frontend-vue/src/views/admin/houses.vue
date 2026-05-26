@@ -65,7 +65,11 @@
             </div>
             <div class="info-item">
               <span class="info-label">户型</span>
-              <span class="info-value">{{ selectedHouse.rooms }}</span>
+              <span class="info-value">{{ selectedHouse.rooms || selectedHouse.houseType || '未知' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">朝向</span>
+              <span class="info-value">{{ selectedHouse.direction || getOrientationText(selectedHouse.orientation) }}</span>
             </div>
           </div>
           <div class="tags">
@@ -122,6 +126,18 @@ const getStatusText = (status) => {
     'RENTED': '已出租'
   }
   return texts[status] || status
+}
+
+const getOrientationText = (orientation) => {
+  if (!orientation) return '未知'
+  const map = {
+    1: '东',
+    2: '南',
+    3: '西',
+    4: '北',
+    5: '南北通透'
+  }
+  return map[orientation] || '未知'
 }
 
 const loadHouses = async () => {

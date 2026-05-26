@@ -11,6 +11,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -34,7 +36,7 @@ public class FileServiceImpl implements FileService {
             checkAndCreateBucket();
             log.info("MinIO 连接成功，存储桶 '{}' 已就绪", minioConfig.getBucketName());
         } catch (Exception e) {
-            log.warn("MinIO 初始化失败，请检查 MinIO 是否启动: {}", e.getMessage());
+            log.warn("MinIO 初始化失败，请检查 MinIO 是否启动：{}", e.getMessage());
             log.warn("文件上传功能将暂时不可用，直到 MinIO 连接恢复");
         }
     }
@@ -48,7 +50,7 @@ public class FileServiceImpl implements FileService {
             minioClient.makeBucket(MakeBucketArgs.builder()
                     .bucket(minioConfig.getBucketName())
                     .build());
-            log.info("创建存储桶: {}", minioConfig.getBucketName());
+            log.info("创建存储桶：{}", minioConfig.getBucketName());
         }
     }
 
@@ -70,13 +72,42 @@ public class FileServiceImpl implements FileService {
                     .stream(file.getInputStream(), file.getSize(), -1)
                     .contentType(file.getContentType())
                     .build());
+            
+            // 上传成功后设置 bucket 为公开读取
+            try {
+                setBucketPublic();
+                log.info("Bucket 已设置为公开读取");
+            } catch (Exception policyEx) {
+                log.warn("设置 Bucket 公开失败：{}", policyEx.getMessage());
+            }
 
-            log.info("文件上传成功: {}", fileName);
+            log.info("文件上传成功：{}", fileName);
             return fileName;
         } catch (Exception e) {
             log.error("文件上传失败", e);
-            throw new RuntimeException("文件上传失败: " + e.getMessage() + "，请检查 MinIO 服务是否正常运行", e);
+            throw new RuntimeException("文件上传失败：" + e.getMessage() + "，请检查 MinIO 服务是否正常运行", e);
         }
+    }
+
+    public void setBucketPublic() throws Exception {
+        String policyJson = "{\n" +
+                "  \"Version\": \"2012-10-17\",\n" +
+                "  \"Statement\": [\n" +
+                "    {\n" +
+                "      \"Effect\": \"Allow\",\n" +
+                "      \"Principal\": {\"AWS\": [\"*\"]},\n" +
+                "      \"Action\": [\"s3:GetObject\"],\n" +
+                "      \"Resource\": [\"arn:aws:s3:::" + minioConfig.getBucketName() + "/*\"]\n" +
+                "    }\n" +
+                "  ]\n" +
+                "}";
+        
+        minioClient.setBucketPolicy(SetBucketPolicyArgs.builder()
+                .bucket(minioConfig.getBucketName())
+                .config(policyJson)
+                .build());
+        
+        log.debug("存储桶 '{}' 已设置为公开读取", minioConfig.getBucketName());
     }
 
     @Override
