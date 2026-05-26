@@ -90,16 +90,18 @@ public class FileServiceImpl implements FileService {
     }
 
     public void setBucketPublic() throws Exception {
+        // 标准的 MinIO 公开读取 Policy JSON
+        // 允许任何用户 (*) 对 bucket 中的所有对象执行 s3:GetObject 操作
         String policyJson = "{\n" +
-                "  \"Version\": \"2012-10-17\",\n" +
-                "  \"Statement\": [\n" +
-                "    {\n" +
-                "      \"Effect\": \"Allow\",\n" +
-                "      \"Principal\": {\"AWS\": [\"*\"]},\n" +
-                "      \"Action\": [\"s3:GetObject\"],\n" +
-                "      \"Resource\": [\"arn:aws:s3:::" + minioConfig.getBucketName() + "/*\"]\n" +
-                "    }\n" +
-                "  ]\n" +
+                "    \"Version\": \"2012-10-17\",\n" +
+                "    \"Statement\": [\n" +
+                "        {\n" +
+                "            \"Effect\": \"Allow\",\n" +
+                "            \"Principal\": \"*\",\n" +
+                "            \"Action\": [\"s3:GetObject\"],\n" +
+                "            \"Resource\": [\"arn:aws:s3:::" + minioConfig.getBucketName() + "/*\"]\n" +
+                "        }\n" +
+                "    ]\n" +
                 "}";
         
         minioClient.setBucketPolicy(SetBucketPolicyArgs.builder()
@@ -107,7 +109,7 @@ public class FileServiceImpl implements FileService {
                 .config(policyJson)
                 .build());
         
-        log.debug("存储桶 '{}' 已设置为公开读取", minioConfig.getBucketName());
+        log.info("存储桶 '{}' 已设置为公开读取 (Public Read-Only)", minioConfig.getBucketName());
     }
 
     @Override

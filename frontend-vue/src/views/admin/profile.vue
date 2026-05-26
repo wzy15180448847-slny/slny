@@ -200,25 +200,36 @@ const handleAvatarUpload = async (event) => {
   }
   
   try {
-    const fileName = await uploadFile(file)
+    const response = await uploadFile(file)
+    // 从响应中提取文件名
+    const fileName = response.data || response
+    console.log('上传返回的响应:', response)
+    console.log('提取的文件名:', fileName)
+    
     if (fileName) {
-      // 先获取URL临时显示
-      const fileUrl = await getFileUrl(fileName)
-      formData.avatar = fileUrl
+      // 直接拼接完整的公开访问 URL
+      const minioBaseUrl = 'http://localhost:9000'
+      const bucketName = 'house-rental'
+      const avatarUrl = fileName.startsWith('/') 
+        ? `${minioBaseUrl}/${bucketName}${fileName}` 
+        : `${minioBaseUrl}/${bucketName}/${fileName}`
       
-      // 创建更新数据，只保存文件名到数据库
+      formData.avatar = avatarUrl
+      console.log('头像上传成功，完整 URL:', avatarUrl)
+      
+      // 创建更新数据，保存完整的 URL 到数据库
       const updateData = {
         nickname: formData.nickname,
         realName: formData.realName,
         phone: formData.phone,
         email: formData.email,
-        avatar: fileName // 存的是文件名，不是URL！
+        avatar: avatarUrl // 直接保存完整 URL
       }
       
-      // 调用API更新
+      // 调用 API 更新
       await userStore.updateProfile(updateData)
       
-      // 重新获取用户信息（后端会返回新的有效URL）
+      // 重新获取用户信息
       await userStore.getUserInfo()
       
       // 重新加载表单数据

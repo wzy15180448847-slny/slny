@@ -270,10 +270,13 @@ const getFullImageUrl = (url) => {
   if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('blob:')) {
     return url
   }
-  // 否则拼接 MinIO 基础 URL
+  // 否则拼接 MinIO 基础 URL（包含 bucket 名称）
   const minioBaseUrl = 'http://localhost:9000'
-  // 确保路径以 / 开头
-  return url.startsWith('/') ? `${minioBaseUrl}${url}` : `${minioBaseUrl}/${url}`
+  const bucketName = 'house-rental'  // MinIO bucket 名称
+  // 确保路径包含 bucket 名称：http://localhost:9000/house-rental/house/xxx.png
+  return url.startsWith('/') 
+    ? `${minioBaseUrl}/${bucketName}${url}` 
+    : `${minioBaseUrl}/${bucketName}/${url}`
 }
 
 const initForm = async () => {
@@ -374,8 +377,36 @@ const handleImageUpload = (response, file, fileList) => {
   }
 }
 
-const handleImageRemove = (file) => {
+const handleImageRemove = async (file) => {
   console.log('移除图片:', file)
+  
+  // 如果是已上传的文件（有后端返回的 URL），调用后端删除
+  if (file.url && !file.url.startsWith('blob:')) {
+    try {
+      // 从完整 URL 中提取文件名
+      // 格式：http://localhost:9000/house-rental/house/xxx.png
+      const urlParts = file.url.split('/')
+      const fileName = urlParts.slice(urlParts.indexOf('house')).join('/')
+      console.log('提取的文件名:', fileName)
+      
+      if (fileName) {
+        await request({
+          url: '/files/delete',
+          method: 'delete',
+          params: { fileName }
+        })
+        console.log('后端删除成功:', fileName)
+        ElMessage.success('图片已删除')
+      }
+    } catch (error) {
+      console.error('删除失败:', error)
+      ElMessage.error('删除失败：' + (error.message || '请重试'))
+      // 删除失败时不更新前端列表
+      return
+    }
+  }
+  
+  // 更新前端图片列表
   imageList.value = imageList.value.filter(item => item.url !== file.url)
 }
 

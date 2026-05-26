@@ -199,9 +199,21 @@ const handleAvatarChange = async (event) => {
   }
 
   try {
-    const fileName = await uploadFile(file)
-    const avatarUrl = await getFileUrl(fileName)
+    const response = await uploadFile(file)
+    // 从响应中提取文件名
+    const fileName = response.data || response
+    console.log('上传返回的响应:', response)
+    console.log('提取的文件名:', fileName)
+    
+    // 直接拼接完整的公开访问 URL
+    const minioBaseUrl = 'http://localhost:9000'
+    const bucketName = 'house-rental'
+    const avatarUrl = fileName.startsWith('/') 
+      ? `${minioBaseUrl}/${bucketName}${fileName}` 
+      : `${minioBaseUrl}/${bucketName}/${fileName}`
+    
     formData.avatar = avatarUrl
+    console.log('头像上传成功，完整 URL:', avatarUrl)
     ElMessage.success('头像上传成功')
   } catch (error) {
     console.error('头像上传失败:', error)

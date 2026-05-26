@@ -190,12 +190,20 @@ const saveProfile = async () => {
       ElMessage.info('正在上传头像...')
       const blob = await fetch(avatarUrl).then(res => res.blob())
       const file = new File([blob], 'avatar.jpg', { type: blob.type })
-      const result = await uploadFile(file)
-      console.log('上传结果:', result)
+      const response = await uploadFile(file)
+      // 从响应中提取文件名
+      const fileName = response.data || response
+      console.log('上传结果:', response)
+      console.log('提取的文件名:', fileName)
       
-      const urlResult = await getFileUrl(result)
-      console.log('URL结果:', urlResult)
-      avatarUrl = urlResult
+      // 直接拼接完整的公开访问 URL
+      const minioBaseUrl = 'http://localhost:9000'
+      const bucketName = 'house-rental'
+      avatarUrl = fileName.startsWith('/') 
+        ? `${minioBaseUrl}/${bucketName}${fileName}` 
+        : `${minioBaseUrl}/${bucketName}/${fileName}`
+      
+      console.log('头像完整 URL:', avatarUrl)
     }
     
     await userStore.updateProfile({

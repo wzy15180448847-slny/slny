@@ -1,5 +1,7 @@
 package com.houserental.config;
 
+import io.minio.MinioClient;
+import io.minio.SetBucketPolicyArgs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,6 +20,18 @@ public class MinioStartupRunner implements CommandLineRunner {
 
     @Value("${app.minio.data-path:D:/MinIO/data}")
     private String minioDataPath;
+
+    @Value("${app.minio.url:http://localhost:9000}")
+    private String minioUrl;
+
+    @Value("${app.minio.access-key:minioadmin}")
+    private String accessKey;
+
+    @Value("${app.minio.secret-key:minioadmin}")
+    private String secretKey;
+
+    @Value("${app.minio.bucket-name:house-rental}")
+    private String bucketName;
 
     private Process minioProcess;
 
@@ -71,31 +85,35 @@ public class MinioStartupRunner implements CommandLineRunner {
 
     private void setBucketPolicy() {
         try {
-            io.minio.MinioClient client = io.minio.MinioClient.builder()
-                    .endpoint("http://localhost:9000")
-                    .credentials("minioadmin", "minioadmin")
+            MinioClient client = MinioClient.builder()
+                    .endpoint(minioUrl)
+                    .credentials(accessKey, secretKey)
                     .build();
 
+            // 标准的 MinIO 公开读取 Policy JSON
+            // 允许任何用户 (*) 对 bucket 中的所有对象执行 s3:GetObject 操作
             String policyJson = "{\n" +
-                    "  \"Version\": \"2012-10-17\",\n" +
-                    "  \"Statement\": [\n" +
-                    "    {\n" +
-                    "      \"Effect\": \"Allow\",\n" +
-                    "      \"Principal\": {\"AWS\": [\"*\"]},\n" +
-                    "      \"Action\": [\"s3:GetObject\"],\n" +
-                    "      \"Resource\": [\"arn:aws:s3:::house-rental/*\"]\n" +
-                    "    }\n" +
-                    "  ]\n" +
+                    "    \"Version\": \"2012-10-17\",\n" +
+                    "    \"Statement\": [\n" +
+                    "        {\n" +
+                    "            \"Effect\": \"Allow\",\n" +
+                    "            \"Principal\": \"*\",\n" +
+                    "            \"Action\": [\"s3:GetObject\"],\n" +
+                    "            \"Resource\": [\"arn:aws:s3:::" + bucketName + "/*\"]\n" +
+                    "        }\n" +
+                    "    ]\n" +
                     "}";
 
-            client.setBucketPolicy(io.minio.SetBucketPolicyArgs.builder()
-                    .bucket("house-rental")
+            client.setBucketPolicy(SetBucketPolicyArgs.builder()
+                    .bucket(bucketName)
                     .config(policyJson)
                     .build());
 
-            log.info("✅ Bucket 'house-rental' 已设置为公开读取");
+            log.info("✅ Bucket '{}' 已设置为公开读取 (Public Read-Only)", bucketName);
+            log.info("📝 Policy JSON: {}", policyJson);
         } catch (Exception e) {
-            log.error("设置 Bucket 公开失败：{}", e.getMessage());
+            log.error("❌ 设置 Bucket 公开读取失败：{}", e.getMessage(), e);
+            log.warn("⚠️  前端可能无法直接访问上传的图片，需要手动在 MinIO 控制台设置 Bucket Policy");
         }
     }
 }
